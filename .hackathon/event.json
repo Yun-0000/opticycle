@@ -1,0 +1,9 @@
+{
+  "schema_version": 3,
+  "event_id": "alpaca-trading-agents-2026",
+  "event_name": "Alpaca AI Trading Agents Hackathon",
+  "official_url": "https://lablab.ai/ai-hackathons/alpaca-ai-trading-agents-hackathon",
+  "foundation_id": "gauss-world-trader",
+  "source_report_path": "reports/eligible/alpaca-trading-agents-2026.md",
+  "report_sha256": "fadcfdae7aaf82241a854e9fb9a990a352be6101b6a29ddae83517448ec9fff2"
+}
