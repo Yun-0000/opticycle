@@ -12,12 +12,13 @@ Verifies:
 from __future__ import annotations
 
 import copy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 import pytest
 
 from opticycle.protocol import (
     BrokerReceipt,
+    CalculatedRisk,
     CanonicalOrderPayload,
     DecisionEpisode,
     DecisionRecord,
@@ -25,6 +26,7 @@ from opticycle.protocol import (
     ExecutionAttempt,
     ExecutionChannel,
     ExecutionStatus,
+    LegRisk,
     OptionCandidate,
     OptionContractQuote,
     OptionLegSpec,
@@ -34,6 +36,7 @@ from opticycle.protocol import (
     ReconciliationReport,
     ReconciliationStatus,
     RiskCertificate,
+    RiskLimits,
     SpreadType,
     StrategyKind,
     ThesisAction,
@@ -82,6 +85,99 @@ def _make_sample_payload(
         qty=qty,
         limit_price=limit_price,
         legs=legs,
+    )
+
+
+def _sample_limits() -> RiskLimits:
+    return RiskLimits(
+        max_position_pct=Decimal("0.08"),
+        max_daily_trades=8,
+        max_open_positions=6,
+        max_abs_delta=Decimal("80"),
+        max_abs_vega=Decimal("250"),
+        max_abs_gamma=Decimal("40"),
+        max_abs_theta=Decimal("400"),
+        max_concentration_pct=Decimal("0.08"),
+        max_daily_loss=Decimal("2000.00"),
+        max_open_risk=Decimal("8000.00"),
+        max_quote_age_seconds=Decimal("120"),
+        equity_tolerance=Decimal("0.15"),
+        starting_capital=Decimal("100000.00"),
+        certificate_ttl_seconds=60,
+        paper_only=True,
+        require_options=True,
+    )
+
+
+def _sample_calculated_risk() -> CalculatedRisk:
+    return CalculatedRisk(
+        is_credit=True,
+        width=Decimal("10.00"),
+        net_credit=Decimal("2.45"),
+        net_debit=Decimal("0"),
+        max_loss=Decimal("755.00"),
+        max_profit=Decimal("245.00"),
+        buying_power_impact=Decimal("755.00"),
+        concentration_pct=Decimal("0.00755"),
+        daily_trades=0,
+        open_risk=Decimal("755.00"),
+        daily_loss=Decimal("0"),
+        quote_age_seconds=Decimal("0.5"),
+        quote_fresh=True,
+        combo_delta=Decimal("-15.00"),
+        combo_vega=Decimal("4.50"),
+        combo_gamma=Decimal("1.20"),
+        combo_theta=Decimal("-8.00"),
+        portfolio_delta=Decimal("-15.00"),
+        portfolio_vega=Decimal("4.50"),
+        portfolio_gamma=Decimal("1.20"),
+        portfolio_theta=Decimal("-8.00"),
+        legs=(
+            LegRisk(
+                symbol="SPY260918P00550000",
+                side="sell",
+                ratio_qty=1,
+                bid=Decimal("4.10"),
+                ask=Decimal("4.20"),
+                delta=Decimal("20.00"),
+                vega=Decimal("-8.00"),
+                gamma=Decimal("-1.00"),
+                theta=Decimal("6.00"),
+            ),
+            LegRisk(
+                symbol="SPY260918P00540000",
+                side="buy",
+                ratio_qty=1,
+                bid=Decimal("1.60"),
+                ask=Decimal("1.70"),
+                delta=Decimal("-35.00"),
+                vega=Decimal("12.50"),
+                gamma=Decimal("2.20"),
+                theta=Decimal("-14.00"),
+            ),
+        ),
+        portfolio_equity=Decimal("100000.00"),
+        buying_power=Decimal("100000.00"),
+    )
+
+
+def _make_certificate(payload: CanonicalOrderPayload, now: datetime | None = None) -> RiskCertificate:
+    issued = now or datetime.now(timezone.utc)
+    return RiskCertificate(
+        certificate_id="cert-001",
+        cycle_id=payload.client_order_id,
+        payload_hash=payload.payload_hash,
+        evidence_hash="a" * 64,
+        account_hash="b" * 64,
+        client_order_id=payload.client_order_id,
+        account_id=payload.account_id,
+        approval=True,
+        veto=False,
+        reasons=(),
+        limits=_sample_limits(),
+        calculated_risk=_sample_calculated_risk(),
+        issued_at=issued,
+        expires_at=issued + timedelta(seconds=60),
     )
 
 
@@ -256,23 +352,14 @@ def test_validation_rejects_invalid_occ_symbol() -> None:
 
 def test_risk_certificate_binding() -> None:
     payload = _make_sample_payload()
-    cert = RiskCertificate(
-        certificate_id="cert-001",
-        cycle_id="cycle-20260829-001",
-        payload_hash=payload.payload_hash,
-        client_order_id=payload.client_order_id,
-        account_id=payload.account_id,
-        passed=True,
-        reasons=(),
-        portfolio_equity=Decimal("100000.00"),
-        buying_power=Decimal("100000.00"),
-        projected_delta=Decimal("-0.15"),
-        projected_vega=Decimal("4.50"),
-        max_risk_allowed=Decimal("8000.00"),
-        timestamp=datetime.now(timezone.utc),
-    )
+    cert = _make_certificate(payload)
     assert cert.payload_hash == payload.payload_hash
     assert cert.passed is True
+    assert cert.approval is True
+    assert cert.veto is False
+    assert len(cert.evidence_hash) == 64
+    assert len(cert.account_hash) == 64
+    assert len(cert.binding_hash) == 64
 
 
 def test_decision_episode_lifecycle_and_immutability() -> None:
@@ -328,21 +415,7 @@ def test_decision_episode_lifecycle_and_immutability() -> None:
 
     payload = _make_sample_payload(client_order_id="cycle-001", legs=(leg1, leg2))
 
-    cert = RiskCertificate(
-        certificate_id="cert-001",
-        cycle_id="cycle-001",
-        payload_hash=payload.payload_hash,
-        client_order_id=payload.client_order_id,
-        account_id=payload.account_id,
-        passed=True,
-        reasons=(),
-        portfolio_equity=Decimal("100000.00"),
-        buying_power=Decimal("100000.00"),
-        projected_delta=Decimal("-0.15"),
-        projected_vega=Decimal("4.50"),
-        max_risk_allowed=Decimal("8000.00"),
-        timestamp=now,
-    )
+    cert = _make_certificate(payload, now=now)
 
     execution = ExecutionAttempt(
         attempt_id="att-001",

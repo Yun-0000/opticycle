@@ -185,10 +185,12 @@ def _spread_request(plan: Any, underlying: str) -> OptionOrderRequest:
         }
         legs.append(payload)
     limit = plan.target_price
+    if limit is None:
+        raise ExecutionRejected("NO_TRADE: missing market-derived limit price")
     return OptionOrderRequest(
         qty=1,
         order_type="limit",
-        limit_price=abs(float(limit)) if limit is not None else 0.85,
+        limit_price=abs(float(limit)),
         order_class="mleg",
         legs=legs,
         reason=str(plan.reason or "vertical_spread"),

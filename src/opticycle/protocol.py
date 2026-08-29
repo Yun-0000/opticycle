@@ -364,27 +364,273 @@ class CanonicalOrderPayload:
         }
 
 
+def canonical_hash(value: Mapping[str, Any] | dict[str, Any]) -> str:
+    """Deterministic SHA-256 over canonical JSON. Used for evidence/account/cert binding."""
+    blob = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
+def parse_occ_symbol(symbol: str) -> tuple[str, datetime, OptionType, Decimal]:
+    """Parse OCC option symbol into root, expiration, type, and strike."""
+    if not OCC_SYMBOL_RE.fullmatch(symbol):
+        raise ValueError(f"Invalid OCC option symbol: {symbol!r}")
+    root = symbol[:-15]
+    yymmdd = symbol[-15:-9]
+    kind = symbol[-9]
+    strike_raw = symbol[-8:]
+    expiration = datetime.strptime(yymmdd, "%y%m%d").replace(tzinfo=timezone.utc)
+    strike = Decimal(strike_raw) / Decimal("1000")
+    option_type = OptionType.PUT if kind == "P" else OptionType.CALL
+    return root, expiration, option_type, strike
+
+
+def evidence_canonical_dict(evidence: EvidenceSnapshot) -> dict[str, Any]:
+    """Canonical dict for evidence_hash. Quote prices are included; no synthetic fills."""
+    quotes = []
+    for quote in sorted(evidence.chain_quotes, key=lambda item: item.symbol):
+        quotes.append(
+            {
+                "ask": format_decimal(quote.ask, 4),
+                "bid": format_decimal(quote.bid, 4),
+                "delta": format_decimal(quote.delta, 6),
+                "expiration": ensure_utc(quote.expiration).strftime("%Y-%m-%d"),
+                "gamma": format_decimal(quote.gamma, 6),
+                "last": format_decimal(quote.last, 4),
+                "option_type": quote.option_type.value,
+                "strike_price": format_decimal(quote.strike_price, 2),
+                "symbol": quote.symbol,
+                "theta": format_decimal(quote.theta, 6),
+                "underlying": quote.underlying,
+                "vega": format_decimal(quote.vega, 6),
+            }
+        )
+    return {
+        "account_id": evidence.account_id or "",
+        "bars_count": evidence.bars_count,
+        "chain_quotes": quotes,
+        "correlation_id": evidence.correlation_id,
+        "indicators": [[name, format_decimal(value, 6)] for name, value in evidence.indicators],
+        "is_fresh": evidence.is_fresh,
+        "quote_age_seconds": format_decimal(evidence.quote_age_seconds, 3),
+        "spot_price": format_decimal(evidence.spot_price, 4),
+        "timestamp": ensure_utc(evidence.timestamp).isoformat(),
+        "underlying": evidence.underlying.strip().upper(),
+    }
+
+
+def evidence_digest(evidence: EvidenceSnapshot) -> str:
+    return canonical_hash(evidence_canonical_dict(evidence))
+
+
+@dataclass(frozen=True, slots=True)
+class RiskLimits:
+    """Single limit set for replay, live, and demo. LLM cannot supply these."""
+
+    max_position_pct: Decimal
+    max_daily_trades: int
+    max_open_positions: int
+    max_abs_delta: Decimal
+    max_abs_vega: Decimal
+    max_abs_gamma: Decimal
+    max_abs_theta: Decimal
+    max_concentration_pct: Decimal
+    max_daily_loss: Decimal
+    max_open_risk: Decimal
+    max_quote_age_seconds: Decimal
+    equity_tolerance: Decimal
+    starting_capital: Decimal
+    certificate_ttl_seconds: int
+    paper_only: bool
+    require_options: bool
+
+    def canonical_dict(self) -> dict[str, Any]:
+        return {
+            "certificate_ttl_seconds": self.certificate_ttl_seconds,
+            "equity_tolerance": format_decimal(self.equity_tolerance, 4),
+            "max_abs_delta": format_decimal(self.max_abs_delta, 4),
+            "max_abs_gamma": format_decimal(self.max_abs_gamma, 4),
+            "max_abs_theta": format_decimal(self.max_abs_theta, 4),
+            "max_abs_vega": format_decimal(self.max_abs_vega, 4),
+            "max_concentration_pct": format_decimal(self.max_concentration_pct, 4),
+            "max_daily_loss": format_decimal(self.max_daily_loss, 2),
+            "max_daily_trades": self.max_daily_trades,
+            "max_open_positions": self.max_open_positions,
+            "max_open_risk": format_decimal(self.max_open_risk, 2),
+            "max_position_pct": format_decimal(self.max_position_pct, 4),
+            "max_quote_age_seconds": format_decimal(self.max_quote_age_seconds, 3),
+            "paper_only": self.paper_only,
+            "require_options": self.require_options,
+            "starting_capital": format_decimal(self.starting_capital, 2),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class LegRisk:
+    """Per-leg quote-derived price and greeks. Prices come only from market data."""
+
+    symbol: str
+    side: str
+    ratio_qty: int
+    bid: Decimal
+    ask: Decimal
+    delta: Decimal
+    vega: Decimal
+    gamma: Decimal
+    theta: Decimal
+
+    def canonical_dict(self) -> dict[str, Any]:
+        return {
+            "ask": format_decimal(self.ask, 4),
+            "bid": format_decimal(self.bid, 4),
+            "delta": format_decimal(self.delta, 6),
+            "gamma": format_decimal(self.gamma, 6),
+            "ratio_qty": self.ratio_qty,
+            "side": self.side,
+            "symbol": self.symbol,
+            "theta": format_decimal(self.theta, 6),
+            "vega": format_decimal(self.vega, 6),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class CalculatedRisk:
+    """Deterministic risk on the exact MLEG vertical from real quotes and account."""
+
+    is_credit: bool
+    width: Decimal
+    net_credit: Decimal
+    net_debit: Decimal
+    max_loss: Decimal
+    max_profit: Decimal
+    buying_power_impact: Decimal
+    concentration_pct: Decimal
+    daily_trades: int
+    open_risk: Decimal
+    daily_loss: Decimal
+    quote_age_seconds: Decimal
+    quote_fresh: bool
+    combo_delta: Decimal
+    combo_vega: Decimal
+    combo_gamma: Decimal
+    combo_theta: Decimal
+    portfolio_delta: Decimal
+    portfolio_vega: Decimal
+    portfolio_gamma: Decimal
+    portfolio_theta: Decimal
+    legs: tuple[LegRisk, ...]
+    portfolio_equity: Decimal
+    buying_power: Decimal
+
+    def canonical_dict(self) -> dict[str, Any]:
+        return {
+            "buying_power": format_decimal(self.buying_power, 2),
+            "buying_power_impact": format_decimal(self.buying_power_impact, 2),
+            "combo_delta": format_decimal(self.combo_delta, 6),
+            "combo_gamma": format_decimal(self.combo_gamma, 6),
+            "combo_theta": format_decimal(self.combo_theta, 6),
+            "combo_vega": format_decimal(self.combo_vega, 6),
+            "concentration_pct": format_decimal(self.concentration_pct, 6),
+            "daily_loss": format_decimal(self.daily_loss, 2),
+            "daily_trades": self.daily_trades,
+            "is_credit": self.is_credit,
+            "legs": [leg.canonical_dict() for leg in self.legs],
+            "max_loss": format_decimal(self.max_loss, 2),
+            "max_profit": format_decimal(self.max_profit, 2),
+            "net_credit": format_decimal(self.net_credit, 4),
+            "net_debit": format_decimal(self.net_debit, 4),
+            "open_risk": format_decimal(self.open_risk, 2),
+            "portfolio_delta": format_decimal(self.portfolio_delta, 6),
+            "portfolio_equity": format_decimal(self.portfolio_equity, 2),
+            "portfolio_gamma": format_decimal(self.portfolio_gamma, 6),
+            "portfolio_theta": format_decimal(self.portfolio_theta, 6),
+            "portfolio_vega": format_decimal(self.portfolio_vega, 6),
+            "quote_age_seconds": format_decimal(self.quote_age_seconds, 3),
+            "quote_fresh": self.quote_fresh,
+            "width": format_decimal(self.width, 4),
+        }
+
+
 @dataclass(frozen=True, slots=True)
 class RiskCertificate:
-    """Cryptographic/hash proof binding deterministic risk checks to payload."""
+    """Hash-bound authorization for one exact MLEG order. LLM cannot modify it."""
+
     certificate_id: str
     cycle_id: str
     payload_hash: str
+    evidence_hash: str
+    account_hash: str
     client_order_id: str
     account_id: str
-    passed: bool
+    approval: bool
+    veto: bool
     reasons: tuple[str, ...]
-    portfolio_equity: Decimal
-    buying_power: Decimal
-    projected_delta: Decimal
-    projected_vega: Decimal
-    max_risk_allowed: Decimal
-    timestamp: datetime
+    limits: RiskLimits
+    calculated_risk: CalculatedRisk
+    issued_at: datetime
+    expires_at: datetime
+    binding_hash: str = field(init=False)
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "timestamp", ensure_utc(self.timestamp))
+        object.__setattr__(self, "issued_at", ensure_utc(self.issued_at))
+        object.__setattr__(self, "expires_at", ensure_utc(self.expires_at))
         if len(self.payload_hash) != 64:
             raise ValueError("payload_hash must be exactly 64 hex characters")
+        if len(self.evidence_hash) != 64:
+            raise ValueError("evidence_hash must be exactly 64 hex characters")
+        if len(self.account_hash) != 64:
+            raise ValueError("account_hash must be exactly 64 hex characters")
+        if self.approval == self.veto:
+            raise ValueError("certificate must be either approval or veto, not both")
+        if self.expires_at <= self.issued_at:
+            raise ValueError("expires_at must be after issued_at")
+        computed = canonical_hash(self._binding_dict())
+        object.__setattr__(self, "binding_hash", computed)
+
+    def _binding_dict(self) -> dict[str, Any]:
+        return {
+            "account_hash": self.account_hash,
+            "account_id": self.account_id,
+            "approval": self.approval,
+            "calculated_risk": self.calculated_risk.canonical_dict(),
+            "certificate_id": self.certificate_id,
+            "client_order_id": self.client_order_id,
+            "cycle_id": self.cycle_id,
+            "evidence_hash": self.evidence_hash,
+            "expires_at": ensure_utc(self.expires_at).isoformat(),
+            "issued_at": ensure_utc(self.issued_at).isoformat(),
+            "limits": self.limits.canonical_dict(),
+            "payload_hash": self.payload_hash,
+            "reasons": list(self.reasons),
+            "veto": self.veto,
+        }
+
+    @property
+    def passed(self) -> bool:
+        return self.approval and not self.veto
+
+    @property
+    def timestamp(self) -> datetime:
+        return self.issued_at
+
+    @property
+    def portfolio_equity(self) -> Decimal:
+        return self.calculated_risk.portfolio_equity
+
+    @property
+    def buying_power(self) -> Decimal:
+        return self.calculated_risk.buying_power
+
+    @property
+    def projected_delta(self) -> Decimal:
+        return self.calculated_risk.portfolio_delta
+
+    @property
+    def projected_vega(self) -> Decimal:
+        return self.calculated_risk.portfolio_vega
+
+    @property
+    def max_risk_allowed(self) -> Decimal:
+        return self.limits.max_open_risk
 
 
 @dataclass(frozen=True, slots=True)

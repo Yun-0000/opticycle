@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import os
 import time
-from dataclasses import asdict
+import uuid
+from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Any
 
 from opticycle.journal import TradeJournal
@@ -13,7 +15,12 @@ from opticycle.pin_option import ObservedBook, ObservedChainAdapter, ObservedFre
 from opticycle.plans import build_cycle_plan
 from opticycle.preflight import assert_paper_env, dry_run_portfolio
 from opticycle.protocol import ObservationOutcome, ThesisStance
-from opticycle.risk import RiskGate, contract_greeks, scale_greeks
+from opticycle.risk import (
+    RiskEngine,
+    evidence_from_chain_rows,
+    option_request_from_payload,
+    payload_from_request,
+)
 from opticycle.settings import ALLOWED_STRATEGIES, HackathonSettings
 from opticycle.thesis import ThesisDisabled, ThesisAgent, persist_thesis_episode, require_live_llm
 from trade.mcp.alpaca_mcp_executor import AlpacaMcpExecutor
@@ -225,34 +232,88 @@ def run_once(
         },
     )
 
-    greeks = contract_greeks(
-        "p",
-        spot,
-        spot * 0.95,
-        21 / 365,
-        0.04,
-        0.20,
-    )
-    scaled = scale_greeks(greeks, plan.request.qty, plan.request.side or "sell")
-    gate = RiskGate(settings).evaluate(
+    account_id = str(portfolio.account_id or settings.paper_account_id or "")
+    client_order_id = plan.request.client_order_id or f"oc-{uuid.uuid4().hex[:16]}"
+    plan.request.client_order_id = client_order_id
+    payload = payload_from_request(
         plan.request,
+        account_id=account_id,
+        client_order_id=client_order_id,
+        underlying=plan.underlying,
+    )
+    if dry_run:
+        evidence = evidence_from_chain_rows(
+            underlying=plan.underlying,
+            spot=Decimal(str(spot)),
+            rows=pin_market.chain,
+            account_id=account_id,
+            timestamp=datetime.now(timezone.utc),
+            quote_age_seconds=Decimal("0"),
+            bars_count=int(len(pin_market.bars)),
+        )
+        correlation_id = evidence.correlation_id
+    else:
+        if observation.evidence is None:
+            return _closed_cycle(
+                outcome=ObservationOutcome.HALT,
+                reason="live evidence missing",
+                dry_run=False,
+                journal_entry=None,
+                correlation_id=observation.correlation_id,
+            )
+        evidence = observation.evidence
+        correlation_id = observation.correlation_id
+
+    engine = RiskEngine(settings)
+    certificate = engine.issue(
+        payload,
         portfolio,
-        underlying_price=spot,
-        option_price=plan.request.limit_price,
-        proposed_delta=scaled["delta"],
-        proposed_vega=scaled["vega"],
+        evidence,
+        cycle_id=client_order_id,
+        mode="demo" if dry_run else "live",
     )
     log.record(
         "risk_gate",
-        {"approved": gate.approved, "reasons": gate.reasons, "greeks": scaled},
+        {
+            "approved": certificate.approval,
+            "reasons": list(certificate.reasons),
+            "payload_hash": certificate.payload_hash,
+            "evidence_hash": certificate.evidence_hash,
+            "account_hash": certificate.account_hash,
+            "binding_hash": certificate.binding_hash,
+            "max_loss": str(certificate.calculated_risk.max_loss),
+            "net_credit": str(certificate.calculated_risk.net_credit),
+            "net_debit": str(certificate.calculated_risk.net_debit),
+            "combo_greeks": {
+                "delta": str(certificate.calculated_risk.combo_delta),
+                "vega": str(certificate.calculated_risk.combo_vega),
+                "gamma": str(certificate.calculated_risk.combo_gamma),
+                "theta": str(certificate.calculated_risk.combo_theta),
+            },
+        },
     )
-    gate.raise_if_rejected()
+    if certificate.veto:
+        return _closed_cycle(
+            outcome=ObservationOutcome.NO_TRADE,
+            reason="; ".join(certificate.reasons) or "risk certificate veto",
+            dry_run=dry_run,
+            journal_entry=None,
+            correlation_id=correlation_id,
+        )
 
+    certified_request = option_request_from_payload(payload)
     if dry_run:
-        result = dry_run_option_order(plan.request, "mcp")
+        engine.verify(certificate, payload, portfolio, evidence)
+        result = dry_run_option_order(certified_request, "mcp")
     else:
         executor = mcp_executor or AlpacaMcpExecutor.from_env(dry_run=False)
-        result = executor.place_option_order_sync(plan.request)
+        result = executor.place_certified_order_sync(
+            payload,
+            certificate,
+            portfolio,
+            evidence,
+            settings=settings,
+        )
 
     entry = log.record(
         "order",
@@ -262,6 +323,8 @@ def run_once(
             "result": result,
             "symbol": plan.request.symbol,
             "legs": plan.request.legs,
+            "payload_hash": payload.payload_hash,
+            "certificate_id": certificate.certificate_id,
         },
     )
     return {
@@ -269,7 +332,14 @@ def run_once(
         "strategy": plan.strategy,
         "backend": settings.execution_backend,
         "dry_run": dry_run,
-        "gate": asdict(gate),
+        "gate": {"approved": certificate.approval, "reasons": list(certificate.reasons)},
+        "certificate": {
+            "payload_hash": certificate.payload_hash,
+            "evidence_hash": certificate.evidence_hash,
+            "account_hash": certificate.account_hash,
+            "approval": certificate.approval,
+            "veto": certificate.veto,
+        },
         "order": result,
         "journal": entry,
     }

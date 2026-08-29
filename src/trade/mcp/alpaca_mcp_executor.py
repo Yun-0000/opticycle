@@ -12,7 +12,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Callable, Protocol
 
-from ..orders import OptionOrderRequest
+from ..orders import ExecutionRejected, OptionOrderRequest
 
 MCP_SERVER_SPEC = "alpaca-mcp-server==2.3.0"
 PLACE_OPTION_ORDER = "place_option_order"
@@ -131,6 +131,46 @@ class AlpacaMcpExecutor:
 
     def place_option_order_sync(self, request: OptionOrderRequest) -> dict[str, Any]:
         return asyncio.run(self.place_option_order(request))
+
+    def place_certified_order_sync(
+        self,
+        payload: Any,
+        certificate: Any,
+        portfolio: Any,
+        evidence: Any,
+        *,
+        now: Any = None,
+        settings: Any = None,
+    ) -> dict[str, Any]:
+        """Execute only the exact payload bound to a still-valid Risk Certificate."""
+        from opticycle.risk import RiskEngine
+        from opticycle.settings import HackathonSettings
+
+        engine = RiskEngine(settings or HackathonSettings())
+        engine.assert_executable(certificate, payload, portfolio, evidence, now=now)
+        if payload.payload_hash != certificate.payload_hash:
+            raise ExecutionRejected("payload changed after certificate issue")
+        arguments = payload.to_mcp_arguments()
+        return self._dispatch_mcp_arguments(arguments)
+
+    def _dispatch_mcp_arguments(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        return asyncio.run(self._place_mcp_arguments(arguments))
+
+    async def _place_mcp_arguments(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        if self.dry_run:
+            return {
+                "ok": True,
+                "dry_run": True,
+                "backend": "mcp",
+                "tool": PLACE_OPTION_ORDER,
+                "arguments": arguments,
+            }
+        client = await self._client()
+        result = await client.call_tool(PLACE_OPTION_ORDER, arguments)
+        parsed = parse_mcp_result(result)
+        parsed.setdefault("backend", "mcp")
+        parsed.setdefault("ok", True)
+        return parsed
 
     async def _client(self) -> McpToolClient:
         if self.client is not None:
