@@ -54,8 +54,8 @@ class PortfolioSnapshot:
     buying_power: float
     cash: float
     account_id: str | None = None
-    paper: bool = True
-    options_approved: bool = True
+    paper: bool = False
+    options_approved: bool = False
     trades_today: int = 0
     open_positions: int = 0
     net_delta: float | None = None

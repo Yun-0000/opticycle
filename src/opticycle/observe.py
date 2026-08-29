@@ -328,6 +328,40 @@ def _portfolio_greeks(positions: list[Any]) -> tuple[float | None, float | None,
     )
 
 
+def _confirmed_paper(account: Any) -> bool | None:
+    """True only when the account is confirmed paper. Missing → None (fail-closed)."""
+    explicit = getattr(account, "paper", None)
+    if explicit is True or explicit is False:
+        return explicit
+    if explicit is not None:
+        text = str(explicit).strip().lower()
+        if text in {"true", "1", "paper", "yes"}:
+            return True
+        if text in {"false", "0", "live", "no"}:
+            return False
+        return None
+    number = str(getattr(account, "account_number", None) or getattr(account, "id", "") or "").strip()
+    if not number:
+        return None
+    return number.startswith("PA")
+
+
+def _confirmed_options_approved(account: Any) -> bool | None:
+    """True only when an options approval level is present and >= 1. Missing → None."""
+    raw = getattr(account, "options_approved_level", None)
+    if raw is None or str(raw).strip() == "":
+        raw = getattr(account, "options_trading_level", None)
+    if raw is None or str(raw).strip() == "":
+        return None
+    text = str(raw).strip().lower()
+    if text in {"0", "none", "false", "no"}:
+        return False
+    try:
+        return int(float(text)) >= 1
+    except (TypeError, ValueError):
+        return False
+
+
 def _as_decimal(value: Any) -> Decimal | None:
     if value is None:
         return None
@@ -672,11 +706,14 @@ def observe_live(
     open_list = list(open_orders or [])
     fill_list = list(fills or [])
     _ = fill_list  # recorded as datum; fills used by later gates
-    paper = bool(getattr(account, "account_number", None) or True)
-    options_approved = True
-    status = str(getattr(account, "options_approved_level", "") or getattr(account, "options_trading_level", "") or "1")
-    if status in {"0", "none", "None"}:
-        options_approved = False
+    paper_flag = _confirmed_paper(account)
+    options_flag = _confirmed_options_approved(account)
+    if paper_flag is not True:
+        datums.append(_datum("account", "alpaca.trading.get_account", correlation_id, ok=False, detail="paper not confirmed"))
+        return _closed(ObservationOutcome.HALT, "paper account not confirmed", correlation_id, datums)
+    if options_flag is not True:
+        datums.append(_datum("account", "alpaca.trading.get_account", correlation_id, ok=False, detail="options approval missing"))
+        return _closed(ObservationOutcome.HALT, "options approval missing or not confirmed", correlation_id, datums)
 
     net_delta, net_gamma, net_theta, net_vega = _portfolio_greeks(position_list)
     portfolio = PortfolioSnapshot(
@@ -684,8 +721,8 @@ def observe_live(
         buying_power=float(buying_power),
         cash=float(cash),
         account_id=account_id,
-        paper=paper,
-        options_approved=options_approved,
+        paper=True,
+        options_approved=True,
         trades_today=int(getattr(account, "daytrade_count", 0) or 0),
         open_positions=len(position_list),
         net_delta=net_delta,

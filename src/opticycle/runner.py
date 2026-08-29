@@ -306,15 +306,26 @@ def _finalize_reconciliation(
     broker: Any = None,
 ) -> dict[str, Any]:
     pending = report.status is ReconciliationStatus.PENDING and not report.halt_triggered
-    if report.halt_triggered:
+    pnl = None
+    pnl_blocked = False
+    if report.complete and not report.halt_triggered and not pending:
+        pnl = _pnl_from_broker(broker)
+        if pnl is None or not pnl.matched or pnl.end_of_cycle_equity is None:
+            pnl_blocked = True
+    if report.halt_triggered or pnl_blocked:
+        halt_reason = (
+            "broker P&L/equity unreadable"
+            if pnl_blocked
+            else ("; ".join(report.discrepancies) or report.status.value)
+        )
         store.halt(
             record.cycle_id,
-            "; ".join(report.discrepancies) or report.status.value,
+            halt_reason,
             forbids_new=True,
         )
         ledger.trip(
-            status=report.status.value,
-            reason="; ".join(report.discrepancies) or report.status.value,
+            status="unknown" if pnl_blocked else report.status.value,
+            reason=halt_reason,
             report_id=report.report_id,
         )
     elif pending:
@@ -348,11 +359,9 @@ def _finalize_reconciliation(
             "client_order_id": final.client_order_id,
         },
     )
-    complete = report.complete and final.state is CycleState.COMPLETED
+    complete = report.complete and final.state is CycleState.COMPLETED and not pnl_blocked
     fill_pnl: dict[str, Any] = {}
-    pnl = None
     if complete:
-        pnl = _pnl_from_broker(broker)
         fill_pnl = _stamp_matched_episode(
             report=report,
             receipt=receipt,
@@ -376,7 +385,10 @@ def _finalize_reconciliation(
         else:
             ledger_outcome = "HALT"
             ledger_reason = (
-                "; ".join(report.discrepancies) or report.status.value or final.halt_reason or ""
+                final.halt_reason
+                or "; ".join(report.discrepancies)
+                or report.status.value
+                or ""
             ) or "reconciliation halted"
         evidence_row = _commit_episode(
             outcome=ledger_outcome,
@@ -393,7 +405,12 @@ def _finalize_reconciliation(
         reason = "broker fill MATCHED"
     else:
         outcome = ObservationOutcome.HALT.value
-        reason = "; ".join(report.discrepancies) or report.status.value or final.halt_reason or ""
+        reason = (
+            final.halt_reason
+            or "; ".join(report.discrepancies)
+            or report.status.value
+            or ""
+        )
     return {
         "ok": complete,
         "complete": complete,
