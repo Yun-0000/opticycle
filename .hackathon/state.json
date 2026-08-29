@@ -2,7 +2,7 @@
   "schemaVersion": 5,
   "eventId": "alpaca-trading-agents-2026",
   "state": "BUILDING",
-  "planSha256": "4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
+  "planSha256": "aabf9a2813ce393c46931607cbb26f4762e0472dc3787f186995b9358f3e3396",
   "artifactRequirements": [
     {
       "id": "submission-repository",
@@ -14,7 +14,7 @@
       "id": "submission-writeup",
       "kind": "document",
       "source": "event_rules",
-      "description": "One-page write-up covering AI decision logic, risk gates, and Alpaca infrastructure (MCP/CLI, paper account workflow)."
+      "description": "One-page write-up covering AI decision logic, risk gates, and Alpaca MCP infrastructure (paper account workflow)."
     },
     {
       "id": "alpaca-paper-account-id",
@@ -26,39 +26,39 @@
       "id": "alpaca-mcp-cli-integration",
       "kind": "integration",
       "source": "event_rules",
-      "description": "Working Alpaca MCP Server or official Alpaca CLI execution path that places real paper option orders, verified by scripts/verify-paper-mcp-order.py."
+      "description": "Working official Alpaca MCP Server execution path (alpaca-mcp-server==2.3.0) that places real multi-leg paper option orders, verified by scripts/verify-paper-mcp-order.py. CLI is not an execution channel."
     },
     {
       "id": "options-trading-strategy",
       "kind": "integration",
       "source": "event_rules",
-      "description": "Autonomous agent strategy that includes options trades (wheel and/or vertical spreads) on Alpaca paper, not stock-only execution."
+      "description": "Autonomous agent strategy that executes defined-risk SPY vertical spreads on Alpaca paper, not stock-only execution."
     },
     {
       "id": "remotion-demo-video",
       "kind": "video",
       "source": "approved_plan",
-      "description": "Formal Remotion-produced demo video of the autonomous options agent (decision, risk gate, MCP/CLI paper order). Source in remotion/, rendered MP4 at artifacts/demo.mp4, plus shot list. Screen recordings or empty scripts do not satisfy this requirement."
+      "description": "Formal Remotion-produced demo video of the autonomous options agent (decision, risk gate, MCP paper order). Source in remotion/, rendered MP4 at artifacts/demo.mp4, plus shot list. Screen recordings or empty scripts do not satisfy this requirement."
     },
     {
       "id": "third-party-notices",
       "kind": "document",
       "source": "approved_plan",
-      "description": "THIRD_PARTY_NOTICES.md and README foundation attribution for Gauss World Trader and Alpaca SDK/MCP/CLI dependencies."
+      "description": "THIRD_PARTY_NOTICES.md and README attribution for the pinned MIT snapshot and Alpaca SDK/MCP dependencies (CLI is not an execution dependency)."
     }
   ],
   "buildId": null,
   "planApproval": {
-    "command": "APPROVE PLAN alpaca-trading-agents-2026 4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
+    "command": "APPROVE PLAN alpaca-trading-agents-2026 aabf9a2813ce393c46931607cbb26f4762e0472dc3787f186995b9358f3e3396",
     "eventId": "alpaca-trading-agents-2026",
-    "planSha256": "4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
-    "approvedAt": "2026-08-29T00:56:56Z"
+    "planSha256": "aabf9a2813ce393c46931607cbb26f4762e0472dc3787f186995b9358f3e3396",
+    "approvedAt": "2026-08-29T04:12:12Z"
   },
   "builderRun": {
-    "idempotencyKey": "builder-v3:alpaca-trading-agents-2026:4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
+    "idempotencyKey": "builder-v3:alpaca-trading-agents-2026:aabf9a2813ce393c46931607cbb26f4762e0472dc3787f186995b9358f3e3396",
     "attempt": 1,
     "status": "running",
-    "startedAt": "2026-08-29T00:56:56Z",
+    "startedAt": "2026-08-29T04:12:12Z",
     "finishedAt": null
   },
   "qualityGates": {
@@ -75,5 +75,5 @@
       "review": null
     }
   },
-  "updatedAt": "2026-08-29T00:56:56Z"
+  "updatedAt": "2026-08-29T04:12:12Z"
 }

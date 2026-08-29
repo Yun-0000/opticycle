@@ -1,0 +1,14 @@
+{
+  "demo_mp4": "deleted; Remotion demo is Gate 12",
+  "genuine_no_trade_recorded": false,
+  "injected_no_trade_caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
+  "injected_no_trade_promoted": false,
+  "live_fill_claimed": false,
+  "live_quote_gap": "missing local Alpaca credentials; quotes cannot be observed keylessly; no genuine NO_TRADE recorded",
+  "live_quotes_available": false,
+  "matched_claimed": false,
+  "pnl_reconcile": "fixture-tested; not stamped as live",
+  "sanitized_json_provided": false,
+  "schema": "opticycle.gate11-status.v1",
+  "yun_authorized_one_paper_mleg": true
+}

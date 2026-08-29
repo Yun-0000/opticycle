@@ -1,0 +1,13 @@
+alpaca-py>=0.44.0
+mcp==2.1.1
+vollib==1.0.11
+pydantic-settings>=2.14.2
+pydantic>=2.4.0
+python-dotenv>=1.0.0
+loguru>=0.7.0
+pytz>=2024.1
+numpy>=1.26.0
+pandas>=2.1.0
+scipy>=1.11.0
+pytest>=7.4.0
+pytest-asyncio>=0.21.0

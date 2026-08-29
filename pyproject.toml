@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "opticycle"
+version = "0.1.0"
+description = "Autonomous paper options agent; official alpaca-mcp-server==2.3.0 MLEG only"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+dependencies = [
+    "alpaca-py>=0.44.0",
+    "mcp==2.1.1",
+    "vollib==1.0.11",
+    "pydantic-settings>=2.14.2",
+    "pydantic>=2.4.0",
+    "python-dotenv>=1.0.0",
+    "numpy>=1.26.0",
+    "pandas>=2.1.0",
+    "scipy>=1.11.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[project.scripts]
+opticycle = "opticycle.cli:main"
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["vendor/pin-31374551", "src"]
+testpaths = ["tests"]
+asyncio_mode = "auto"
