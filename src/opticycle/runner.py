@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextvars
 import os
 import time
 import uuid
@@ -17,6 +18,7 @@ from opticycle.cycle import (
     CycleStore,
 )
 from opticycle.journal import TradeJournal
+from opticycle.ledger import CHANNELS, EpisodeBuilder, snapshot_from_observation
 from opticycle.observe import AlpacaReadClient, MarketReadClient, ObservationClosed, ObservationResult, observe_live
 from opticycle.pin_option import ObservedBook, ObservedChainAdapter, ObservedFred, PinMarket
 from opticycle.plans import build_cycle_plan
@@ -45,6 +47,40 @@ from opticycle.settings import ALLOWED_STRATEGIES, HackathonSettings
 from opticycle.thesis import ThesisDisabled, ThesisAgent, persist_thesis_episode, require_live_llm
 from trade.mcp.alpaca_mcp_executor import AlpacaMcpExecutor
 from trade.orders import ExecutionRejected
+
+_CURRENT_EPISODE: contextvars.ContextVar[EpisodeBuilder | None] = contextvars.ContextVar(
+    "opticycle_episode", default=None
+)
+
+
+def _evidence_channel(*, dry_run: bool, provenance: str | None) -> str:
+    if provenance:
+        if provenance not in CHANNELS:
+            raise ValueError(f"provenance must be one of {CHANNELS}")
+        return provenance
+    return "replay" if dry_run else "live_paper"
+
+
+def _commit_episode(
+    *,
+    outcome: str,
+    reason: str,
+    cycle_id: str = "",
+    client_order_id: str = "",
+    extra: dict[str, Any] | None = None,
+    episode: EpisodeBuilder | None = None,
+) -> dict[str, Any] | None:
+    builder = episode if episode is not None else _CURRENT_EPISODE.get()
+    if builder is None:
+        return None
+    mapped = outcome if outcome in {"NO_TRADE", "HALT", "VETO", "ERROR", "PROFIT", "LOSS"} else "HALT"
+    return builder.commit(
+        outcome=mapped,
+        reason=reason,
+        cycle_id=cycle_id,
+        client_order_id=client_order_id,
+        extra=extra,
+    )
 
 
 def configure_backend(settings: HackathonSettings) -> None:
@@ -82,7 +118,18 @@ def _closed_cycle(
     cycle_id: str = "",
     client_order_id: str = "",
     state: str = "",
+    ledger_outcome: str | None = None,
+    extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    record = _commit_episode(
+        outcome=ledger_outcome or outcome.value,
+        reason=reason,
+        cycle_id=cycle_id,
+        client_order_id=client_order_id,
+        extra=extra,
+    )
+    if journal_entry is None:
+        journal_entry = record
     return {
         "ok": False,
         "complete": False,
@@ -97,6 +144,10 @@ def _closed_cycle(
         "cycle_id": cycle_id,
         "client_order_id": client_order_id,
         "state": state,
+        "record_id": (record or {}).get("record_id", ""),
+        "claim": (record or {}).get("claim", ""),
+        "commit_sha": (record or {}).get("commit_sha", ""),
+        "channel": (record or {}).get("channel", ""),
     }
 
 
@@ -194,6 +245,20 @@ def _finalize_reconciliation(
         },
     )
     complete = report.complete and final.state is CycleState.COMPLETED
+    evidence_row = _commit_episode(
+        outcome="HALT" if not complete else "HALT",
+        reason=(
+            "" if complete else ("; ".join(report.discrepancies) or report.status.value or final.halt_reason or "")
+        )
+        or "live paper fill is not claimed until Yun confirms the exact paper order",
+        cycle_id=final.cycle_id,
+        client_order_id=final.client_order_id,
+        extra={
+            "operational_complete": complete,
+            "operational_verdict": report.status.value,
+            "live_fill_claimed": False,
+        },
+    )
     return {
         "ok": complete,
         "complete": complete,
@@ -211,6 +276,10 @@ def _finalize_reconciliation(
         "payload_hash": final.payload_hash,
         "state": final.state.value,
         "recovered": mcp_result is None,
+        "record_id": (evidence_row or {}).get("record_id", ""),
+        "claim": (evidence_row or {}).get("claim", ""),
+        "commit_sha": (evidence_row or {}).get("commit_sha", ""),
+        "channel": (evidence_row or {}).get("channel", ""),
     }
 
 
@@ -471,6 +540,7 @@ def run_once(
     stance: ThesisStance | str | None = None,
     halt_ledger: HaltLedger | None = None,
     cycle_store: CycleStore | None = None,
+    provenance: str | None = None,
 ) -> dict[str, Any]:
     settings = settings or HackathonSettings()
     configure_backend(settings)
@@ -481,20 +551,21 @@ def run_once(
     ledger = halt_ledger or HaltLedger(log.path.with_name("halt.json"))
     store = cycle_store or (None if dry_run else CycleStore(log.path.with_name("cycles.sqlite")))
     cycle: CycleRecord | None = None
+    builder = EpisodeBuilder(
+        log.evidence,
+        channel=_evidence_channel(dry_run=dry_run, provenance=provenance),
+    )
+    _CURRENT_EPISODE.set(builder)
 
     if not dry_run and ledger.is_halted():
-        return {
-            "ok": False,
-            "complete": False,
-            "submitted": False,
-            "outcome": ObservationOutcome.HALT.value,
-            "reason": ledger.reason(),
-            "backend": "mcp",
-            "dry_run": False,
-            "order": None,
-            "journal": None,
-            "correlation_id": "",
-        }
+        return _closed_cycle(
+            outcome=ObservationOutcome.HALT,
+            reason=ledger.reason(),
+            dry_run=False,
+            journal_entry=None,
+            correlation_id="",
+            extra={"halt_ledger": True},
+        )
 
     if not dry_run:
         if market is not None:
@@ -549,6 +620,7 @@ def run_once(
                 ],
             },
         )
+        builder.set("snapshot", snapshot_from_observation(observation), reason="live observation")
         if observation.outcome != ObservationOutcome.OK:
             closed = _close_open_cycle(
                 store, cycle, outcome=observation.outcome, reason=observation.reason
@@ -594,6 +666,18 @@ def run_once(
             )
         if store is not None and cycle is not None:
             store.attach_snapshot(cycle.cycle_id, evidence_digest(observation.evidence))
+        builder.set(
+            "end_of_cycle_equity",
+            str(getattr(portfolio, "equity", "")),
+            reason="account equity at observation",
+        )
+        builder.set(
+            "positions",
+            list(getattr(portfolio, "positions", None) or []),
+            reason="positions at observation; not a live P&L snapshot",
+        )
+        builder.missing("realized_pnl", "TODO: blocked until Yun confirms the exact paper order")
+        builder.missing("unrealized_pnl", "TODO: blocked until Yun confirms the exact paper order")
         try:
             thesis_client = require_live_llm(llm_client)
         except ThesisDisabled as exc:
@@ -612,6 +696,18 @@ def run_once(
             )
         thesis = ThesisAgent(thesis_client).evaluate(observation.evidence)
         persist_thesis_episode(log, observation.evidence, thesis)
+        builder.set(
+            "thesis",
+            {
+                "stance": thesis.stance.value,
+                "reason_code": thesis.reason_code,
+                "accepted": thesis.accepted,
+                "confidence": str(thesis.confidence),
+                "model_called": thesis.model_called,
+                "detail": thesis.detail,
+            },
+            reason="thesis / NO_TRADE",
+        )
         if thesis.reason_code == "LLM_DISABLED":
             closed = _close_open_cycle(
                 store, cycle, outcome=ObservationOutcome.HALT, reason="live path requires a real model call"
@@ -727,6 +823,18 @@ def run_once(
         client_order_id=client_order_id,
         underlying=plan.underlying,
     )
+    builder.set(
+        "candidate_set",
+        {
+            "strategy": plan.strategy,
+            "underlying": plan.underlying,
+            "payload_hash": payload.payload_hash,
+            "legs": payload.to_canonical_dict()["legs"],
+            "qty": payload.qty,
+            "limit_price": str(payload.limit_price),
+        },
+        reason="candidate vertical",
+    )
     if dry_run:
         evidence = evidence_from_chain_rows(
             underlying=plan.underlying,
@@ -771,6 +879,19 @@ def run_once(
         cycle_id=cycle.cycle_id if cycle is not None else client_order_id,
         mode="demo" if dry_run else "live",
     )
+    builder.set(
+        "certificate",
+        {
+            "certificate_id": certificate.certificate_id,
+            "payload_hash": certificate.payload_hash,
+            "evidence_hash": certificate.evidence_hash,
+            "binding_hash": certificate.binding_hash,
+            "approval": certificate.approval,
+            "veto": certificate.veto,
+            "reasons": list(certificate.reasons),
+        },
+        reason="risk certificate",
+    )
     log.record(
         "risk_gate",
         {
@@ -805,6 +926,7 @@ def run_once(
             cycle_id=closed.cycle_id if closed else "",
             client_order_id=closed.client_order_id if closed else "",
             state=closed.state.value if closed else "",
+            ledger_outcome="VETO",
         )
     if store is not None and cycle is not None:
         cycle = store.authorize(cycle.cycle_id, payload, certificate)
@@ -853,6 +975,27 @@ def run_once(
             "authorized_payload": payload.to_canonical_dict(),
         },
     )
+    builder.set(
+        "mcp_attempt",
+        {
+            "dry_run": True,
+            "submitted": False,
+            "tool": result.get("tool"),
+            "arguments_hash": result.get("arguments_hash"),
+        },
+        reason="replay preview; not a live MLEG submit",
+    )
+    builder.missing("broker_receipt", "replay/dry-run is not a live broker receipt")
+    builder.missing("reconciliation", "replay/dry-run is not a live fill")
+    builder.missing("realized_pnl", "replay/dry-run is not a live P&L snapshot")
+    builder.missing("unrealized_pnl", "replay/dry-run is not a live P&L snapshot")
+    evidence_row = _commit_episode(
+        outcome="NO_TRADE",
+        reason="replay/dry-run does not place a live order",
+        cycle_id=cycle.cycle_id if cycle is not None else "",
+        client_order_id=client_order_id,
+        extra={"dry_run": True, "live_fill_claimed": False},
+    )
     return {
         "ok": True,
         "complete": False,
@@ -870,6 +1013,10 @@ def run_once(
         },
         "order": result,
         "journal": entry,
+        "record_id": (evidence_row or {}).get("record_id", ""),
+        "claim": (evidence_row or {}).get("claim", ""),
+        "commit_sha": (evidence_row or {}).get("commit_sha", ""),
+        "channel": (evidence_row or {}).get("channel", ""),
     }
 
 
