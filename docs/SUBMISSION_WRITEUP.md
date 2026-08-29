@@ -1,26 +1,23 @@
 # GaussOptions Agent — submission write-up
 
-## Product
-An autonomous paper-trading agent that only trades equity options on a dedicated $100k Alpaca paper book. One cycle: pick a wheel-style cash-secured put, pass risk gates, then submit the order through Alpaca MCP (primary) or the official Alpaca CLI (fallback).
+GaussOptions Agent is an autonomous paper options trader. Each cycle produces one options decision, runs risk gates sized for a $100,000 paper book, and sends the order through Alpaca MCP (primary) or the official Alpaca CLI (fallback). Equity-only orders are disabled.
 
-## AI logic
-The MVP cycle is deterministic and options-only. It selects the event symbol (default SPY), sizes a single-leg put, and tags the plan as `wheel`. Stock-only plans are rejected before any broker call. A later cycle can swap in a vertical spread without changing the execution contract.
+## AI decision logic
+
+The hackathon profile defaults to `fast` committee mode (no LLM billing). The live strategy set is **wheel** (cash-secured put, then covered-call stage when shares are assigned) and **vertical_spread** (defined-risk put or call verticals). The default demo underlying is SPY. A cycle builds an OCC option symbol or a two-leg mleg payload, never a cash-equity market order. Operators may set `HACKATHON_STRATEGY=vertical_spread` without turning stocks on.
 
 ## Risk gates
-Pre-trade checks, all fail-closed:
 
-- `asset_class` must be `option`
-- order notional cannot exceed 15% of paper equity
-- daily trade count cannot exceed 8
-- paper equity must stay positive on the $100k book
+Before any MCP or CLI call, the agent checks:
 
-Failed gates never reach MCP or CLI.
+- options-mandatory profile and paper-only flags
+- dedicated paper account id `PA3V84C40PJQ` when the live account snapshot is present
+- equity near $100,000 (configurable tolerance)
+- max position percent, daily trade count, open position count, and buying power
+- portfolio delta and vega caps, with per-contract greeks from vollib Black-Scholes, scaled by the 100-share multiplier
+
+A failed gate is journaled and no order is submitted.
 
 ## Alpaca infrastructure
-- **MCP (primary):** `place_order` with `asset_class=option`
-- **CLI (fallback):** `alpaca order submit --asset-class option`
-- Paper API keys stay in local environment variables and are never written to the repository
-- Account ID for the already-created dedicated paper account is recorded in `docs/ALPACA_ACCOUNT.md` (ID only)
 
-## How to verify
-`python -m src.gaussoptions --once --backend mcp --dry-run`
+Orders do not use alpaca-py `submit_order` on the hackathon path. `EXECUTION_BACKEND=mcp` spawns `uvx alpaca-mcp-server==2.3.0` over stdio and calls the `place_option_order` tool (single-leg or `order_class=mleg`). `EXECUTION_BACKEND=cli` runs `alpaca order submit` with paper forced (`ALPACA_LIVE_TRADE` must not be true). CI and `scripts/verify-paper-mcp-order.py --dry-run` exercise the same payload path with mocks so no keys are required. Structured JSONL at `data/journal.jsonl` records decision, gate, and order id.

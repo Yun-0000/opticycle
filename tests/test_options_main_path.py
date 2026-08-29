@@ -1,53 +1,52 @@
-from src.gaussoptions.profile import HackathonProfile
-from src.gaussoptions.risk import check_order
-from src.gaussoptions.runner import run_once
-from src.trade.cli.alpaca_cli_executor import AlpacaCliExecutor
-from src.trade.mcp.alpaca_mcp_executor import AlpacaMcpExecutor
+"""Main autonomous path: decision → risk gate → MCP/CLI option order."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from gaussoptions.risk import RiskGate, PortfolioSnapshot
+from gaussoptions.runner import run_once
+from gaussoptions.settings import HackathonSettings
+from trade.mcp.alpaca_mcp_executor import MCP_SERVER_SPEC, PLACE_OPTION_ORDER, _stdio_params
+from trade.orders import ExecutionRejected, OptionOrderRequest
 
 
-def test_mcp_options_path():
-    calls = []
+def test_mcp_stdio_spawns_pinned_server() -> None:
+    params = _stdio_params(MCP_SERVER_SPEC, {"ALPACA_PAPER_TRADE": "true"})
+    assert params.command == "uvx"
+    assert params.args == ["alpaca-mcp-server==2.3.0"]
 
-    def call_tool(name, payload):
-        calls.append((name, dict(payload)))
-        return {"id": "ord-mcp", "status": "accepted"}
 
+def test_options_main_path_mcp_dry_run(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    result = run_once(HackathonSettings(execution_backend="mcp", strategy="wheel"), dry_run=True)
+    assert result["ok"] is True
+    assert result["strategy"] == "wheel"
+    assert result["order"]["tool"] == PLACE_OPTION_ORDER
+    assert result["order"]["arguments"]["symbol"]
+    assert result["gate"]["approved"] is True
+
+
+def test_options_main_path_cli_vertical_spread(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
     result = run_once(
-        HackathonProfile(execution_backend="mcp"),
-        AlpacaMcpExecutor(call_tool),
-        {"option_symbol": "SPY250919P00580000", "qty": 1, "notional": 2000},
-        {"equity": 100000, "trades_today": 0},
+        HackathonSettings(execution_backend="cli", strategy="vertical_spread"),
+        dry_run=True,
     )
-    assert result["backend"] == "mcp"
-    assert result["decision"]["asset_class"] == "option"
-    assert result["decision"]["strategy"] == "wheel"
-    assert calls[0][0] == "place_order"
-    assert calls[0][1]["asset_class"] == "option"
-    assert result["execution"]["backend"] == "mcp"
+    assert result["strategy"] == "vertical_spread"
+    assert "--order-class" in result["order"]["argv"]
+    assert "mleg" in result["order"]["argv"]
 
 
-def test_cli_options_fallback():
-    runs = []
-
-    def run(argv):
-        runs.append(list(argv))
-        return {"id": "ord-cli", "status": "accepted"}
-
-    result = run_once(
-        HackathonProfile(execution_backend="cli"),
-        AlpacaCliExecutor(run),
-        {"option_symbol": "SPY250919C00600000", "qty": 1, "notional": 1500},
-        {"equity": 100000, "trades_today": 1},
-    )
-    assert result["execution"]["backend"] == "cli"
-    assert "option" in runs[0]
-
-
-def test_stock_order_blocked():
-    profile = HackathonProfile()
+def test_stock_symbol_blocked_by_risk_gate() -> None:
+    settings = HackathonSettings()
+    request = OptionOrderRequest(qty=1, symbol="SPY", side="buy")
     try:
-        check_order(profile, {"asset_class": "us_equity", "notional": 100}, {"equity": 100000, "trades_today": 0})
-    except ValueError as exc:
-        assert "stock-only" in str(exc)
+        RiskGate(settings).evaluate(
+            request,
+            PortfolioSnapshot(equity=100000, buying_power=100000, cash=100000),
+        )
+    except ExecutionRejected as exc:
+        assert "OCC" in str(exc)
     else:
-        raise AssertionError("expected stock-only block")
+        raise AssertionError("stock symbol must be rejected")

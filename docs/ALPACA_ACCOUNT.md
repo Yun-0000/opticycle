@@ -1,7 +1,12 @@
-# Paper account (ID only)
+# Alpaca paper account (ID only)
 
-Event: alpaca-trading-agents-2026
-Account type: dedicated $100k paper book, already created for this event
-API keys: never store here
+Dedicated $100,000 paper account for this hackathon submission.
 
-Account ID: PA3V84C40PJQ
+| Field | Value |
+| --- | --- |
+| Account ID | `PA3V84C40PJQ` |
+| Environment | paper |
+| Starting capital | $100,000 |
+| Use | GaussOptions Agent options paper trading |
+
+API keys and secrets are not stored in this repository. They stay in a local `.env` that is gitignored.

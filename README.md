@@ -1,9 +1,30 @@
 # GaussOptions Agent
 
-Autonomous paper-trading agent for equity options.
+Autonomous options trader for the Alpaca AI Trading Agents Hackathon.
 
-- Places option orders through Alpaca MCP (primary) or Alpaca CLI (fallback)
-- Options-only hackathon profile on a dedicated $100k paper book
-- Run a single dry-run cycle: `python -m src.gaussoptions --once --backend mcp --dry-run`
+GaussOptions Agent runs an unattended paper cycle: it selects a wheel cash-secured put or a vertical put credit spread, applies $100k book risk gates (position size, daily trades, buying power, portfolio delta/vega), and places **option** orders through **Alpaca MCP Server 2.3.0** (primary) or the official **Alpaca CLI** (fallback). Stock-only orders are rejected.
 
-API keys stay in local environment variables. Never commit secrets.
+## Quick start (dry-run, no keys)
+
+```bash
+python3 -m pip install -r requirements-hackathon.txt
+PYTHONPATH=vendor/pin-31374551:src python3 -m gaussoptions run --profile hackathon --backend mcp --once --dry-run
+PYTHONPATH=vendor/pin-31374551:src python3 scripts/verify-paper-mcp-order.py --dry-run
+PYTHONPATH=vendor/pin-31374551:src python3 -m pytest tests/ -q
+```
+
+Live paper orders use local environment variables only (`ALPACA_API_KEY`, `ALPACA_SECRET_KEY`). Never commit secrets. Paper mode stays on (`ALPACA_PAPER_TRADE=true`, `ALPACA_LIVE_TRADE` must not be `true`).
+
+## Product behavior
+
+1. Load the hackathon profile (`starting_capital=100000`, `require_options=true`, `execution_backend=mcp`).
+2. Build an options structure (`wheel` or `vertical_spread`) on the watchlist underlying (default SPY).
+3. Evaluate risk gates, including vollib Black-Scholes greeks.
+4. Submit via MCP tool `place_option_order`, or `alpaca order submit` if `--backend cli`.
+5. Append decision, gate, and order records to `data/journal.jsonl`.
+
+Paper account ID is recorded in `docs/ALPACA_ACCOUNT.md` (ID only).
+
+## License
+
+MIT. See `LICENSE` and `THIRD_PARTY_NOTICES.md`.

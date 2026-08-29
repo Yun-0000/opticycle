@@ -1,0 +1,109 @@
+"""Helpers to run multiple live trading engines concurrently."""
+from __future__ import annotations
+
+import logging
+import threading
+import time
+from datetime import datetime
+from typing import Iterable
+
+from .live_trading_base import LiveTradingEngine
+
+logger = logging.getLogger(__name__)
+
+
+def run_live_engines(engines: Iterable[LiveTradingEngine]) -> None:
+    """Run multiple live trading engines concurrently until interrupted."""
+    engine_list = list(engines)
+    threads: list[threading.Thread] = []
+    worker_errors: list[tuple[str, Exception]] = []
+    stream_errors: list[Exception] = []
+
+    if not engine_list:
+        return
+
+    if len(engine_list) == 1:
+        engine_list[0].start()
+        return
+
+    first = engine_list[0]
+    first_cls = type(first)
+    if not all(isinstance(engine, first_cls) for engine in engine_list):
+        raise ValueError("Mixed asset types are not supported in a shared stream")
+
+    stream = first._create_stream()
+    engine_map = {engine.symbol: engine for engine in engine_list}
+
+    for engine in engine_list:
+        engine._stream = stream
+        engine._stop_event.clear()
+        engine._background_error = None
+
+    async def handle_trade(data: object) -> None:
+        symbol = first._get_field(data, "symbol", "S")
+        if not symbol:
+            return
+        normalized = first._normalize_symbol(str(symbol))
+        target = engine_map.get(normalized)
+        if not target:
+            return
+        price = target._get_field(data, "price", "p")
+        timestamp = target._get_field(data, "timestamp", "t")
+        if price is None:
+            return
+        target._handle_trade_update(
+            float(price), timestamp if isinstance(timestamp, datetime) else None
+        )
+
+    for engine in engine_list:
+        engine._subscribe_to_stream(handle_trade, engine.symbol)
+
+    def _run_stream() -> None:
+        try:
+            stream.run()
+        except Exception as exc:
+            logger.exception("Shared stream stopped unexpectedly")
+            stream_errors.append(exc)
+            for engine in engine_list:
+                engine._stop_event.set()
+
+    stream_thread = threading.Thread(target=_run_stream, name="live_stream", daemon=False)
+    stream_thread.start()
+    logger.info("Shared stream started for %d symbols", len(engine_list))
+
+    for engine in engine_list:
+        name = f"{engine.__class__.__name__}_{engine.symbol}"
+        def _run_engine(target_engine: LiveTradingEngine = engine) -> None:
+            try:
+                target_engine.run_signal_loop()
+            except Exception as exc:
+                logger.exception("Live engine failed for %s", target_engine.symbol)
+                worker_errors.append((target_engine.symbol, exc))
+                for other_engine in engine_list:
+                    other_engine._stop_event.set()
+
+        thread = threading.Thread(target=_run_engine, name=name, daemon=False)
+        thread.start()
+        threads.append(thread)
+
+    try:
+        while any(thread.is_alive() for thread in threads):
+            time.sleep(1)
+    except KeyboardInterrupt:
+        for engine in engine_list:
+            engine._stop_event.set()
+        try:
+            stream.stop()
+        except Exception as exc:
+            logger.exception("Failed to stop shared stream")
+            stream_errors.append(exc)
+    finally:
+        stream_thread.join(timeout=5)
+        for thread in threads:
+            thread.join(timeout=5)
+
+    if stream_errors:
+        raise RuntimeError(f"Shared live stream failed: {stream_errors[0]}") from stream_errors[0]
+    if worker_errors:
+        symbol, exc = worker_errors[0]
+        raise RuntimeError(f"Live engine failed for {symbol}: {exc}") from exc

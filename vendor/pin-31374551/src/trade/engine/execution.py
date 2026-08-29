@@ -186,6 +186,9 @@ class ExecutionEngine:
     def execute_decision(self, decision: ExecutionDecision) -> bool:
         if decision is None:
             return False
+        routed = self._route_hackathon_backend(decision)
+        if routed is not None:
+            return routed
         if not self.execute:
             if decision.metadata.get("order_class") == "mleg":
                 self.logger.info(
@@ -223,6 +226,21 @@ class ExecutionEngine:
                 side=decision.side,
             )
         return True
+
+    def _route_hackathon_backend(self, decision: ExecutionDecision) -> bool | None:
+        """Place option orders through MCP or CLI when EXECUTION_BACKEND is set.
+
+        Returns None when the SDK path should run. Local modification of the
+        vendored snapshot at 31374551bae6fd34a0fe56fe11d208f4ff04fbb4.
+        """
+        import os
+
+        backend = (os.getenv("EXECUTION_BACKEND") or "").strip().lower()
+        if backend not in {"mcp", "cli"}:
+            return None
+        from src.trade.routing import execute_via_backend
+
+        return execute_via_backend(self, decision, backend)
 
     def _execute_option_mleg(self, decision: ExecutionDecision) -> bool:
         engine = self.trading_engine
