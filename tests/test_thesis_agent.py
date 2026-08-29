@@ -117,7 +117,11 @@ def _evidence(
 
 
 def _valid_payload(features, stance: str = "BULLISH") -> dict:
-    citations = [item for item in features.evidence_refs if item.startswith(("bar_return=", "bar_trend=", "underlying_"))]
+    citations = [
+        item
+        for item in features.evidence_refs
+        if item.startswith(("bar_return=", "bar_trend=", "underlying_", "quote_timestamp="))
+    ]
     if not citations:
         citations = list(features.evidence_refs[:3])
     return {
@@ -275,16 +279,21 @@ def test_empty_or_missing_features_is_no_trade() -> None:
     assert thin_thesis.stance == ThesisStance.NO_TRADE
     assert thin_thesis.reason_code == ThesisReasonCode.INSUFFICIENT_EVIDENCE.value
     flat = _evidence(direction="flat")
+    flat_features = summarize_features(flat)
+    assert flat_features.implied_stance == ThesisStance.NO_TRADE
     flat_thesis = ThesisAgent().evaluate(flat)
     assert flat_thesis.stance == ThesisStance.NO_TRADE
-    assert flat_thesis.reason_code == ThesisReasonCode.INSUFFICIENT_EVIDENCE.value
+    assert flat_thesis.accepted is False
+    assert flat_thesis.reason_code == ThesisReasonCode.LLM_DISABLED.value
 
 
 def test_bullish_fixture_matches_stance_and_citations() -> None:
     evidence = _evidence(direction="bullish")
-    thesis = ThesisAgent().evaluate(evidence)
+    features = summarize_features(evidence)
+    thesis = ThesisAgent(ScriptedLlm([_valid_payload(features, "BULLISH")])).evaluate(evidence)
     assert thesis.stance == ThesisStance.BULLISH
     assert thesis.accepted is True
+    assert thesis.model_called is True
     assert thesis.bound_credit_type == "bull_put"
     names = {item.split("=", 1)[0] for item in thesis.evidence}
     assert {"underlying_last", "underlying_bid", "underlying_ask", "quote_timestamp", "bar_return", "bar_trend"} <= names
@@ -294,9 +303,11 @@ def test_bullish_fixture_matches_stance_and_citations() -> None:
 
 def test_bearish_fixture_matches_stance_and_citations() -> None:
     evidence = _evidence(direction="bearish")
-    thesis = ThesisAgent().evaluate(evidence)
+    features = summarize_features(evidence)
+    thesis = ThesisAgent(ScriptedLlm([_valid_payload(features, "BEARISH")])).evaluate(evidence)
     assert thesis.stance == ThesisStance.BEARISH
     assert thesis.accepted is True
+    assert thesis.model_called is True
     assert thesis.bound_credit_type == "bear_call"
     assert any(item.startswith("bar_trend=down") for item in thesis.evidence)
     assert any(item.startswith("bar_return=") for item in thesis.evidence)
@@ -344,3 +355,34 @@ def test_missing_quote_timestamp_is_fail_closed_not_freshness_zero() -> None:
     assert features.quote_timestamp_present is False
     assert features.is_fresh is False
     assert features.implied_stance == ThesisStance.NO_TRADE
+
+
+def test_model_output_is_stance_even_if_it_disagrees_with_implied_stance() -> None:
+    evidence = _evidence(direction="bullish")
+    features = summarize_features(evidence)
+    assert features.implied_stance == ThesisStance.BULLISH
+    prompt = features_to_prompt(features)
+    assert "implied_stance" in prompt
+    assert "evidence_only_not_the_answer" in prompt
+    payload = _valid_payload(features, "BEARISH")
+    record, reason = validate_thesis_output(payload, features)
+    assert record is not None
+    assert record.stance == ThesisStance.BEARISH
+    assert reason != ThesisReasonCode.EVIDENCE_CONFLICT.value
+    thesis = ThesisAgent(ScriptedLlm([payload])).evaluate(evidence)
+    assert thesis.stance == ThesisStance.BEARISH
+    assert thesis.accepted is True
+    assert thesis.model_called is True
+    assert thesis.bound_credit_type == "bear_call"
+
+
+def test_no_llm_key_is_fail_closed_not_silent_deterministic_ai() -> None:
+    evidence = _evidence(direction="bullish")
+    features = summarize_features(evidence)
+    assert features.implied_stance == ThesisStance.BULLISH
+    thesis = ThesisAgent().evaluate(evidence)
+    assert thesis.stance == ThesisStance.NO_TRADE
+    assert thesis.accepted is False
+    assert thesis.model_called is False
+    assert thesis.reason_code == ThesisReasonCode.LLM_DISABLED.value
+    assert thesis.bound_credit_type == ""

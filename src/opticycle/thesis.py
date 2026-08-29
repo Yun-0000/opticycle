@@ -1,7 +1,9 @@
 """Constrained ThesisAgent: BULLISH / BEARISH / NO_TRADE from summarized evidence.
 
+Determined signals (implied_stance, bar_trend) may enter the prompt as evidence.
+They are not the answer. The model chooses the stance. Disagreement is valid.
+No LLM key is fail-closed NO_TRADE — never a silent deterministic direction labeled AI.
 The model never receives or emits OCC symbols, quantity, or order prices.
-Live execution requires a real model call. There is no pretend-AI path.
 """
 
 from __future__ import annotations
@@ -99,7 +101,8 @@ class OpenAiThesisClient:
                     "role": "system",
                     "content": (
                         "You are Opticycle ThesisAgent. Reply with JSON only. "
-                        "stance must be BULLISH, BEARISH, or NO_TRADE. "
+                        "Choose stance from pre-validated evidence: BULLISH, BEARISH, or NO_TRADE. "
+                        "implied_stance is evidence, not the required answer; disagreement is allowed. "
                         "Do not choose OCC symbols, quantity, or prices."
                     ),
                 },
@@ -251,6 +254,7 @@ def features_to_prompt(features: FeatureSummary) -> str:
         "bar_return": str(features.bar_return) if features.bar_return is not None else None,
         "clock_open": features.clock_open,
         "implied_stance": features.implied_stance.value,
+        "implied_stance_role": "evidence_only_not_the_answer",
         "bound_credit_type": features.bound_credit_type,
         "cited_features": list(features.evidence_refs),
         "missing_features": list(features.missing_features),
@@ -264,7 +268,14 @@ def features_to_prompt(features: FeatureSummary) -> str:
             "reason_code",
         ],
         "allowed_stances": ["BULLISH", "BEARISH", "NO_TRADE"],
-        "credit_binding": "BULLISH=bull_put credit; BEARISH=bear_call credit; debit disabled",
+        "choice_rule": (
+            "You choose BULLISH, BEARISH, or NO_TRADE from cited_features. "
+            "implied_stance is a determined signal in the evidence, not the required answer. "
+            "Disagreement is a valid choice, not an automatic conflict."
+        ),
+        "credit_binding": (
+            "Bind after you choose: BULLISH=bull_put credit; BEARISH=bear_call credit; debit disabled"
+        ),
         "citation_rule": "evidence must be feature name=value citations from cited_features",
     }
     text = json.dumps(payload, sort_keys=True)
@@ -340,8 +351,6 @@ def validate_thesis_output(
         cited_names = {_citation_name(item) for item in evidence_refs}
         if "bar_return" not in cited_names or "bar_trend" not in cited_names:
             return None, ThesisReasonCode.EVIDENCE_CONFLICT.value
-        if features.implied_stance != stance:
-            return None, ThesisReasonCode.EVIDENCE_CONFLICT.value
         if features.bound_credit_type in FORBIDDEN_DEBIT_TYPES:
             return None, ThesisReasonCode.INVALID_OUTPUT.value
     elif evidence_refs and any(item not in allowed for item in evidence_refs):
@@ -363,7 +372,7 @@ def validate_thesis_output(
         return None, ThesisReasonCode.EVIDENCE_CONFLICT.value
     if (not features.is_fresh or not features.quote_timestamp_present) and stance != ThesisStance.NO_TRADE:
         return None, ThesisReasonCode.STALE_DATA.value
-    bound = features.bound_credit_type if stance != ThesisStance.NO_TRADE else ""
+    bound = STANCE_CREDIT_TYPE.get(stance, "") if stance != ThesisStance.NO_TRADE else ""
     if bound in FORBIDDEN_DEBIT_TYPES:
         return None, ThesisReasonCode.INVALID_OUTPUT.value
     return (
@@ -411,27 +420,6 @@ def _closed_thesis(
     )
 
 
-def _record_from_features(features: FeatureSummary) -> ThesisRecord:
-    stance = features.implied_stance
-    bound = features.bound_credit_type if stance != ThesisStance.NO_TRADE else ""
-    return ThesisRecord(
-        stance=stance,
-        confidence=Decimal("0.80"),
-        evidence=features.evidence_refs,
-        assumptions=("snapshot bar return and quote features only; no invented IV/greeks",),
-        invalidation_conditions=(
-            "quote_timestamp missing or stale",
-            "bar_trend flattens below MIN_ABS_BAR_RETURN",
-        ),
-        observation_timestamp=features.observation_timestamp,
-        reason_code=ThesisReasonCode.TREND_ALIGNED.value,
-        feature_correlation_id=features.correlation_id,
-        model_called=False,
-        accepted=True,
-        bound_credit_type=bound,
-    )
-
-
 class ThesisAgent:
     def __init__(self, client: LlmClient | None = None) -> None:
         self.client = client
@@ -447,16 +435,20 @@ class ThesisAgent:
             )
         if not features.is_fresh or evidence.quote_age_seconds < 0:
             return _closed_thesis(features, reason_code=ThesisReasonCode.STALE_DATA, model_called=False)
-        if features.missing_features or features.implied_stance == ThesisStance.NO_TRADE:
+        if features.missing_features:
             return _closed_thesis(
                 features,
                 reason_code=ThesisReasonCode.INSUFFICIENT_EVIDENCE,
                 model_called=False,
-                detail="insufficient or non-directional snapshot features",
+                detail="insufficient snapshot features",
             )
-        directional = _record_from_features(features)
         if self.client is None:
-            return directional
+            return _closed_thesis(
+                features,
+                reason_code=ThesisReasonCode.LLM_DISABLED,
+                model_called=False,
+                detail="no LLM key; fail-closed — not a silent deterministic BULLISH/BEARISH labeled as AI",
+            )
         prompt = features_to_prompt(features)
         last_reason = ThesisReasonCode.SCHEMA_ERROR.value
         regenerations = 0
