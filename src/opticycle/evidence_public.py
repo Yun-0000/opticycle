@@ -195,6 +195,8 @@ def build_manifest(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         "schema": "opticycle.claim-evidence.v1",
         "source": "sanitized_public_ledger",
         "live_fill_claimed": False,
+        "injected_no_trade_promoted": False,
+        "matched_claimed": False,
         "incomplete_live": dict(INCOMPLETE_LIVE_CLAIMS),
         "no_trade_injected_quote_caveat": NO_TRADE_CAVEAT,
         "claims": claims,

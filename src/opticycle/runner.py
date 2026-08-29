@@ -47,7 +47,7 @@ from opticycle.risk import (
 )
 from opticycle.settings import ALLOWED_STRATEGIES, HackathonSettings
 from opticycle.thesis import ThesisDisabled, ThesisAgent, persist_thesis_episode, require_live_llm
-from trade.mcp.alpaca_mcp_executor import AlpacaMcpExecutor
+from trade.mcp.alpaca_mcp_executor import PLACE_OPTION_ORDER, AlpacaMcpExecutor, digest_canonical
 from trade.orders import ExecutionRejected
 
 _CURRENT_EPISODE: contextvars.ContextVar[EpisodeBuilder | None] = contextvars.ContextVar(
@@ -205,13 +205,50 @@ def _pnl_from_broker(broker: Any) -> Any | None:
         return None
 
 
+def _mcp_attempt_fields(
+    *,
+    payload: CanonicalOrderPayload,
+    mcp_result: dict[str, Any] | None,
+    store: CycleStore | None,
+    cycle_id: str,
+) -> dict[str, Any]:
+    if mcp_result:
+        return {
+            "tool": str(mcp_result.get("tool") or PLACE_OPTION_ORDER),
+            "arguments_hash": str(mcp_result.get("arguments_hash") or ""),
+            "submitted": bool(mcp_result.get("submitted")),
+            "dry_run": bool(mcp_result.get("dry_run")),
+            "order_class": "mleg",
+        }
+    attempt = store.attempt(cycle_id) if store is not None else None
+    if attempt:
+        return {
+            "tool": str(attempt.get("mcp_tool") or PLACE_OPTION_ORDER),
+            "arguments_hash": str(attempt.get("arguments_hash") or ""),
+            "submitted": True,
+            "dry_run": False,
+            "order_class": "mleg",
+        }
+    return {
+        "tool": PLACE_OPTION_ORDER,
+        "arguments_hash": digest_canonical(payload.to_mcp_arguments()),
+        "submitted": True,
+        "dry_run": False,
+        "order_class": "mleg",
+    }
+
+
 def _stamp_matched_episode(
     *,
     report: Any,
     receipt: BrokerReceipt,
     pnl: Any | None,
+    payload: CanonicalOrderPayload,
+    mcp_result: dict[str, Any] | None,
+    store: CycleStore,
+    cycle_id: str,
 ) -> dict[str, Any]:
-    """Write fill + P&L onto the open episode. Missing P&L is omitted, not invented."""
+    """Write MCP attempt, broker readback, fill + P&L onto the open episode."""
     fill = {
         "filled_qty": int(report.filled_qty),
         "filled_avg_price": str(report.filled_avg_price) if report.filled_avg_price is not None else None,
@@ -224,8 +261,27 @@ def _stamp_matched_episode(
     builder = _CURRENT_EPISODE.get()
     if builder is None:
         return fill
+    mcp_attempt = _mcp_attempt_fields(
+        payload=payload, mcp_result=mcp_result, store=store, cycle_id=cycle_id
+    )
+    builder.set(
+        "candidate_set",
+        {
+            "payload_hash": payload.payload_hash,
+            "client_order_id": payload.client_order_id,
+            "order_class": payload.order_class,
+            "qty": payload.qty,
+            "limit_price": str(payload.limit_price),
+            "legs": [
+                {"symbol": leg.symbol, "side": leg.side.value, "ratio_qty": str(leg.ratio_qty)}
+                for leg in payload.legs
+            ],
+        },
+        reason="authorized MLEG candidate",
+    )
+    builder.set("mcp_attempt", mcp_attempt, reason="official MCP MLEG submit")
     builder.set("reconciliation", report_as_dict(report), reason="broker terminal MATCHED fill")
-    builder.set("broker_receipt", receipt_as_dict(receipt), reason="broker receipt for MATCHED fill")
+    builder.set("broker_receipt", receipt_as_dict(receipt), reason="broker receipt/readback for MATCHED fill")
     if fill["end_of_cycle_equity"] is not None:
         builder.set("end_of_cycle_equity", fill["end_of_cycle_equity"], reason="account equity after MATCHED fill")
     if fill["unrealized_pnl"] is not None:
@@ -296,7 +352,15 @@ def _finalize_reconciliation(
     pnl = None
     if complete:
         pnl = _pnl_from_broker(broker)
-        fill_pnl = _stamp_matched_episode(report=report, receipt=receipt, pnl=pnl)
+        fill_pnl = _stamp_matched_episode(
+            report=report,
+            receipt=receipt,
+            pnl=pnl,
+            payload=payload,
+            mcp_result=mcp_result,
+            store=store,
+            cycle_id=final.cycle_id,
+        )
     evidence_row = None
     if not pending:
         extra = {

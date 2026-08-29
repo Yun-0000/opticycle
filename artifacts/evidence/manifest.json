@@ -1,19 +1,19 @@
 {
   "claims": {
-    "opticycle:v1:ERROR:el-05a729bbf7754e1fa7a778ee05ed799a:318ff5ec5960380a4682122fe631d5b6b78ab82f": {
+    "opticycle:v1:ERROR:el-3400d966514a4c2f8c3e4d564165eab9:fc974f1ae3119fd9d8207cd23468ca79f864f6f2": {
       "caveat": null,
       "channel": "fault_injection",
-      "commit_sha": "318ff5ec5960380a4682122fe631d5b6b78ab82f",
+      "commit_sha": "fc974f1ae3119fd9d8207cd23468ca79f864f6f2",
       "incomplete": [],
       "live_fill": false,
       "live_mleg_submit": false,
       "outcome": "ERROR",
-      "record_id": "el-05a729bbf7754e1fa7a778ee05ed799a"
+      "record_id": "el-3400d966514a4c2f8c3e4d564165eab9"
     },
-    "opticycle:v1:HALT:el-745a08784c774e8baae0eb35fdb4b5b0:318ff5ec5960380a4682122fe631d5b6b78ab82f": {
+    "opticycle:v1:HALT:el-009a99570d494d1fbf2be1bf11257ba2:fc974f1ae3119fd9d8207cd23468ca79f864f6f2": {
       "caveat": null,
       "channel": "live_paper",
-      "commit_sha": "318ff5ec5960380a4682122fe631d5b6b78ab82f",
+      "commit_sha": "fc974f1ae3119fd9d8207cd23468ca79f864f6f2",
       "incomplete": [
         "live_mleg_submit",
         "live_broker_receipt",
@@ -23,7 +23,17 @@
       "live_fill": false,
       "live_mleg_submit": false,
       "outcome": "HALT",
-      "record_id": "el-745a08784c774e8baae0eb35fdb4b5b0"
+      "record_id": "el-009a99570d494d1fbf2be1bf11257ba2"
+    },
+    "opticycle:v1:MATCHED:el-12da1988e56d4c13aa799050b0adea66:fc974f1ae3119fd9d8207cd23468ca79f864f6f2": {
+      "caveat": null,
+      "channel": "replay",
+      "commit_sha": "fc974f1ae3119fd9d8207cd23468ca79f864f6f2",
+      "incomplete": [],
+      "live_fill": false,
+      "live_mleg_submit": false,
+      "outcome": "MATCHED",
+      "record_id": "el-12da1988e56d4c13aa799050b0adea66"
     },
     "opticycle:v1:NO_TRADE:el-6b67a01c2bdd448388e813633f90e890:18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b": {
       "caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
@@ -40,29 +50,27 @@
       "outcome": "NO_TRADE",
       "record_id": "el-6b67a01c2bdd448388e813633f90e890"
     },
-    "opticycle:v1:NO_TRADE:el-953294082969463d98f7399741143e9a:318ff5ec5960380a4682122fe631d5b6b78ab82f": {
+    "opticycle:v1:NO_TRADE:el-7e27c4f8821041a4a502bd2ad2bc1f1f:fc974f1ae3119fd9d8207cd23468ca79f864f6f2": {
       "caveat": null,
       "channel": "replay",
-      "commit_sha": "318ff5ec5960380a4682122fe631d5b6b78ab82f",
+      "commit_sha": "fc974f1ae3119fd9d8207cd23468ca79f864f6f2",
       "incomplete": [],
       "live_fill": false,
       "live_mleg_submit": false,
       "outcome": "NO_TRADE",
-      "record_id": "el-953294082969463d98f7399741143e9a"
+      "record_id": "el-7e27c4f8821041a4a502bd2ad2bc1f1f"
     },
-    "opticycle:v1:VETO:el-37ef9739745b4d4d917b170082d4de79:318ff5ec5960380a4682122fe631d5b6b78ab82f": {
+    "opticycle:v1:VETO:el-3f2cbe29749f46b78d03a16d8e7b9f21:fc974f1ae3119fd9d8207cd23468ca79f864f6f2": {
       "caveat": null,
       "channel": "replay",
-      "commit_sha": "318ff5ec5960380a4682122fe631d5b6b78ab82f",
+      "commit_sha": "fc974f1ae3119fd9d8207cd23468ca79f864f6f2",
       "incomplete": [],
       "live_fill": false,
       "live_mleg_submit": false,
       "outcome": "VETO",
-      "record_id": "el-37ef9739745b4d4d917b170082d4de79"
+      "record_id": "el-3f2cbe29749f46b78d03a16d8e7b9f21"
     }
   },
-  "demo_mp4": "deleted; Remotion demo is Gate 12",
-  "genuine_no_trade_recorded": false,
   "incomplete_live": {
     "live_broker_receipt": "TODO: Yun authorized one Alpaca paper MLEG. Cloud VM has no keys and must not submit. Live receipt/fill/P&L stay incomplete until sanitized broker JSON is ingested (order_id, legs, limit, status, filled_avg_price, client_order_id). Do not invent MATCHED.",
     "live_fill": "TODO: Yun authorized one Alpaca paper MLEG. Cloud VM has no keys and must not submit. Live receipt/fill/P&L stay incomplete until sanitized broker JSON is ingested (order_id, legs, limit, status, filled_avg_price, client_order_id). Do not invent MATCHED.",
@@ -71,11 +79,8 @@
   },
   "injected_no_trade_promoted": false,
   "live_fill_claimed": false,
-  "live_quotes_available": false,
   "matched_claimed": false,
   "no_trade_injected_quote_caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
-  "sanitized_json_provided": false,
   "schema": "opticycle.claim-evidence.v1",
-  "source": "sanitized_public_ledger",
-  "yun_authorized_one_paper_mleg": true
+  "source": "sanitized_public_ledger"
 }

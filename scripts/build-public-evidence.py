@@ -24,6 +24,7 @@ from opticycle.evidence_public import (  # noqa: E402
     render_evidence_page,
 )
 from opticycle.ledger import EvidenceLedger, canonical_dumps, current_commit_sha  # noqa: E402
+from opticycle.replay_matched_chain import append_replay_matched_episode  # noqa: E402
 
 
 def _sha(payload: dict) -> str:
@@ -112,6 +113,7 @@ def _replay_records(sha: str) -> list[dict]:
         fields={"code_build_id": sha},
         extra={"live_fill_claimed": False},
     )
+    append_replay_matched_episode(ledger, commit_sha=sha)
     return ledger.export_public()
 
 
