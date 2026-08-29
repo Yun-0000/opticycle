@@ -1,4 +1,4 @@
-"""Gate 10: public evidence page, claim manifest, keyless replay, FOUNDATION.md."""
+"""Gate 10: public evidence page, claim manifest, keyless replay."""
 
 from __future__ import annotations
 
@@ -126,16 +126,14 @@ def test_live_mleg_fill_claims_are_incomplete() -> None:
                 assert row["episode"][blocked]["present"] is False
 
 
-def test_foundation_md_is_scoped_and_present() -> None:
-    path = ROOT / "FOUNDATION.md"
-    text = path.read_text(encoding="utf-8")
-    assert "31374551bae6fd34a0fe56fe11d208f4ff04fbb4" in text
-    assert "MIT" in text
-    assert "Reuse scope" in text or "reuse scope" in text.lower()
-    assert "Original-vs-reused checklist" in text
-    assert "vendor/pin-31374551/" in text
-    assert "Gauss World Trader" in text
-    assert "https://github.com/Magica-Chen/GaussWorldTrader" in text
+def test_foundation_md_is_absent() -> None:
+    assert not (ROOT / "FOUNDATION.md").is_file()
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "FOUNDATION.md" not in readme
+    assert "FOUNDATION" not in readme
+    license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
+    assert "Copyright (c) 2026 Zexun Chen" in license_text
+    assert "MIT License" in license_text
 
 
 def test_upstream_names_stay_out_of_readme_demo_and_evidence_page() -> None:
