@@ -32,3 +32,7 @@ jobs:
         run: python3 scripts/verify-paper-mcp-order.py --dry-run
       - name: One autonomous dry-run cycle
         run: python3 -m opticycle run --profile hackathon --backend mcp --once --dry-run
+      - name: Live-fill ledger path is dry-run only
+        run: python3 scripts/record-live-fill-episode.py --dry-run
+      - name: Genuine NO_TRADE probe without keys
+        run: python3 scripts/record-genuine-no-trade.py

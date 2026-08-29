@@ -29,6 +29,7 @@ PUBLIC_JSONL = EVIDENCE_DIR / "public.jsonl"
 NO_TRADE_JSONL = EVIDENCE_DIR / "no_trade.public.jsonl"
 MANIFEST_PATH = EVIDENCE_DIR / "manifest.json"
 PAGE_PATH = EVIDENCE_DIR / "index.html"
+GATE11_STATUS_PATH = EVIDENCE_DIR / "gate11_status.json"
 
 NO_TRADE_CAVEAT = (
     "live-path + injected missing quote; NOT an Alpaca true quote-miss; "
@@ -83,6 +84,28 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
             raise ValueError(f"non-object row in {path}")
         rows.append(loaded)
     return rows
+
+
+def load_gate11_status() -> dict[str, Any]:
+    default = {
+        "live_fill_claimed": False,
+        "live_quotes_available": False,
+        "genuine_no_trade_recorded": False,
+        "injected_no_trade_promoted": False,
+        "demo_mp4": "NOT submission footage",
+        "live_quote_gap": "live Alpaca quotes were not available without keys",
+        "pnl_reconcile": "fixture-tested; not stamped as live",
+    }
+    if not GATE11_STATUS_PATH.is_file():
+        return default
+    loaded = json.loads(GATE11_STATUS_PATH.read_text(encoding="utf-8"))
+    if not isinstance(loaded, dict):
+        return default
+    merged = dict(default)
+    merged.update(loaded)
+    merged["live_fill_claimed"] = False
+    merged["injected_no_trade_promoted"] = False
+    return merged
 
 
 def load_public_records() -> list[dict[str, Any]]:
@@ -250,18 +273,23 @@ def _pre(value: Any) -> str:
     return f"<pre>{html.escape(dumped)}</pre>"
 
 
-def render_evidence_page(records: list[dict[str, Any]], manifest: Mapping[str, Any]) -> str:
+def render_evidence_page(
+    records: list[dict[str, Any]],
+    manifest: Mapping[str, Any],
+    *,
+    status: Mapping[str, Any] | None = None,
+) -> str:
     claim_rows: list[str] = []
     for claim, mapped in (manifest.get("claims") or {}).items():
-        status = "incomplete live slots" if mapped.get("incomplete") else "non-live / keyless replay"
+        claim_status = "incomplete live slots" if mapped.get("incomplete") else "non-live / keyless replay"
         if mapped.get("caveat"):
-            status = "injected-quote NO_TRADE — not fill evidence"
+            claim_status = "injected-quote NO_TRADE — not fill evidence"
         claim_rows.append(
             "<tr>"
             f"<td><code>{html.escape(str(claim))}</code></td>"
             f"<td><code>{html.escape(str(mapped.get('record_id', '')))}</code></td>"
             f"<td><code>{html.escape(str(mapped.get('commit_sha', '')))}</code></td>"
-            f"<td>{html.escape(status)}</td>"
+            f"<td>{html.escape(claim_status)}</td>"
             "</tr>"
         )
     cards: list[str] = []
@@ -320,7 +348,11 @@ def render_evidence_page(records: list[dict[str, Any]], manifest: Mapping[str, A
         f"<li><strong>{html.escape(name)}</strong>: {html.escape(detail)}</li>"
         for name, detail in INCOMPLETE_LIVE_CLAIMS.items()
     )
-    embedded = html.escape(canonical_dumps({"records": records, "manifest": manifest}))
+    gate11 = dict(status or load_gate11_status())
+    quote_gap = html.escape(str(gate11.get("live_quote_gap") or ""))
+    demo_label = html.escape(str(gate11.get("demo_mp4") or "NOT submission footage"))
+    genuine = "yes" if gate11.get("genuine_no_trade_recorded") else "no — gap recorded honestly"
+    embedded = html.escape(canonical_dumps({"records": records, "manifest": manifest, "gate11": gate11}))
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -345,6 +377,8 @@ def render_evidence_page(records: list[dict[str, Any]], manifest: Mapping[str, A
   <div class="banner">
     <p><strong>Live MLEG / fill / broker receipt / P&amp;L are incomplete.</strong> Do not treat any card as a live MATCHED fill. Yun has not confirmed the exact paper order.</p>
     <p>{html.escape(NO_TRADE_CAVEAT)}</p>
+    <p>Genuine live NO_TRADE this gate: {html.escape(genuine)}. {quote_gap}</p>
+    <p><strong>artifacts/demo.mp4</strong>: {demo_label}. Remotion rewrite is Gate 12.</p>
     <ul>{incomplete}</ul>
   </div>
   <h2>Claim → record → commit</h2>

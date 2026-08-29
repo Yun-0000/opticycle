@@ -211,7 +211,7 @@ def complete_episode(fields: Mapping[str, Any] | None = None) -> dict[str, Any]:
 
 
 def _apply_live_paper_block(episode: dict[str, Any], channel: str) -> dict[str, Any]:
-    """Live paper never claims a fill, receipt, or P&L snapshot in Gate 9."""
+    """Live paper never claims a fill, receipt, or P&L snapshot until a real broker fill exists."""
     if channel != "live_paper":
         return episode
     blocked = dict(episode)

@@ -23,7 +23,7 @@ Live paper orders use local environment variables only (`ALPACA_API_KEY`, `ALPAC
 4. Submit via MCP tool `place_option_order` (`order_class=mleg`) only.
 5. Append decision, gate, and order records to `data/journal.jsonl`.
 
-Official demo video (Remotion, not a screen recording): `artifacts/demo.mp4`. Shot list: `docs/DEMO_SHOTLIST.md`.
+`artifacts/demo.mp4` is leftover footage and is **not submission footage** (see `artifacts/DEMO_NOT_SUBMISSION.md`). Locked product shot list: `docs/DEMO_SHOTLIST.md`. Remotion rewrite is Gate 12.
 
 Paper account ID is recorded in `docs/ALPACA_ACCOUNT.md` (ID only).
 

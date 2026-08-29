@@ -160,6 +160,7 @@ def test_ci_runs_tests_and_public_evidence_checks() -> None:
     assert "python3 -m pytest tests/" in workflow
     assert "scripts/scan-public-evidence.py" in workflow
     assert "scripts/replay-public-evidence.py" in workflow
+    assert "scripts/record-live-fill-episode.py" in workflow
     assert "pull_request" in workflow
 
 

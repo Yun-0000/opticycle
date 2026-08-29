@@ -22,6 +22,7 @@ from opticycle.ledger import CHANNELS, EpisodeBuilder, snapshot_from_observation
 from opticycle.observe import AlpacaReadClient, MarketReadClient, ObservationClosed, ObservationResult, observe_live
 from opticycle.pin_option import ObservedBook, ObservedChainAdapter, ObservedFred, PinMarket
 from opticycle.plans import build_cycle_plan
+from opticycle.pnl import SOURCE_LIVE_BROKER, pnl_from_snapshot, snapshot_from_client, snapshot_from_objects
 from opticycle.preflight import assert_paper_env, dry_run_portfolio
 from opticycle.protocol import (
     BrokerReceipt,
@@ -666,10 +667,42 @@ def run_once(
             )
         if store is not None and cycle is not None:
             store.attach_snapshot(cycle.cycle_id, evidence_digest(observation.evidence))
+        reader = observer if observer is not None else broker
+        if reader is not None and hasattr(reader, "fetch_account"):
+            snap = snapshot_from_client(reader, source=SOURCE_LIVE_BROKER)
+        else:
+            snap = snapshot_from_objects(
+                account={
+                    "equity": getattr(portfolio, "equity", None),
+                    "cash": getattr(portfolio, "cash", None),
+                    "id": getattr(portfolio, "account_id", None),
+                },
+                positions=list(getattr(portfolio, "positions", None) or []),
+                fills=[],
+                source=SOURCE_LIVE_BROKER,
+            )
+        pnl = pnl_from_snapshot(snap)
+        if not pnl.matched:
+            closed = _close_open_cycle(
+                store,
+                cycle,
+                outcome=ObservationOutcome.HALT,
+                reason="broker snapshot P&L identity mismatch",
+            )
+            return _closed_cycle(
+                outcome=ObservationOutcome.HALT,
+                reason="broker snapshot P&L identity mismatch",
+                dry_run=False,
+                journal_entry=None,
+                correlation_id=observation.correlation_id,
+                cycle_id=closed.cycle_id if closed else "",
+                client_order_id=closed.client_order_id if closed else "",
+                state=closed.state.value if closed else "",
+            )
         builder.set(
             "end_of_cycle_equity",
-            str(getattr(portfolio, "equity", "")),
-            reason="account equity at observation",
+            str(pnl.end_of_cycle_equity) if pnl.end_of_cycle_equity is not None else str(getattr(portfolio, "equity", "")),
+            reason="account equity from broker snapshot; not a live fill P&L",
         )
         builder.set(
             "positions",
