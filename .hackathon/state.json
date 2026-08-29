@@ -2,7 +2,7 @@
   "schemaVersion": 5,
   "eventId": "alpaca-trading-agents-2026",
   "state": "PLAN_PENDING_APPROVAL",
-  "planSha256": "9bca6e0ba17bbced6f892d85caa0d4ff74b3b706181191c79cb4e88ced1da860",
+  "planSha256": "4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
   "artifactRequirements": [
     {
       "id": "submission-repository",
@@ -20,7 +20,7 @@
       "id": "alpaca-paper-account-id",
       "kind": "document",
       "source": "event_rules",
-      "description": "Fresh Alpaca paper trading account ID for hackathon submission, recorded in docs/ALPACA_ACCOUNT.md for the user to confirm before platform submit."
+      "description": "Dedicated $100k Alpaca paper account ID already created for this hackathon, recorded as ID-only in docs/ALPACA_ACCOUNT.md. Never store API keys in the repository."
     },
     {
       "id": "alpaca-mcp-cli-integration",
@@ -35,10 +35,10 @@
       "description": "Autonomous agent strategy that includes options trades (wheel and/or vertical spreads) on Alpaca paper, not stock-only execution."
     },
     {
-      "id": "autonomous-agent-demo",
-      "kind": "demo",
+      "id": "remotion-demo-video",
+      "kind": "video",
       "source": "approved_plan",
-      "description": "End-to-end autonomous agent cycle documented in docs/DEMO_SCRIPT.md with structured logs showing agent decision, risk gate pass, and MCP order routing."
+      "description": "Formal Remotion-produced demo video of the autonomous options agent (decision, risk gate, MCP/CLI paper order). Source in remotion/, rendered MP4 at artifacts/demo.mp4, plus shot list. Screen recordings or empty scripts do not satisfy this requirement."
     },
     {
       "id": "third-party-notices",
@@ -64,5 +64,5 @@
       "review": null
     }
   },
-  "updatedAt": "2026-08-29T00:45:05Z"
+  "updatedAt": "2026-08-29T00:48:11Z"
 }
