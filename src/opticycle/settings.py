@@ -35,7 +35,7 @@ class HackathonSettings(BaseSettings):
     mcp_server_spec: str = "alpaca-mcp-server==2.3.0"
     watchlist: str = "SPY"
     interval_minutes: int = Field(default=15, ge=1, le=240)
-    agent_mode: Literal["fast", "llm"] = "fast"
+    agent_mode: Literal["llm"] = "llm"
     strategy: Literal["vertical_spread"] = "vertical_spread"
     paper_only: bool = True
     max_position_pct: float = Field(default=0.08, gt=0, le=0.25)

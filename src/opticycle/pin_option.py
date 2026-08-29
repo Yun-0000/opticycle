@@ -1,4 +1,4 @@
-"""Load wheel / vertical_spread from vendor/pin-31374551 and turn ActionPlans into orders."""
+"""Load vertical_spread from vendor/pin-31374551 and turn ActionPlans into orders."""
 
 from __future__ import annotations
 
@@ -136,15 +136,11 @@ def _install_pin_modules(market: PinMarket) -> dict[str, Any]:
     data_pkg = sys.modules["src.data"]
     data_pkg.AlpacaDataProvider = alpaca_mod.AlpacaDataProvider
 
-    wheel_mod = _load_file("src.strategy.option.wheel", PIN_SRC / "strategy" / "option" / "wheel.py")
     spread_mod = _load_file(
         "src.strategy.option.vertical_spread",
         PIN_SRC / "strategy" / "option" / "vertical_spread.py",
     )
-    return {
-        "WheelStrategy": wheel_mod.WheelStrategy,
-        "VerticalSpreadStrategy": spread_mod.VerticalSpreadStrategy,
-    }
+    return {"VerticalSpreadStrategy": spread_mod.VerticalSpreadStrategy}
 
 
 def _occ_from_leg(underlying: str, leg: dict[str, Any]) -> str:
@@ -159,29 +155,6 @@ def _occ_from_leg(underlying: str, leg: dict[str, Any]) -> str:
     else:
         exp = datetime.fromisoformat(str(raw_exp)).date()
     return occ_symbol(underlying, exp, is_put, strike)
-
-
-def _wheel_request(legacy: dict[str, Any], qty: int) -> OptionOrderRequest:
-    symbol = str(legacy.get("symbol") or "").upper()
-    action = str(legacy.get("action") or "").upper()
-    side = "sell" if "SELL" in action else "buy"
-    intent = "sell_to_open" if side == "sell" else "buy_to_open"
-    premium = legacy.get("premium") or legacy.get("price")
-    return OptionOrderRequest(
-        qty=max(int(qty), 1),
-        symbol=symbol,
-        side=side,
-        order_type="limit",
-        limit_price=float(premium) if premium is not None else 1.25,
-        position_intent=intent,
-        reason=str(legacy.get("reason") or "wheel"),
-        metadata={
-            "strategy": "wheel",
-            "stage": legacy.get("strategy_stage"),
-            "pin": PIN_COMMIT,
-            "strategy_class": "WheelStrategy",
-        },
-    )
 
 
 def _spread_request(plan: Any, underlying: str) -> OptionOrderRequest:
@@ -231,10 +204,9 @@ def build_pin_cycle_plan(
     if not dry_run and underlying_price is not None:
         raise ExecutionRejected("live path cannot use a hardcoded underlying price")
 
-    wheel_path = PIN_SRC / "strategy" / "option" / "wheel.py"
     spread_path = PIN_SRC / "strategy" / "option" / "vertical_spread.py"
-    if not wheel_path.is_file() or not spread_path.is_file():
-        raise RuntimeError("pin option strategies are missing under vendor/pin-31374551")
+    if not spread_path.is_file():
+        raise RuntimeError("pin vertical_spread is missing under vendor/pin-31374551")
 
     underlying = settings.symbols[0]
     loaded = _install_pin_modules(market)
@@ -250,38 +222,10 @@ def build_pin_cycle_plan(
         "dte_max": 45,
     }
 
-    if settings.strategy == "vertical_spread":
-        strategy = loaded["VerticalSpreadStrategy"](params)
-        strategy.symbol_list = [underlying]
-        strategy.provider = market.provider
-        strategy.fred = market.fred
-        snapshot = strategy.get_signal(
-            symbol=underlying,
-            current_date=now,
-            current_price=spot,
-            current_data={},
-            historical_data=bars,
-            portfolio=book,
-        )
-        if snapshot is None:
-            raise ExecutionRejected("vertical_spread returned no signal")
-        action_plan = strategy.get_action_plan(snapshot, spot, now)
-        if action_plan is None or action_plan.action == "HOLD":
-            raise ExecutionRejected(
-                f"vertical_spread did not produce an order: {getattr(snapshot, 'reason', '')}"
-            )
-        request = _spread_request(action_plan, underlying)
-        return CyclePlan(
-            strategy="vertical_spread",
-            request=request,
-            underlying=underlying,
-            notes=str(action_plan.reason or "vertical_spread"),
-            metadata={"pin": PIN_COMMIT, "strategy_class": "VerticalSpreadStrategy"},
-        )
-
-    # Dead WheelStrategy branch retained for Gate 4 deletion. Not an execution path.
-    strategy = loaded["WheelStrategy"](params)
+    strategy = loaded["VerticalSpreadStrategy"](params)
     strategy.symbol_list = [underlying]
+    strategy.provider = market.provider
+    strategy.fred = market.fred
     snapshot = strategy.get_signal(
         symbol=underlying,
         current_date=now,
@@ -291,19 +235,17 @@ def build_pin_cycle_plan(
         portfolio=book,
     )
     if snapshot is None:
-        raise ExecutionRejected("wheel returned no signal")
+        raise ExecutionRejected("vertical_spread returned no signal")
     action_plan = strategy.get_action_plan(snapshot, spot, now)
     if action_plan is None or action_plan.action == "HOLD":
         raise ExecutionRejected(
-            f"wheel did not produce an order: {getattr(snapshot, 'reason', '')}"
+            f"vertical_spread did not produce an order: {getattr(snapshot, 'reason', '')}"
         )
-    legacy = (action_plan.metadata or {}).get("legacy_signal") or {}
-    qty = max(int(legacy.get("quantity") or 1), 1)
-    request = _wheel_request(legacy, min(qty, 1))
+    request = _spread_request(action_plan, underlying)
     return CyclePlan(
-        strategy="wheel",
+        strategy="vertical_spread",
         request=request,
         underlying=underlying,
-        notes=str(action_plan.reason or "wheel"),
-        metadata={"pin": PIN_COMMIT, "strategy_class": "WheelStrategy"},
+        notes=str(action_plan.reason or "vertical_spread"),
+        metadata={"pin": PIN_COMMIT, "strategy_class": "VerticalSpreadStrategy"},
     )

@@ -15,6 +15,7 @@ LIVE_MODULES = [
     ROOT / "src" / "opticycle" / "plans.py",
     ROOT / "src" / "opticycle" / "observe.py",
     ROOT / "src" / "opticycle" / "pin_option.py",
+    ROOT / "src" / "opticycle" / "thesis.py",
     ROOT / "src" / "trade" / "routing.py",
     ROOT / "src" / "trade" / "__init__.py",
 ]
@@ -80,6 +81,13 @@ def test_observe_never_submits_orders() -> None:
     text = (ROOT / "src" / "opticycle" / "observe.py").read_text(encoding="utf-8")
     assert "submit_order" not in text
     assert "close_position" not in text
+
+
+def test_pin_option_does_not_require_wheel_on_disk() -> None:
+    text = (ROOT / "src" / "opticycle" / "pin_option.py").read_text(encoding="utf-8")
+    assert "wheel.py" not in text
+    assert "WheelStrategy" not in text
+    assert "_wheel_request" not in text
 
 
 def test_live_runner_does_not_call_dry_run_portfolio_on_live_branch() -> None:

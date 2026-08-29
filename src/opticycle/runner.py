@@ -12,9 +12,10 @@ from opticycle.observe import MarketReadClient, ObservationResult, observe_live
 from opticycle.pin_option import ObservedBook, ObservedChainAdapter, ObservedFred, PinMarket
 from opticycle.plans import build_cycle_plan
 from opticycle.preflight import assert_paper_env, dry_run_portfolio
-from opticycle.protocol import ObservationOutcome
+from opticycle.protocol import ObservationOutcome, ThesisStance
 from opticycle.risk import RiskGate, contract_greeks, scale_greeks
 from opticycle.settings import ALLOWED_STRATEGIES, HackathonSettings
+from opticycle.thesis import ThesisDisabled, ThesisAgent, persist_thesis_episode, require_live_llm
 from trade.mcp.alpaca_mcp_executor import AlpacaMcpExecutor
 from trade.orders import ExecutionRejected
 from trade.routing import dry_run_option_order
@@ -74,6 +75,7 @@ def run_once(
     observer: MarketReadClient | None = None,
     market: PinMarket | None = None,
     underlying_price: float | None = None,
+    llm_client: Any | None = None,
 ) -> dict[str, Any]:
     settings = settings or HackathonSettings()
     configure_backend(settings)
@@ -121,6 +123,50 @@ def run_once(
             return _closed_cycle(
                 outcome=ObservationOutcome.HALT,
                 reason="account snapshot missing",
+                dry_run=False,
+                journal_entry=None,
+                correlation_id=observation.correlation_id,
+            )
+        if observation.evidence is None:
+            return _closed_cycle(
+                outcome=ObservationOutcome.HALT,
+                reason="live evidence missing",
+                dry_run=False,
+                journal_entry=None,
+                correlation_id=observation.correlation_id,
+            )
+        try:
+            thesis_client = require_live_llm(llm_client)
+        except ThesisDisabled as exc:
+            return _closed_cycle(
+                outcome=ObservationOutcome.HALT,
+                reason=str(exc),
+                dry_run=False,
+                journal_entry=None,
+                correlation_id=observation.correlation_id,
+            )
+        thesis = ThesisAgent(thesis_client).evaluate(observation.evidence)
+        persist_thesis_episode(log, observation.evidence, thesis)
+        if thesis.reason_code == "LLM_DISABLED":
+            return _closed_cycle(
+                outcome=ObservationOutcome.HALT,
+                reason="live path requires a real model call",
+                dry_run=False,
+                journal_entry=None,
+                correlation_id=observation.correlation_id,
+            )
+        if thesis.stance == ThesisStance.NO_TRADE or not thesis.accepted:
+            return _closed_cycle(
+                outcome=ObservationOutcome.NO_TRADE,
+                reason=thesis.reason_code,
+                dry_run=False,
+                journal_entry=None,
+                correlation_id=observation.correlation_id,
+            )
+        if not thesis.model_called:
+            return _closed_cycle(
+                outcome=ObservationOutcome.HALT,
+                reason="live path requires a real model call",
                 dry_run=False,
                 journal_entry=None,
                 correlation_id=observation.correlation_id,

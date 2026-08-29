@@ -43,6 +43,25 @@ class ThesisAction(str, Enum):
     OPEN_SPREAD = "OPEN_SPREAD"
     NO_TRADE = "NO_TRADE"
     HOLD = "HOLD"
+    BULLISH = "BULLISH"
+    BEARISH = "BEARISH"
+
+
+class ThesisStance(str, Enum):
+    BULLISH = "BULLISH"
+    BEARISH = "BEARISH"
+    NO_TRADE = "NO_TRADE"
+
+
+class ThesisReasonCode(str, Enum):
+    TREND_ALIGNED = "TREND_ALIGNED"
+    INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
+    STALE_DATA = "STALE_DATA"
+    SCHEMA_ERROR = "SCHEMA_ERROR"
+    LOW_CONFIDENCE = "LOW_CONFIDENCE"
+    EVIDENCE_CONFLICT = "EVIDENCE_CONFLICT"
+    INVALID_OUTPUT = "INVALID_OUTPUT"
+    LLM_DISABLED = "LLM_DISABLED"
 
 
 class OrderSide(str, Enum):
@@ -189,6 +208,49 @@ class OptionLegSpec:
             "strike_price": format_decimal(self.strike_price, 2),
             "symbol": self.symbol,
         }
+
+
+@dataclass(frozen=True, slots=True)
+class FeatureSummary:
+    """Summarized evidence features. Contains no OCC symbols, qty, or order prices."""
+
+    underlying: str
+    observation_timestamp: datetime
+    correlation_id: str
+    quote_age_seconds: Decimal
+    is_fresh: bool
+    bars_count: int
+    chain_count: int
+    spot_bucket: str
+    trend_bucket: str
+    clock_open: bool | None
+    evidence_refs: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "observation_timestamp", ensure_utc(self.observation_timestamp))
+
+
+@dataclass(frozen=True, slots=True)
+class ThesisRecord:
+    """Constrained thesis: stance only, never OCC/qty/price selection."""
+
+    stance: ThesisStance
+    confidence: Decimal
+    evidence: tuple[str, ...]
+    assumptions: tuple[str, ...]
+    invalidation_conditions: tuple[str, ...]
+    observation_timestamp: datetime
+    reason_code: str
+    feature_correlation_id: str
+    model_called: bool
+    regenerations: int = 0
+    accepted: bool = True
+    detail: str = ""
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "observation_timestamp", ensure_utc(self.observation_timestamp))
+        if self.stance not in ThesisStance:
+            raise ValueError("stance must be BULLISH, BEARISH, or NO_TRADE")
 
 
 @dataclass(frozen=True, slots=True)
@@ -393,6 +455,7 @@ class DecisionEpisode:
     execution: ExecutionAttempt | None = None
     receipt: BrokerReceipt | None = None
     reconciliation: ReconciliationReport | None = None
+    thesis: ThesisRecord | None = None
     terminal_state: ExecutionStatus = ExecutionStatus.PENDING
 
     def __post_init__(self) -> None:

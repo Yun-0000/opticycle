@@ -168,9 +168,7 @@ def _as_decimal(value: Any) -> Decimal | None:
     return number
 
 
-def _freshness(ts: datetime | None, now: datetime) -> Decimal:
-    if ts is None:
-        return Decimal("0")
+def _freshness(ts: datetime, now: datetime) -> Decimal:
     delta = ensure_utc(now) - ensure_utc(ts)
     return Decimal(str(max(delta.total_seconds(), 0.0)))
 
@@ -425,14 +423,26 @@ def observe_live(
         return _closed(ObservationOutcome.NO_TRADE, "SPY quote missing", correlation_id, datums)
 
     quote_ts = getattr(quote, "timestamp", None)
-    quote_age = _freshness(quote_ts if isinstance(quote_ts, datetime) else None, clock_now)
+    if not isinstance(quote_ts, datetime):
+        datums.append(
+            _datum(
+                "quote",
+                "alpaca.data.get_stock_latest_quote",
+                correlation_id,
+                ok=False,
+                timestamp=clock_now,
+                detail="timestamp missing",
+            )
+        )
+        return _closed(ObservationOutcome.NO_TRADE, "SPY quote timestamp missing", correlation_id, datums)
+    quote_age = _freshness(quote_ts, clock_now)
     datums.append(
         _datum(
             "quote",
             "alpaca.data.get_stock_latest_quote",
             correlation_id,
             ok=True,
-            timestamp=quote_ts if isinstance(quote_ts, datetime) else clock_now,
+            timestamp=quote_ts,
             freshness_seconds=quote_age,
         )
     )
