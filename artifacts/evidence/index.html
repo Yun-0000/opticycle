@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Opticycle public evidence</title>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 2rem; max-width: 960px; color: #111; }
+    h1 { font-size: 1.6rem; }
+    .banner, .caveat { background: #fff3cd; border: 1px solid #e6c200; padding: 0.75rem 1rem; }
+    article.episode { border: 1px solid #ddd; padding: 1rem; margin: 1.25rem 0; }
+    dt { font-weight: 600; margin-top: 0.4rem; }
+    pre { background: #f6f8fa; padding: 0.75rem; overflow: auto; }
+    code { font-size: 0.9em; word-break: break-all; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.85rem; }
+    th, td { border: 1px solid #ddd; padding: 0.4rem 0.5rem; text-align: left; vertical-align: top; }
+    .empty { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Opticycle public evidence</h1>
+  <p>Rendered from sanitized ledger records only. No secrets, keys, or account credentials.</p>
+  <div class="banner">
+    <p><strong>Live MLEG / fill / broker receipt / P&amp;L are incomplete.</strong> Do not treat any card as a live MATCHED fill. Yun has not confirmed the exact paper order.</p>
+    <p>live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim</p>
+    <ul><li><strong>live_mleg_submit</strong>: TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate.</li><li><strong>live_broker_receipt</strong>: TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate.</li><li><strong>live_fill</strong>: TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate.</li><li><strong>live_pnl_snapshot</strong>: TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate.</li></ul>
+  </div>
+  <h2>Claim → record → commit</h2>
+  <table>
+    <thead><tr><th>claim</th><th>record id</th><th>commit (40-char)</th><th>status</th></tr></thead>
+    <tbody><tr><td><code>opticycle:v1:NO_TRADE:el-6b67a01c2bdd448388e813633f90e890:18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b</code></td><td><code>el-6b67a01c2bdd448388e813633f90e890</code></td><td><code>18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b</code></td><td>injected-quote NO_TRADE — not fill evidence</td></tr><tr><td><code>opticycle:v1:NO_TRADE:el-953294082969463d98f7399741143e9a:318ff5ec5960380a4682122fe631d5b6b78ab82f</code></td><td><code>el-953294082969463d98f7399741143e9a</code></td><td><code>318ff5ec5960380a4682122fe631d5b6b78ab82f</code></td><td>non-live / keyless replay</td></tr><tr><td><code>opticycle:v1:VETO:el-37ef9739745b4d4d917b170082d4de79:318ff5ec5960380a4682122fe631d5b6b78ab82f</code></td><td><code>el-37ef9739745b4d4d917b170082d4de79</code></td><td><code>318ff5ec5960380a4682122fe631d5b6b78ab82f</code></td><td>non-live / keyless replay</td></tr><tr><td><code>opticycle:v1:ERROR:el-05a729bbf7754e1fa7a778ee05ed799a:318ff5ec5960380a4682122fe631d5b6b78ab82f</code></td><td><code>el-05a729bbf7754e1fa7a778ee05ed799a</code></td><td><code>318ff5ec5960380a4682122fe631d5b6b78ab82f</code></td><td>non-live / keyless replay</td></tr><tr><td><code>opticycle:v1:HALT:el-745a08784c774e8baae0eb35fdb4b5b0:318ff5ec5960380a4682122fe631d5b6b78ab82f</code></td><td><code>el-745a08784c774e8baae0eb35fdb4b5b0</code></td><td><code>318ff5ec5960380a4682122fe631d5b6b78ab82f</code></td><td>incomplete live slots</td></tr></tbody>
+  </table>
+  
+<article class="episode" id="el-6b67a01c2bdd448388e813633f90e890">
+  <h2>NO_TRADE · live_paper</h2>
+  <p class='caveat'>live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim</p>
+  <dl>
+    <dt>record id</dt><dd><code>el-6b67a01c2bdd448388e813633f90e890</code></dd>
+    <dt>claim</dt><dd><code>opticycle:v1:NO_TRADE:el-6b67a01c2bdd448388e813633f90e890:18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b</code></dd>
+    <dt>commit / build ID</dt><dd><code>18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b</code></dd>
+    <dt>authorized payload hash</dt><dd><code>not present</code></dd>
+  </dl>
+  <h3>thesis</h3><p class='empty'>not present</p>
+  <p class="slot">NO_TRADE / veto: <strong>NO_TRADE</strong> — SPY quote missing</p>
+  <h3>real candidate (if present)</h3>
+  <p class="slot">present</p>
+  <pre>[]</pre>
+  <h3>Risk Certificate</h3>
+  <p class="slot">not present — not observed in this episode</p>
+  <p class='empty'>not present</p>
+  <h3>MCP call (if present)</h3>
+  <p class="slot">not present — TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (mcp_attempt)</p>
+  <p class='empty'>not present</p>
+  <h3>broker receipt (if present)</h3>
+  <p class="slot">not present — TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (broker_receipt)</p>
+  <p class='empty'>not present</p>
+  <h3>reconciliation (if present)</h3>
+  <p class="slot">not present — TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (reconciliation)</p>
+  <p class='empty'>not present</p>
+  <h3>P&amp;L / equity (if present)</h3>
+  <p class="slot">realized not present — TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&L snapshot is claimed in this gate. (realized_pnl); unrealized not present — TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&L snapshot is claimed in this gate. (unrealized_pnl); equity not present — not observed in this episode</p>
+  <pre>{
+  &quot;end_of_cycle_equity&quot;: null,
+  &quot;realized_pnl&quot;: null,
+  &quot;unrealized_pnl&quot;: null
+}</pre>
+  <h3>failure episode</h3>
+  <p class="slot">no — outcome NO_TRADE</p>
+  <p class='empty'>not present</p>
+</article>
+
+<article class="episode" id="el-953294082969463d98f7399741143e9a">
+  <h2>NO_TRADE · replay</h2>
+  
+  <dl>
+    <dt>record id</dt><dd><code>el-953294082969463d98f7399741143e9a</code></dd>
+    <dt>claim</dt><dd><code>opticycle:v1:NO_TRADE:el-953294082969463d98f7399741143e9a:318ff5ec5960380a4682122fe631d5b6b78ab82f</code></dd>
+    <dt>commit / build ID</dt><dd><code>318ff5ec5960380a4682122fe631d5b6b78ab82f</code></dd>
+    <dt>authorized payload hash</dt><dd><code>e6e771e87e060881d98c9082b69044b0a0d4447cb82e821acc5e9822b462a4e7</code></dd>
+  </dl>
+  <h3>thesis</h3><pre>{
+  &quot;accepted&quot;: true,
+  &quot;confidence&quot;: &quot;0.70&quot;,
+  &quot;reason_code&quot;: &quot;TREND_ALIGNED&quot;,
+  &quot;stance&quot;: &quot;BULLISH&quot;
+}</pre>
+  <p class="slot">NO_TRADE / veto: <strong>NO_TRADE</strong> — keyless replay dry-run preview; not a live order</p>
+  <h3>real candidate (if present)</h3>
+  <p class="slot">present</p>
+  <pre>{
+  &quot;legs&quot;: [
+    {
+      &quot;ratio_qty&quot;: &quot;1&quot;,
+      &quot;side&quot;: &quot;sell&quot;,
+      &quot;symbol&quot;: &quot;SPY260918P00550000&quot;
+    },
+    {
+      &quot;ratio_qty&quot;: &quot;1&quot;,
+      &quot;side&quot;: &quot;buy&quot;,
+      &quot;symbol&quot;: &quot;SPY260918P00540000&quot;
+    }
+  ],
+  &quot;limit_price&quot;: &quot;1.20&quot;,
+  &quot;order_class&quot;: &quot;mleg&quot;,
+  &quot;payload_hash&quot;: &quot;e6e771e87e060881d98c9082b69044b0a0d4447cb82e821acc5e9822b462a4e7&quot;,
+  &quot;qty&quot;: 1,
+  &quot;spread&quot;: &quot;bull_put&quot;,
+  &quot;strategy&quot;: &quot;vertical_spread&quot;,
+  &quot;underlying&quot;: &quot;SPY&quot;
+}</pre>
+  <h3>Risk Certificate</h3>
+  <p class="slot">present</p>
+  <pre>{
+  &quot;approval&quot;: true,
+  &quot;binding_hash&quot;: &quot;8b87a1e863e7e0d514e0fc9aa4b86b4d22f2e6bf52d9c45780dab8d00af6307a&quot;,
+  &quot;payload_hash&quot;: &quot;e6e771e87e060881d98c9082b69044b0a0d4447cb82e821acc5e9822b462a4e7&quot;,
+  &quot;reasons&quot;: [],
+  &quot;veto&quot;: false
+}</pre>
+  <h3>MCP call (if present)</h3>
+  <p class="slot">present</p>
+  <pre>{
+  &quot;dry_run&quot;: true,
+  &quot;order_class&quot;: &quot;mleg&quot;,
+  &quot;submitted&quot;: false,
+  &quot;tool&quot;: &quot;place_option_order&quot;
+}</pre>
+  <h3>broker receipt (if present)</h3>
+  <p class="slot">not present</p>
+  <p class='empty'>not present</p>
+  <h3>reconciliation (if present)</h3>
+  <p class="slot">not present</p>
+  <p class='empty'>not present</p>
+  <h3>P&amp;L / equity (if present)</h3>
+  <p class="slot">realized not present; unrealized not present; equity not present</p>
+  <pre>{
+  &quot;end_of_cycle_equity&quot;: null,
+  &quot;realized_pnl&quot;: null,
+  &quot;unrealized_pnl&quot;: null
+}</pre>
+  <h3>failure episode</h3>
+  <p class="slot">no — outcome NO_TRADE</p>
+  <p class='empty'>not present</p>
+</article>
+
+<article class="episode" id="el-37ef9739745b4d4d917b170082d4de79">
+  <h2>VETO · replay</h2>
+  
+  <dl>
+    <dt>record id</dt><dd><code>el-37ef9739745b4d4d917b170082d4de79</code></dd>
+    <dt>claim</dt><dd><code>opticycle:v1:VETO:el-37ef9739745b4d4d917b170082d4de79:318ff5ec5960380a4682122fe631d5b6b78ab82f</code></dd>
+    <dt>commit / build ID</dt><dd><code>318ff5ec5960380a4682122fe631d5b6b78ab82f</code></dd>
+    <dt>authorized payload hash</dt><dd><code>e6e771e87e060881d98c9082b69044b0a0d4447cb82e821acc5e9822b462a4e7</code></dd>
+  </dl>
+  <h3>thesis</h3><pre>{
+  &quot;accepted&quot;: false,
+  &quot;reason_code&quot;: &quot;LOW_CONFIDENCE&quot;,
+  &quot;stance&quot;: &quot;BEARISH&quot;
+}</pre>
+  <p class="slot">NO_TRADE / veto: <strong>VETO</strong> — risk certificate veto (replay)</p>
+  <h3>real candidate (if present)</h3>
+  <p class="slot">present</p>
+  <pre>{
+  &quot;payload_hash&quot;: &quot;e6e771e87e060881d98c9082b69044b0a0d4447cb82e821acc5e9822b462a4e7&quot;,
+  &quot;rejected&quot;: true
+}</pre>
+  <h3>Risk Certificate</h3>
+  <p class="slot">present</p>
+  <pre>{
+  &quot;approval&quot;: false,
+  &quot;payload_hash&quot;: &quot;e6e771e87e060881d98c9082b69044b0a0d4447cb82e821acc5e9822b462a4e7&quot;,
+  &quot;reasons&quot;: [
+    &quot;stale quote&quot;
+  ],
+  &quot;veto&quot;: true
+}</pre>
+  <h3>MCP call (if present)</h3>
+  <p class="slot">not present</p>
+  <p class='empty'>not present</p>
+  <h3>broker receipt (if present)</h3>
+  <p class="slot">not present</p>
+  <p class='empty'>not present</p>
+  <h3>reconciliation (if present)</h3>
+  <p class="slot">not present</p>
+  <p class='empty'>not present</p>
+  <h3>P&amp;L / equity (if present)</h3>
+  <p class="slot">realized not present; unrealized not present; equity not present</p>
+  <pre>{
+  &quot;end_of_cycle_equity&quot;: null,
+  &quot;realized_pnl&quot;: null,
+  &quot;unrealized_pnl&quot;: null
+}</pre>
+  <h3>failure episode</h3>
+  <p class="slot">yes — VETO</p>
+  <pre>{
+  &quot;reason&quot;: &quot;risk certificate veto (replay)&quot;,
+  &quot;snapshot&quot;: null
+}</pre>
+</article>
+
+<article class="episode" id="el-05a729bbf7754e1fa7a778ee05ed799a">
+  <h2>ERROR · fault_injection</h2>
+  
+  <dl>
+    <dt>record id</dt><dd><code>el-05a729bbf7754e1fa7a778ee05ed799a</code></dd>
+    <dt>claim</dt><dd><code>opticycle:v1:ERROR:el-05a729bbf7754e1fa7a778ee05ed799a:318ff5ec5960380a4682122fe631d5b6b78ab82f</code></dd>
+    <dt>commit / build ID</dt><dd><code>318ff5ec5960380a4682122fe631d5b6b78ab82f</code></dd>
+    <dt>authorized payload hash</dt><dd><code>not present</code></dd>
+  </dl>
+  <h3>thesis</h3><p class='empty'>not present</p>
+  <p class="slot">NO_TRADE / veto: <strong>ERROR</strong> — injected observation failure</p>
+  <h3>real candidate (if present)</h3>
+  <p class="slot">not present</p>
+  <p class='empty'>not present</p>
+  <h3>Risk Certificate</h3>
+  <p class="slot">not present</p>
+  <p class='empty'>not present</p>
+  <h3>MCP call (if present)</h3>
+  <p class="slot">not present</p>
+  <p class='empty'>not present</p>
+  <h3>broker receipt (if present)</h3>
+  <p class="slot">not present</p>
+  <p class='empty'>not present</p>
+  <h3>reconciliation (if present)</h3>
+  <p class="slot">not present</p>
+  <p class='empty'>not present</p>
+  <h3>P&amp;L / equity (if present)</h3>
+  <p class="slot">realized not present; unrealized not present; equity not present</p>
+  <pre>{
+  &quot;end_of_cycle_equity&quot;: null,
+  &quot;realized_pnl&quot;: null,
+  &quot;unrealized_pnl&quot;: null
+}</pre>
+  <h3>failure episode</h3>
+  <p class="slot">yes — ERROR</p>
+  <pre>{
+  &quot;reason&quot;: &quot;injected observation failure&quot;,
+  &quot;snapshot&quot;: {
+    &quot;has_evidence&quot;: false,
+    &quot;outcome&quot;: &quot;HALT&quot;,
+    &quot;reason&quot;: &quot;fault injection&quot;
+  }
+}</pre>
+</article>
+
+<article class="episode" id="el-745a08784c774e8baae0eb35fdb4b5b0">
+  <h2>HALT · live_paper</h2>
+  
+  <dl>
+    <dt>record id</dt><dd><code>el-745a08784c774e8baae0eb35fdb4b5b0</code></dd>
+    <dt>claim</dt><dd><code>opticycle:v1:HALT:el-745a08784c774e8baae0eb35fdb4b5b0:318ff5ec5960380a4682122fe631d5b6b78ab82f</code></dd>
+    <dt>commit / build ID</dt><dd><code>318ff5ec5960380a4682122fe631d5b6b78ab82f</code></dd>
+    <dt>authorized payload hash</dt><dd><code>not present</code></dd>
+  </dl>
+  <h3>thesis</h3><p class='empty'>not present</p>
+  <p class="slot">NO_TRADE / veto: <strong>HALT</strong> — live paper schema ready; MLEG/fill not claimed</p>
+  <h3>real candidate (if present)</h3>
+  <p class="slot">not present</p>
+  <p class='empty'>not present</p>
+  <h3>Risk Certificate</h3>
+  <p class="slot">not present</p>
+  <p class='empty'>not present</p>
+  <h3>MCP call (if present)</h3>
+  <p class="slot">not present — TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (mcp_attempt)</p>
+  <p class='empty'>not present</p>
+  <h3>broker receipt (if present)</h3>
+  <p class="slot">not present — TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (broker_receipt)</p>
+  <p class='empty'>not present</p>
+  <h3>reconciliation (if present)</h3>
+  <p class="slot">not present — TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (reconciliation)</p>
+  <p class='empty'>not present</p>
+  <h3>P&amp;L / equity (if present)</h3>
+  <p class="slot">realized not present — TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&L snapshot is claimed in this gate. (realized_pnl); unrealized not present — TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&L snapshot is claimed in this gate. (unrealized_pnl); equity not present</p>
+  <pre>{
+  &quot;end_of_cycle_equity&quot;: null,
+  &quot;realized_pnl&quot;: null,
+  &quot;unrealized_pnl&quot;: null
+}</pre>
+  <h3>failure episode</h3>
+  <p class="slot">yes — HALT</p>
+  <pre>{
+  &quot;reason&quot;: &quot;live paper schema ready; MLEG/fill not claimed&quot;,
+  &quot;snapshot&quot;: null
+}</pre>
+</article>
+
+  <script type="application/json" id="sanitized-ledger">{&quot;manifest&quot;:{&quot;claims&quot;:{&quot;opticycle:v1:ERROR:el-05a729bbf7754e1fa7a778ee05ed799a:318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;:{&quot;caveat&quot;:null,&quot;channel&quot;:&quot;fault_injection&quot;,&quot;commit_sha&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;incomplete&quot;:[],&quot;live_fill&quot;:false,&quot;live_mleg_submit&quot;:false,&quot;outcome&quot;:&quot;ERROR&quot;,&quot;record_id&quot;:&quot;el-05a729bbf7754e1fa7a778ee05ed799a&quot;},&quot;opticycle:v1:HALT:el-745a08784c774e8baae0eb35fdb4b5b0:318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;:{&quot;caveat&quot;:null,&quot;channel&quot;:&quot;live_paper&quot;,&quot;commit_sha&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;incomplete&quot;:[&quot;live_mleg_submit&quot;,&quot;live_broker_receipt&quot;,&quot;live_fill&quot;,&quot;live_pnl_snapshot&quot;],&quot;live_fill&quot;:false,&quot;live_mleg_submit&quot;:false,&quot;outcome&quot;:&quot;HALT&quot;,&quot;record_id&quot;:&quot;el-745a08784c774e8baae0eb35fdb4b5b0&quot;},&quot;opticycle:v1:NO_TRADE:el-6b67a01c2bdd448388e813633f90e890:18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b&quot;:{&quot;caveat&quot;:&quot;live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim&quot;,&quot;channel&quot;:&quot;live_paper&quot;,&quot;commit_sha&quot;:&quot;18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b&quot;,&quot;incomplete&quot;:[&quot;live_mleg_submit&quot;,&quot;live_broker_receipt&quot;,&quot;live_fill&quot;,&quot;live_pnl_snapshot&quot;],&quot;live_fill&quot;:false,&quot;live_mleg_submit&quot;:false,&quot;outcome&quot;:&quot;NO_TRADE&quot;,&quot;record_id&quot;:&quot;el-6b67a01c2bdd448388e813633f90e890&quot;},&quot;opticycle:v1:NO_TRADE:el-953294082969463d98f7399741143e9a:318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;:{&quot;caveat&quot;:null,&quot;channel&quot;:&quot;replay&quot;,&quot;commit_sha&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;incomplete&quot;:[],&quot;live_fill&quot;:false,&quot;live_mleg_submit&quot;:false,&quot;outcome&quot;:&quot;NO_TRADE&quot;,&quot;record_id&quot;:&quot;el-953294082969463d98f7399741143e9a&quot;},&quot;opticycle:v1:VETO:el-37ef9739745b4d4d917b170082d4de79:318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;:{&quot;caveat&quot;:null,&quot;channel&quot;:&quot;replay&quot;,&quot;commit_sha&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;incomplete&quot;:[],&quot;live_fill&quot;:false,&quot;live_mleg_submit&quot;:false,&quot;outcome&quot;:&quot;VETO&quot;,&quot;record_id&quot;:&quot;el-37ef9739745b4d4d917b170082d4de79&quot;}},&quot;incomplete_live&quot;:{&quot;live_broker_receipt&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate.&quot;,&quot;live_fill&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate.&quot;,&quot;live_mleg_submit&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate.&quot;,&quot;live_pnl_snapshot&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate.&quot;},&quot;live_fill_claimed&quot;:false,&quot;no_trade_injected_quote_caveat&quot;:&quot;live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim&quot;,&quot;schema&quot;:&quot;opticycle.claim-evidence.v1&quot;,&quot;source&quot;:&quot;sanitized_public_ledger&quot;},&quot;records&quot;:[{&quot;channel&quot;:&quot;live_paper&quot;,&quot;claim&quot;:&quot;opticycle:v1:NO_TRADE:el-6b67a01c2bdd448388e813633f90e890:18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b&quot;,&quot;client_order_id&quot;:&quot;oc-8b4a322a9a5640009146148ff6909b5d&quot;,&quot;code_build_id&quot;:&quot;18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b&quot;,&quot;commit_sha&quot;:&quot;18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b&quot;,&quot;cycle_id&quot;:&quot;709e9c00db394b72991cc6cc70b4187f&quot;,&quot;derived_from&quot;:{&quot;commit_sha&quot;:&quot;18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b&quot;,&quot;record_hash&quot;:&quot;768fb6e4eb82a87b95fd87d8d215a82baa178fd73f248dd2244007b959ddc53c&quot;,&quot;record_id&quot;:&quot;el-6b67a01c2bdd448388e813633f90e890&quot;},&quot;episode&quot;:{&quot;broker_receipt&quot;:{&quot;present&quot;:false,&quot;reason&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (broker_receipt)&quot;,&quot;value&quot;:null},&quot;candidate_set&quot;:{&quot;present&quot;:true,&quot;reason&quot;:&quot;empty set&quot;,&quot;value&quot;:[]},&quot;certificate&quot;:{&quot;present&quot;:false,&quot;reason&quot;:&quot;not observed in this episode&quot;,&quot;value&quot;:null},&quot;code_build_id&quot;:{&quot;present&quot;:true,&quot;reason&quot;:&quot;exact git commit&quot;,&quot;value&quot;:&quot;18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b&quot;},&quot;end_of_cycle_equity&quot;:{&quot;present&quot;:false,&quot;reason&quot;:&quot;not observed in this episode&quot;,&quot;value&quot;:null},&quot;mcp_attempt&quot;:{&quot;present&quot;:false,&quot;reason&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (mcp_attempt)&quot;,&quot;value&quot;:null},&quot;positions&quot;:{&quot;present&quot;:true,&quot;reason&quot;:&quot;no positions observed&quot;,&quot;value&quot;:[]},&quot;realized_pnl&quot;:{&quot;present&quot;:false,&quot;reason&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (realized_pnl)&quot;,&quot;value&quot;:null},&quot;reconciliation&quot;:{&quot;present&quot;:false,&quot;reason&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (reconciliation)&quot;,&quot;value&quot;:null},&quot;snapshot&quot;:{&quot;present&quot;:true,&quot;reason&quot;:&quot;live observation&quot;,&quot;value&quot;:{&quot;correlation_id&quot;:&quot;042fc7a1da314dfebfc5739140e63ab8&quot;,&quot;datums&quot;:[{&quot;correlation_id&quot;:&quot;042fc7a1da314dfebfc5739140e63ab8&quot;,&quot;detail&quot;:&quot;&quot;,&quot;freshness_seconds&quot;:&quot;0&quot;,&quot;kind&quot;:&quot;account&quot;,&quot;ok&quot;:true,&quot;source&quot;:&quot;alpaca.trading.get_account&quot;,&quot;timestamp&quot;:&quot;2026-08-29T05:56:11.267490+00:00&quot;},{&quot;correlation_id&quot;:&quot;042fc7a1da314dfebfc5739140e63ab8&quot;,&quot;detail&quot;:&quot;&quot;,&quot;freshness_seconds&quot;:&quot;0&quot;,&quot;kind&quot;:&quot;positions&quot;,&quot;ok&quot;:true,&quot;source&quot;:&quot;alpaca.trading.get_all_positions&quot;,&quot;timestamp&quot;:&quot;2026-08-29T05:56:11.267490+00:00&quot;},{&quot;correlation_id&quot;:&quot;042fc7a1da314dfebfc5739140e63ab8&quot;,&quot;detail&quot;:&quot;&quot;,&quot;freshness_seconds&quot;:&quot;0&quot;,&quot;kind&quot;:&quot;open_orders&quot;,&quot;ok&quot;:true,&quot;source&quot;:&quot;alpaca.trading.get_orders&quot;,&quot;timestamp&quot;:&quot;2026-08-29T05:56:11.267490+00:00&quot;},{&quot;correlation_id&quot;:&quot;042fc7a1da314dfebfc5739140e63ab8&quot;,&quot;detail&quot;:&quot;&quot;,&quot;freshness_seconds&quot;:&quot;0&quot;,&quot;kind&quot;:&quot;fills&quot;,&quot;ok&quot;:true,&quot;source&quot;:&quot;alpaca.trading.get_orders&quot;,&quot;timestamp&quot;:&quot;2026-08-29T05:56:11.267490+00:00&quot;},{&quot;correlation_id&quot;:&quot;042fc7a1da314dfebfc5739140e63ab8&quot;,&quot;detail&quot;:&quot;&quot;,&quot;freshness_seconds&quot;:&quot;0&quot;,&quot;kind&quot;:&quot;clock&quot;,&quot;ok&quot;:true,&quot;source&quot;:&quot;alpaca.trading.get_clock&quot;,&quot;timestamp&quot;:&quot;2026-08-29T05:56:11.267490+00:00&quot;},{&quot;correlation_id&quot;:&quot;042fc7a1da314dfebfc5739140e63ab8&quot;,&quot;detail&quot;:&quot;&quot;,&quot;freshness_seconds&quot;:&quot;0&quot;,&quot;kind&quot;:&quot;quote&quot;,&quot;ok&quot;:true,&quot;source&quot;:&quot;alpaca.data.get_stock_latest_quote&quot;,&quot;timestamp&quot;:&quot;2026-08-29T05:56:11.267490+00:00&quot;},{&quot;correlation_id&quot;:&quot;042fc7a1da314dfebfc5739140e63ab8&quot;,&quot;detail&quot;:&quot;&quot;,&quot;freshness_seconds&quot;:&quot;0&quot;,&quot;kind&quot;:&quot;bars&quot;,&quot;ok&quot;:true,&quot;source&quot;:&quot;alpaca.data.get_stock_bars&quot;,&quot;timestamp&quot;:&quot;2026-08-29T05:56:11.267490+00:00&quot;},{&quot;correlation_id&quot;:&quot;042fc7a1da314dfebfc5739140e63ab8&quot;,&quot;detail&quot;:&quot;&quot;,&quot;freshness_seconds&quot;:&quot;0&quot;,&quot;kind&quot;:&quot;option_chain&quot;,&quot;ok&quot;:true,&quot;source&quot;:&quot;alpaca.data.get_option_chain&quot;,&quot;timestamp&quot;:&quot;2026-08-29T05:56:11.267490+00:00&quot;},{&quot;correlation_id&quot;:&quot;042fc7a1da314dfebfc5739140e63ab8&quot;,&quot;detail&quot;:&quot;missing&quot;,&quot;freshness_seconds&quot;:&quot;0&quot;,&quot;kind&quot;:&quot;quote&quot;,&quot;ok&quot;:false,&quot;source&quot;:&quot;alpaca.data.get_stock_latest_quote&quot;,&quot;timestamp&quot;:&quot;2026-08-29T05:56:11.267537+00:00&quot;}],&quot;has_evidence&quot;:false,&quot;outcome&quot;:&quot;NO_TRADE&quot;,&quot;quote_age_seconds&quot;:null,&quot;reason&quot;:&quot;SPY quote missing&quot;,&quot;spot_price&quot;:null}},&quot;thesis&quot;:{&quot;present&quot;:false,&quot;reason&quot;:&quot;not observed in this episode&quot;,&quot;value&quot;:null},&quot;unrealized_pnl&quot;:{&quot;present&quot;:false,&quot;reason&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (unrealized_pnl)&quot;,&quot;value&quot;:null}},&quot;extra&quot;:{},&quot;ledger_class&quot;:&quot;public_sanitized&quot;,&quot;live_paper_incomplete&quot;:{&quot;code&quot;:&quot;LIVE_PAPER_INCOMPLETE&quot;,&quot;detail&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate.&quot;,&quot;live_broker_receipt&quot;:false,&quot;live_fill&quot;:false,&quot;live_mleg_submit&quot;:false,&quot;live_pnl_snapshot&quot;:false},&quot;outcome&quot;:&quot;NO_TRADE&quot;,&quot;prev_hash&quot;:&quot;0000000000000000000000000000000000000000000000000000000000000000&quot;,&quot;reason&quot;:&quot;SPY quote missing&quot;,&quot;record_hash&quot;:&quot;768fb6e4eb82a87b95fd87d8d215a82baa178fd73f248dd2244007b959ddc53c&quot;,&quot;record_id&quot;:&quot;el-6b67a01c2bdd448388e813633f90e890&quot;,&quot;seq&quot;:1,&quot;ts&quot;:&quot;2026-08-29T05:56:11Z&quot;},{&quot;channel&quot;:&quot;replay&quot;,&quot;claim&quot;:&quot;opticycle:v1:NO_TRADE:el-953294082969463d98f7399741143e9a:318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;client_order_id&quot;:&quot;&quot;,&quot;code_build_id&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;commit_sha&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;cycle_id&quot;:&quot;&quot;,&quot;derived_from&quot;:{&quot;commit_sha&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;record_hash&quot;:&quot;0688b5a478d4583dace33e67a8a633b2241c551cc4b98aef530eca6de17728d1&quot;,&quot;record_id&quot;:&quot;el-953294082969463d98f7399741143e9a&quot;},&quot;episode&quot;:{&quot;broker_receipt&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;candidate_set&quot;:{&quot;present&quot;:true,&quot;reason&quot;:null,&quot;value&quot;:{&quot;legs&quot;:[{&quot;ratio_qty&quot;:&quot;1&quot;,&quot;side&quot;:&quot;sell&quot;,&quot;symbol&quot;:&quot;SPY260918P00550000&quot;},{&quot;ratio_qty&quot;:&quot;1&quot;,&quot;side&quot;:&quot;buy&quot;,&quot;symbol&quot;:&quot;SPY260918P00540000&quot;}],&quot;limit_price&quot;:&quot;1.20&quot;,&quot;order_class&quot;:&quot;mleg&quot;,&quot;payload_hash&quot;:&quot;e6e771e87e060881d98c9082b69044b0a0d4447cb82e821acc5e9822b462a4e7&quot;,&quot;qty&quot;:1,&quot;spread&quot;:&quot;bull_put&quot;,&quot;strategy&quot;:&quot;vertical_spread&quot;,&quot;underlying&quot;:&quot;SPY&quot;}},&quot;certificate&quot;:{&quot;present&quot;:true,&quot;reason&quot;:null,&quot;value&quot;:{&quot;approval&quot;:true,&quot;binding_hash&quot;:&quot;8b87a1e863e7e0d514e0fc9aa4b86b4d22f2e6bf52d9c45780dab8d00af6307a&quot;,&quot;payload_hash&quot;:&quot;e6e771e87e060881d98c9082b69044b0a0d4447cb82e821acc5e9822b462a4e7&quot;,&quot;reasons&quot;:[],&quot;veto&quot;:false}},&quot;code_build_id&quot;:{&quot;present&quot;:true,&quot;reason&quot;:null,&quot;value&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;},&quot;end_of_cycle_equity&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;mcp_attempt&quot;:{&quot;present&quot;:true,&quot;reason&quot;:null,&quot;value&quot;:{&quot;dry_run&quot;:true,&quot;order_class&quot;:&quot;mleg&quot;,&quot;submitted&quot;:false,&quot;tool&quot;:&quot;place_option_order&quot;}},&quot;positions&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;realized_pnl&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;reconciliation&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;snapshot&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;thesis&quot;:{&quot;present&quot;:true,&quot;reason&quot;:null,&quot;value&quot;:{&quot;accepted&quot;:true,&quot;confidence&quot;:&quot;0.70&quot;,&quot;reason_code&quot;:&quot;TREND_ALIGNED&quot;,&quot;stance&quot;:&quot;BULLISH&quot;}},&quot;unrealized_pnl&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null}},&quot;extra&quot;:{&quot;live_fill_claimed&quot;:false},&quot;ledger_class&quot;:&quot;public_sanitized&quot;,&quot;live_paper_incomplete&quot;:null,&quot;outcome&quot;:&quot;NO_TRADE&quot;,&quot;prev_hash&quot;:&quot;0000000000000000000000000000000000000000000000000000000000000000&quot;,&quot;reason&quot;:&quot;keyless replay dry-run preview; not a live order&quot;,&quot;record_hash&quot;:&quot;0688b5a478d4583dace33e67a8a633b2241c551cc4b98aef530eca6de17728d1&quot;,&quot;record_id&quot;:&quot;el-953294082969463d98f7399741143e9a&quot;,&quot;seq&quot;:1,&quot;ts&quot;:&quot;2026-08-29T06:13:05Z&quot;},{&quot;channel&quot;:&quot;replay&quot;,&quot;claim&quot;:&quot;opticycle:v1:VETO:el-37ef9739745b4d4d917b170082d4de79:318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;client_order_id&quot;:&quot;&quot;,&quot;code_build_id&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;commit_sha&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;cycle_id&quot;:&quot;&quot;,&quot;derived_from&quot;:{&quot;commit_sha&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;record_hash&quot;:&quot;b27c81a98e872c2014ed1b56e7ab29d60fc8e3593a718c9495013b539d925644&quot;,&quot;record_id&quot;:&quot;el-37ef9739745b4d4d917b170082d4de79&quot;},&quot;episode&quot;:{&quot;broker_receipt&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;candidate_set&quot;:{&quot;present&quot;:true,&quot;reason&quot;:null,&quot;value&quot;:{&quot;payload_hash&quot;:&quot;e6e771e87e060881d98c9082b69044b0a0d4447cb82e821acc5e9822b462a4e7&quot;,&quot;rejected&quot;:true}},&quot;certificate&quot;:{&quot;present&quot;:true,&quot;reason&quot;:null,&quot;value&quot;:{&quot;approval&quot;:false,&quot;payload_hash&quot;:&quot;e6e771e87e060881d98c9082b69044b0a0d4447cb82e821acc5e9822b462a4e7&quot;,&quot;reasons&quot;:[&quot;stale quote&quot;],&quot;veto&quot;:true}},&quot;code_build_id&quot;:{&quot;present&quot;:true,&quot;reason&quot;:null,&quot;value&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;},&quot;end_of_cycle_equity&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;mcp_attempt&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;positions&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;realized_pnl&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;reconciliation&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;snapshot&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;thesis&quot;:{&quot;present&quot;:true,&quot;reason&quot;:null,&quot;value&quot;:{&quot;accepted&quot;:false,&quot;reason_code&quot;:&quot;LOW_CONFIDENCE&quot;,&quot;stance&quot;:&quot;BEARISH&quot;}},&quot;unrealized_pnl&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null}},&quot;extra&quot;:{},&quot;ledger_class&quot;:&quot;public_sanitized&quot;,&quot;live_paper_incomplete&quot;:null,&quot;outcome&quot;:&quot;VETO&quot;,&quot;prev_hash&quot;:&quot;0688b5a478d4583dace33e67a8a633b2241c551cc4b98aef530eca6de17728d1&quot;,&quot;reason&quot;:&quot;risk certificate veto (replay)&quot;,&quot;record_hash&quot;:&quot;b27c81a98e872c2014ed1b56e7ab29d60fc8e3593a718c9495013b539d925644&quot;,&quot;record_id&quot;:&quot;el-37ef9739745b4d4d917b170082d4de79&quot;,&quot;seq&quot;:2,&quot;ts&quot;:&quot;2026-08-29T06:13:05Z&quot;},{&quot;channel&quot;:&quot;fault_injection&quot;,&quot;claim&quot;:&quot;opticycle:v1:ERROR:el-05a729bbf7754e1fa7a778ee05ed799a:318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;client_order_id&quot;:&quot;&quot;,&quot;code_build_id&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;commit_sha&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;cycle_id&quot;:&quot;&quot;,&quot;derived_from&quot;:{&quot;commit_sha&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;record_hash&quot;:&quot;75078c237fd5889138e77939769bda25a2e4040b286c03cba55d07c0adbb18f3&quot;,&quot;record_id&quot;:&quot;el-05a729bbf7754e1fa7a778ee05ed799a&quot;},&quot;episode&quot;:{&quot;broker_receipt&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;candidate_set&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;certificate&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;code_build_id&quot;:{&quot;present&quot;:true,&quot;reason&quot;:null,&quot;value&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;},&quot;end_of_cycle_equity&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;mcp_attempt&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;positions&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;realized_pnl&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;reconciliation&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;snapshot&quot;:{&quot;present&quot;:true,&quot;reason&quot;:null,&quot;value&quot;:{&quot;has_evidence&quot;:false,&quot;outcome&quot;:&quot;HALT&quot;,&quot;reason&quot;:&quot;fault injection&quot;}},&quot;thesis&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;unrealized_pnl&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null}},&quot;extra&quot;:{&quot;fault_injection&quot;:true},&quot;ledger_class&quot;:&quot;public_sanitized&quot;,&quot;live_paper_incomplete&quot;:null,&quot;outcome&quot;:&quot;ERROR&quot;,&quot;prev_hash&quot;:&quot;b27c81a98e872c2014ed1b56e7ab29d60fc8e3593a718c9495013b539d925644&quot;,&quot;reason&quot;:&quot;injected observation failure&quot;,&quot;record_hash&quot;:&quot;75078c237fd5889138e77939769bda25a2e4040b286c03cba55d07c0adbb18f3&quot;,&quot;record_id&quot;:&quot;el-05a729bbf7754e1fa7a778ee05ed799a&quot;,&quot;seq&quot;:3,&quot;ts&quot;:&quot;2026-08-29T06:13:05Z&quot;},{&quot;channel&quot;:&quot;live_paper&quot;,&quot;claim&quot;:&quot;opticycle:v1:HALT:el-745a08784c774e8baae0eb35fdb4b5b0:318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;client_order_id&quot;:&quot;&quot;,&quot;code_build_id&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;commit_sha&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;cycle_id&quot;:&quot;&quot;,&quot;derived_from&quot;:{&quot;commit_sha&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;,&quot;record_hash&quot;:&quot;605b9670a229d8291caebdc2ba2f0b4f100ee6dcc20b8ac6b5a8e618089d8aa7&quot;,&quot;record_id&quot;:&quot;el-745a08784c774e8baae0eb35fdb4b5b0&quot;},&quot;episode&quot;:{&quot;broker_receipt&quot;:{&quot;present&quot;:false,&quot;reason&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (broker_receipt)&quot;,&quot;value&quot;:null},&quot;candidate_set&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;certificate&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;code_build_id&quot;:{&quot;present&quot;:true,&quot;reason&quot;:null,&quot;value&quot;:&quot;318ff5ec5960380a4682122fe631d5b6b78ab82f&quot;},&quot;end_of_cycle_equity&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;mcp_attempt&quot;:{&quot;present&quot;:false,&quot;reason&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (mcp_attempt)&quot;,&quot;value&quot;:null},&quot;positions&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;realized_pnl&quot;:{&quot;present&quot;:false,&quot;reason&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (realized_pnl)&quot;,&quot;value&quot;:null},&quot;reconciliation&quot;:{&quot;present&quot;:false,&quot;reason&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (reconciliation)&quot;,&quot;value&quot;:null},&quot;snapshot&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;thesis&quot;:{&quot;present&quot;:false,&quot;reason&quot;:null,&quot;value&quot;:null},&quot;unrealized_pnl&quot;:{&quot;present&quot;:false,&quot;reason&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate. (unrealized_pnl)&quot;,&quot;value&quot;:null}},&quot;extra&quot;:{&quot;live_fill_claimed&quot;:false},&quot;ledger_class&quot;:&quot;public_sanitized&quot;,&quot;live_paper_incomplete&quot;:{&quot;code&quot;:&quot;LIVE_PAPER_INCOMPLETE&quot;,&quot;detail&quot;:&quot;TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&amp;L snapshot is claimed in this gate.&quot;,&quot;live_broker_receipt&quot;:false,&quot;live_fill&quot;:false,&quot;live_mleg_submit&quot;:false,&quot;live_pnl_snapshot&quot;:false},&quot;outcome&quot;:&quot;HALT&quot;,&quot;prev_hash&quot;:&quot;75078c237fd5889138e77939769bda25a2e4040b286c03cba55d07c0adbb18f3&quot;,&quot;reason&quot;:&quot;live paper schema ready; MLEG/fill not claimed&quot;,&quot;record_hash&quot;:&quot;605b9670a229d8291caebdc2ba2f0b4f100ee6dcc20b8ac6b5a8e618089d8aa7&quot;,&quot;record_id&quot;:&quot;el-745a08784c774e8baae0eb35fdb4b5b0&quot;,&quot;seq&quot;:4,&quot;ts&quot;:&quot;2026-08-29T06:13:05Z&quot;}]}</script>
+</body>
+</html>

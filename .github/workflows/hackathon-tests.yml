@@ -21,9 +21,13 @@ jobs:
       - name: Install test dependencies
         run: python3 -m pip install -r requirements-hackathon.txt
       - name: Syntax check
-        run: python3 -m compileall src/ scripts/verify-paper-mcp-order.py
+        run: python3 -m compileall src/ scripts/
       - name: Pytest
         run: python3 -m pytest tests/ -q
+      - name: Secret scan public evidence
+        run: python3 scripts/scan-public-evidence.py
+      - name: Keyless public-evidence replay
+        run: python3 scripts/replay-public-evidence.py
       - name: Verify dry-run MCP path
         run: python3 scripts/verify-paper-mcp-order.py --dry-run
       - name: One autonomous dry-run cycle

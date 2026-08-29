@@ -1,0 +1,74 @@
+{
+  "claims": {
+    "opticycle:v1:ERROR:el-05a729bbf7754e1fa7a778ee05ed799a:318ff5ec5960380a4682122fe631d5b6b78ab82f": {
+      "caveat": null,
+      "channel": "fault_injection",
+      "commit_sha": "318ff5ec5960380a4682122fe631d5b6b78ab82f",
+      "incomplete": [],
+      "live_fill": false,
+      "live_mleg_submit": false,
+      "outcome": "ERROR",
+      "record_id": "el-05a729bbf7754e1fa7a778ee05ed799a"
+    },
+    "opticycle:v1:HALT:el-745a08784c774e8baae0eb35fdb4b5b0:318ff5ec5960380a4682122fe631d5b6b78ab82f": {
+      "caveat": null,
+      "channel": "live_paper",
+      "commit_sha": "318ff5ec5960380a4682122fe631d5b6b78ab82f",
+      "incomplete": [
+        "live_mleg_submit",
+        "live_broker_receipt",
+        "live_fill",
+        "live_pnl_snapshot"
+      ],
+      "live_fill": false,
+      "live_mleg_submit": false,
+      "outcome": "HALT",
+      "record_id": "el-745a08784c774e8baae0eb35fdb4b5b0"
+    },
+    "opticycle:v1:NO_TRADE:el-6b67a01c2bdd448388e813633f90e890:18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b": {
+      "caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
+      "channel": "live_paper",
+      "commit_sha": "18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b",
+      "incomplete": [
+        "live_mleg_submit",
+        "live_broker_receipt",
+        "live_fill",
+        "live_pnl_snapshot"
+      ],
+      "live_fill": false,
+      "live_mleg_submit": false,
+      "outcome": "NO_TRADE",
+      "record_id": "el-6b67a01c2bdd448388e813633f90e890"
+    },
+    "opticycle:v1:NO_TRADE:el-953294082969463d98f7399741143e9a:318ff5ec5960380a4682122fe631d5b6b78ab82f": {
+      "caveat": null,
+      "channel": "replay",
+      "commit_sha": "318ff5ec5960380a4682122fe631d5b6b78ab82f",
+      "incomplete": [],
+      "live_fill": false,
+      "live_mleg_submit": false,
+      "outcome": "NO_TRADE",
+      "record_id": "el-953294082969463d98f7399741143e9a"
+    },
+    "opticycle:v1:VETO:el-37ef9739745b4d4d917b170082d4de79:318ff5ec5960380a4682122fe631d5b6b78ab82f": {
+      "caveat": null,
+      "channel": "replay",
+      "commit_sha": "318ff5ec5960380a4682122fe631d5b6b78ab82f",
+      "incomplete": [],
+      "live_fill": false,
+      "live_mleg_submit": false,
+      "outcome": "VETO",
+      "record_id": "el-37ef9739745b4d4d917b170082d4de79"
+    }
+  },
+  "incomplete_live": {
+    "live_broker_receipt": "TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&L snapshot is claimed in this gate.",
+    "live_fill": "TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&L snapshot is claimed in this gate.",
+    "live_mleg_submit": "TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&L snapshot is claimed in this gate.",
+    "live_pnl_snapshot": "TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&L snapshot is claimed in this gate."
+  },
+  "live_fill_claimed": false,
+  "no_trade_injected_quote_caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
+  "schema": "opticycle.claim-evidence.v1",
+  "source": "sanitized_public_ledger"
+}
