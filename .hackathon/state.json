@@ -1,7 +1,7 @@
 {
   "schemaVersion": 5,
   "eventId": "alpaca-trading-agents-2026",
-  "state": "PLAN_PENDING_APPROVAL",
+  "state": "BUILDING",
   "planSha256": "4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
   "artifactRequirements": [
     {
@@ -48,8 +48,19 @@
     }
   ],
   "buildId": null,
-  "planApproval": null,
-  "builderRun": null,
+  "planApproval": {
+    "command": "APPROVE PLAN alpaca-trading-agents-2026 4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
+    "eventId": "alpaca-trading-agents-2026",
+    "planSha256": "4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
+    "approvedAt": "2026-08-29T00:53:23Z"
+  },
+  "builderRun": {
+    "idempotencyKey": "builder-v3:alpaca-trading-agents-2026:4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
+    "attempt": 1,
+    "status": "running",
+    "startedAt": "2026-08-29T00:53:23Z",
+    "finishedAt": null
+  },
   "qualityGates": {
     "mvp": {
       "status": "pending",
@@ -64,5 +75,5 @@
       "review": null
     }
   },
-  "updatedAt": "2026-08-29T00:48:11Z"
+  "updatedAt": "2026-08-29T00:53:23Z"
 }
