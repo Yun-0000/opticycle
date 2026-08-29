@@ -30,9 +30,10 @@ for path in (str(ROOT), str(VENDOR), str(SRC)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
+from opticycle.pin_option import PinMarket
+from opticycle.protocol import ThesisStance
 from opticycle.runner import run_once
 from opticycle.settings import HackathonSettings
-from opticycle.pin_option import PinMarket
 
 
 def _require_paper_env() -> None:
@@ -62,6 +63,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--backend", choices=["mcp"], default="mcp")
     parser.add_argument("--strategy", choices=["vertical_spread"], default="vertical_spread")
+    parser.add_argument("--stance", choices=["BULLISH", "BEARISH"], default="BULLISH")
     args = parser.parse_args(argv)
     if not args.dry_run:
         _require_paper_env()
@@ -70,11 +72,17 @@ def main(argv: list[str] | None = None) -> int:
         strategy="vertical_spread",
     )
     market: PinMarket | None = None
+    stance = ThesisStance(args.stance)
     if args.dry_run:
         from tests.fixtures.market import make_pin_market
 
         market = make_pin_market()
-    result = run_once(settings, dry_run=args.dry_run, market=market)
+    result = run_once(
+        settings,
+        dry_run=args.dry_run,
+        market=market,
+        stance=stance if args.dry_run else None,
+    )
     if not result.get("ok"):
         print(json.dumps(result, default=str), file=sys.stderr)
         return 1

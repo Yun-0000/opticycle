@@ -13,8 +13,16 @@ from typing import Any
 import pandas as pd
 
 from opticycle.plans import CyclePlan, occ_symbol
+from opticycle.protocol import ThesisStance
 from opticycle.settings import HackathonSettings
 from trade.orders import ExecutionRejected, OptionOrderRequest
+
+ALLOWED_CREDIT_SPREADS = frozenset({"bull_put", "bear_call"})
+FORBIDDEN_DEBIT_SPREADS = frozenset({"bull_call", "bear_put"})
+STANCE_TO_CREDIT = {
+    ThesisStance.BULLISH: "bull_put",
+    ThesisStance.BEARISH: "bear_call",
+}
 
 PIN_ROOT = Path(__file__).resolve().parents[2] / "vendor" / "pin-31374551"
 PIN_SRC = PIN_ROOT / "src"
@@ -159,6 +167,11 @@ def _occ_from_leg(underlying: str, leg: dict[str, Any]) -> str:
 
 def _spread_request(plan: Any, underlying: str) -> OptionOrderRequest:
     metadata = dict(plan.metadata or {})
+    spread_type = str(metadata.get("spread_type") or "")
+    if spread_type in FORBIDDEN_DEBIT_SPREADS:
+        raise ExecutionRejected(f"NO_TRADE: {spread_type} debit verticals are disabled")
+    if spread_type not in ALLOWED_CREDIT_SPREADS:
+        raise ExecutionRejected(f"NO_TRADE: {spread_type or 'unknown'} is not an allowed credit vertical")
     raw_legs = list(metadata.get("legs") or [])
     if not raw_legs:
         raise ExecutionRejected("vertical_spread ActionPlan is missing legs")
@@ -181,12 +194,63 @@ def _spread_request(plan: Any, underlying: str) -> OptionOrderRequest:
         reason=str(plan.reason or "vertical_spread"),
         metadata={
             "strategy": "vertical_spread",
-            "spread_type": metadata.get("spread_type"),
+            "spread_type": spread_type,
             "pin": PIN_COMMIT,
             "strategy_class": "VerticalSpreadStrategy",
             "underlying": underlying,
         },
     )
+
+
+def _normalize_stance(stance: ThesisStance | str | None) -> ThesisStance | None:
+    if stance is None:
+        return None
+    if isinstance(stance, ThesisStance):
+        return stance
+    try:
+        return ThesisStance(str(stance).strip().upper())
+    except ValueError:
+        return None
+
+
+def _credit_candidate_for_type(strategy: Any, market: PinMarket, underlying: str, spread_type: str) -> Any:
+    """Ask the pin constructor for one credit type only. Never uses RSI/trend get_signal."""
+    if spread_type in FORBIDDEN_DEBIT_SPREADS:
+        raise ExecutionRejected(f"NO_TRADE: {spread_type} debit verticals are disabled")
+    if spread_type not in ALLOWED_CREDIT_SPREADS:
+        raise ExecutionRejected(f"NO_TRADE: {spread_type} is not an allowed credit vertical")
+    chain = strategy.provider.get_options_chain(underlying)
+    if chain is None or getattr(chain, "empty", True):
+        raise ExecutionRejected("NO_TRADE: option chain missing")
+    required_cols = {"expiration_date", "strike_price", "option_type"}
+    if not required_cols.issubset(chain.columns):
+        raise ExecutionRejected("NO_TRADE: option chain missing required columns")
+    chain = chain.copy()
+    chain["expiration"] = chain["expiration_date"].apply(strategy._parse_expiration)
+    chain = chain[chain["expiration"].notna()]
+    if chain.empty:
+        raise ExecutionRejected("NO_TRADE: no usable expirations")
+    dte_min = int(strategy.params["dte_min"])
+    dte_max = int(strategy.params["dte_max"])
+    today = datetime.now().date()
+    chain["dte"] = chain["expiration"].apply(lambda exp: (exp - today).days)
+    chain = chain[(chain["dte"] >= dte_min) & (chain["dte"] <= dte_max)]
+    if chain.empty:
+        raise ExecutionRejected("NO_TRADE: no contracts in DTE window")
+    chain["option_type"] = chain["option_type"].astype(str).str.upper()
+    expirations = sorted(chain["expiration"].unique())
+    candidate = strategy._best_candidate_for_type(
+        chain,
+        expirations,
+        float(market.spot),
+        underlying,
+        spread_type,
+    )
+    if candidate is None:
+        raise ExecutionRejected(f"NO_TRADE: no {spread_type} credit vertical available")
+    if candidate.spread_type != spread_type or candidate.spread_type not in ALLOWED_CREDIT_SPREADS:
+        raise ExecutionRejected("NO_TRADE: constructed spread does not match thesis stance")
+    return candidate
 
 
 def build_pin_cycle_plan(
@@ -195,8 +259,9 @@ def build_pin_cycle_plan(
     market: PinMarket | None = None,
     dry_run: bool = True,
     underlying_price: float | None = None,
+    stance: ThesisStance | str | None = None,
 ) -> CyclePlan:
-    """Call the pin vertical_spread path and map the ActionPlan to an option order."""
+    """Construct the credit vertical required by thesis stance. No RSI/trend selection."""
     if settings.strategy != "vertical_spread":
         raise ExecutionRejected("only SPY defined-risk vertical is enabled")
     if market is None:
@@ -204,48 +269,55 @@ def build_pin_cycle_plan(
     if not dry_run and underlying_price is not None:
         raise ExecutionRejected("live path cannot use a hardcoded underlying price")
 
+    resolved = _normalize_stance(stance)
+    if resolved is None or resolved == ThesisStance.NO_TRADE:
+        raise ExecutionRejected("NO_TRADE: thesis stance is missing or not directional")
+    spread_type = STANCE_TO_CREDIT.get(resolved)
+    if spread_type is None:
+        raise ExecutionRejected("NO_TRADE: thesis stance does not map to a credit vertical")
+
     spread_path = PIN_SRC / "strategy" / "option" / "vertical_spread.py"
     if not spread_path.is_file():
         raise RuntimeError("pin vertical_spread is missing under vendor/pin-31374551")
 
     underlying = settings.symbols[0]
     loaded = _install_pin_modules(market)
-    book = market.book
-    now = datetime.now()
-    bars = market.bars
-    spot = float(market.spot)
     params = {
         "max_stock_price": 10_000.0,
         "min_stock_price": 1.0,
         "position_size_pct": 0.55,
         "dte_min": 7,
         "dte_max": 45,
+        "iv_min_credit": 0.10,
+        "short_delta_min": 0.05,
+        "short_delta_max": 0.80,
+        "credit_min_pct": 0.05,
+        "credit_max_pct": 0.90,
+        "width_pct": 0.02,
+        "otm_pct": 0.03,
     }
 
     strategy = loaded["VerticalSpreadStrategy"](params)
     strategy.symbol_list = [underlying]
     strategy.provider = market.provider
     strategy.fred = market.fred
-    snapshot = strategy.get_signal(
-        symbol=underlying,
-        current_date=now,
-        current_price=spot,
-        current_data={},
-        historical_data=bars,
-        portfolio=book,
+    candidate = _credit_candidate_for_type(strategy, market, underlying, spread_type)
+    action_plan = types.SimpleNamespace(
+        metadata=candidate.metadata,
+        target_price=abs(float(candidate.limit_price)),
+        reason=candidate.reason,
+        action=candidate.action,
     )
-    if snapshot is None:
-        raise ExecutionRejected("vertical_spread returned no signal")
-    action_plan = strategy.get_action_plan(snapshot, spot, now)
-    if action_plan is None or action_plan.action == "HOLD":
-        raise ExecutionRejected(
-            f"vertical_spread did not produce an order: {getattr(snapshot, 'reason', '')}"
-        )
     request = _spread_request(action_plan, underlying)
     return CyclePlan(
         strategy="vertical_spread",
         request=request,
         underlying=underlying,
-        notes=str(action_plan.reason or "vertical_spread"),
-        metadata={"pin": PIN_COMMIT, "strategy_class": "VerticalSpreadStrategy"},
+        notes=str(action_plan.reason or spread_type),
+        metadata={
+            "pin": PIN_COMMIT,
+            "strategy_class": "VerticalSpreadStrategy",
+            "spread_type": spread_type,
+            "stance": resolved.value,
+        },
     )

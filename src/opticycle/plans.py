@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import Any
 
+from opticycle.protocol import ThesisStance
 from opticycle.settings import HackathonSettings
 from trade.orders import OptionOrderRequest
 
@@ -40,8 +41,9 @@ def build_cycle_plan(
     market: Any | None = None,
     dry_run: bool = True,
     underlying_price: float | None = None,
+    stance: ThesisStance | str | None = None,
 ) -> CyclePlan:
-    """Build a SPY defined-risk vertical from the pin ActionPlan."""
+    """Build a SPY defined-risk credit vertical bound to the thesis stance."""
     from opticycle.pin_option import build_pin_cycle_plan
 
     return build_pin_cycle_plan(
@@ -49,4 +51,5 @@ def build_cycle_plan(
         market=market,
         dry_run=dry_run,
         underlying_price=underlying_price,
+        stance=stance,
     )

@@ -7,6 +7,7 @@ import os
 import sys
 from typing import Sequence
 
+from opticycle.protocol import ThesisStance
 from opticycle.runner import run_loop
 from opticycle.settings import HackathonSettings, STOCK_STRATEGIES
 
@@ -20,6 +21,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--strategy", choices=["vertical_spread"], default=None)
     run.add_argument("--once", action="store_true")
     run.add_argument("--dry-run", action="store_true")
+    run.add_argument("--stance", choices=["BULLISH", "BEARISH"], default=None)
     return parser
 
 
@@ -43,7 +45,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         updates["strategy"] = args.strategy
     settings = HackathonSettings(**updates)
     os.environ["EXECUTION_BACKEND"] = settings.execution_backend
-    return run_loop(settings, dry_run=args.dry_run, once=args.once)
+    stance = ThesisStance(args.stance) if args.stance else None
+    return run_loop(settings, dry_run=args.dry_run, once=args.once, stance=stance)
 
 
 if __name__ == "__main__":

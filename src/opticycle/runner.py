@@ -76,6 +76,7 @@ def run_once(
     market: PinMarket | None = None,
     underlying_price: float | None = None,
     llm_client: Any | None = None,
+    stance: ThesisStance | str | None = None,
 ) -> dict[str, Any]:
     settings = settings or HackathonSettings()
     configure_backend(settings)
@@ -173,14 +174,46 @@ def run_once(
             )
         pin_market = _pin_market_from_observation(observation)
         spot = pin_market.spot
-        plan = build_cycle_plan(settings, market=pin_market, dry_run=False)
+        try:
+            plan = build_cycle_plan(
+                settings,
+                market=pin_market,
+                dry_run=False,
+                stance=thesis.stance,
+            )
+        except ExecutionRejected as exc:
+            if str(exc).startswith("NO_TRADE"):
+                return _closed_cycle(
+                    outcome=ObservationOutcome.NO_TRADE,
+                    reason=str(exc),
+                    dry_run=False,
+                    journal_entry=None,
+                    correlation_id=observation.correlation_id,
+                )
+            raise
     else:
         if market is None:
             raise ExecutionRejected("dry-run requires injected market")
         portfolio = dry_run_portfolio(settings)
         pin_market = market
         spot = float(pin_market.spot)
-        plan = build_cycle_plan(settings, market=pin_market, dry_run=True)
+        try:
+            plan = build_cycle_plan(
+                settings,
+                market=pin_market,
+                dry_run=True,
+                stance=stance,
+            )
+        except ExecutionRejected as exc:
+            if str(exc).startswith("NO_TRADE"):
+                return _closed_cycle(
+                    outcome=ObservationOutcome.NO_TRADE,
+                    reason=str(exc),
+                    dry_run=True,
+                    journal_entry=None,
+                    correlation_id="",
+                )
+            raise
 
     log.record(
         "decision",
@@ -242,13 +275,19 @@ def run_once(
     }
 
 
-def run_loop(settings: HackathonSettings, *, dry_run: bool, once: bool) -> int:
-    cycle = run_once(settings, dry_run=dry_run)
+def run_loop(
+    settings: HackathonSettings,
+    *,
+    dry_run: bool,
+    once: bool,
+    stance: ThesisStance | str | None = None,
+) -> int:
+    cycle = run_once(settings, dry_run=dry_run, stance=stance)
     print(cycle)
     if once:
         return 0 if cycle.get("ok") else 1
     interval = settings.interval_minutes * 60
     while True:
         time.sleep(interval)
-        cycle = run_once(settings, dry_run=dry_run)
+        cycle = run_once(settings, dry_run=dry_run, stance=stance)
         print(cycle)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from opticycle.protocol import ThesisStance
 from opticycle.risk import RiskGate, PortfolioSnapshot
 from opticycle.runner import run_once
 from opticycle.settings import HackathonSettings
@@ -25,6 +26,7 @@ def test_options_main_path_mcp_dry_run(tmp_path: Path, monkeypatch) -> None:
         HackathonSettings(execution_backend="mcp", strategy="vertical_spread"),
         dry_run=True,
         market=make_pin_market(),
+        stance=ThesisStance.BULLISH,
     )
     assert result["ok"] is True
     assert result["strategy"] == "vertical_spread"
