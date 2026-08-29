@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "opticycle"
 version = "0.1.0"
-description = "Autonomous paper options agent using Alpaca MCP or CLI"
+description = "Autonomous paper options agent; official alpaca-mcp-server==2.3.0 MLEG only"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}

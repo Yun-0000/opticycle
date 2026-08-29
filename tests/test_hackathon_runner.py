@@ -85,7 +85,7 @@ def test_cli_backend_rejected_for_live() -> None:
 def test_cli_once_dry_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     code = cli_main(
-        ["run", "--profile", "hackathon", "--backend", "mcp", "--once", "--dry-run", "--stance", "BULLISH"]
+        ["run", "--profile", "hackathon", "--backend", "mcp", "--once", "--dry-run"]
     )
     assert code == 0
 

@@ -24,6 +24,7 @@ from opticycle.pin_option import ObservedBook, ObservedChainAdapter, ObservedFre
 from opticycle.plans import build_cycle_plan
 from opticycle.pnl import SOURCE_LIVE_BROKER, pnl_from_snapshot, snapshot_from_client, snapshot_from_objects
 from opticycle.preflight import assert_paper_env, dry_run_portfolio
+from opticycle.replay_market import replay_pin_market
 from opticycle.protocol import (
     BrokerReceipt,
     CanonicalOrderPayload,
@@ -951,7 +952,9 @@ def run_once(
             raise
     else:
         if market is None:
-            raise ExecutionRejected("dry-run requires injected market")
+            market = replay_pin_market()
+        if stance is None:
+            stance = ThesisStance.BULLISH
         portfolio = dry_run_portfolio(settings)
         pin_market = market
         spot = float(pin_market.spot)
