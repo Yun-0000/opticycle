@@ -118,6 +118,7 @@ class ReconciliationStatus(str, Enum):
     UNKNOWN = "unknown"
     DUPLICATE = "duplicate"
     PARTIAL_FILL = "partial_fill"
+    PENDING = "pending"
     DISCREPANCY = "mismatch"
     UNKNOWN_BROKER_STATE = "unknown"
     HALTED = "halted"

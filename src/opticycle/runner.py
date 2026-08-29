@@ -28,6 +28,7 @@ from opticycle.protocol import (
     BrokerReceipt,
     CanonicalOrderPayload,
     ObservationOutcome,
+    ReconciliationStatus,
     ThesisStance,
     ensure_utc,
     evidence_digest,
@@ -206,6 +207,7 @@ def _finalize_reconciliation(
     mcp_result: dict[str, Any] | None,
     settings: HackathonSettings,
 ) -> dict[str, Any]:
+    pending = report.status is ReconciliationStatus.PENDING and not report.halt_triggered
     if report.halt_triggered:
         store.halt(
             record.cycle_id,
@@ -217,6 +219,10 @@ def _finalize_reconciliation(
             reason="; ".join(report.discrepancies) or report.status.value,
             report_id=report.report_id,
         )
+    elif pending:
+        if record.state is CycleState.ACKNOWLEDGED:
+            store.transition(record.cycle_id, CycleState.RECONCILING, reason="waiting for terminal broker state")
+        # RECONCILING (or ACKNOWLEDGED→RECONCILING) stays open. Do not HALT.
     else:
         if record.state is CycleState.RECONCILING:
             store.transition(record.cycle_id, CycleState.RECONCILED, reason="matched")
@@ -246,26 +252,37 @@ def _finalize_reconciliation(
         },
     )
     complete = report.complete and final.state is CycleState.COMPLETED
-    evidence_row = _commit_episode(
-        outcome="HALT" if not complete else "HALT",
-        reason=(
-            "" if complete else ("; ".join(report.discrepancies) or report.status.value or final.halt_reason or "")
+    evidence_row = None
+    if not pending:
+        evidence_row = _commit_episode(
+            outcome="HALT" if not complete else "HALT",
+            reason=(
+                "" if complete else ("; ".join(report.discrepancies) or report.status.value or final.halt_reason or "")
+            )
+            or "sanitized broker JSON not ingested; MATCHED not claimed",
+            cycle_id=final.cycle_id,
+            client_order_id=final.client_order_id,
+            extra={
+                "operational_complete": complete,
+                "operational_verdict": report.status.value,
+                "live_fill_claimed": False,
+            },
         )
-        or "sanitized broker JSON not ingested; MATCHED not claimed",
-        cycle_id=final.cycle_id,
-        client_order_id=final.client_order_id,
-        extra={
-            "operational_complete": complete,
-            "operational_verdict": report.status.value,
-            "live_fill_claimed": False,
-        },
-    )
+    if pending:
+        outcome = "PENDING"
+        reason = "waiting for broker terminal state"
+    elif complete:
+        outcome = ObservationOutcome.OK.value
+        reason = ""
+    else:
+        outcome = ObservationOutcome.HALT.value
+        reason = "; ".join(report.discrepancies) or report.status.value or final.halt_reason or ""
     return {
         "ok": complete,
         "complete": complete,
         "submitted": bool(receipt.submitted) or final.attempts > 0,
-        "outcome": ObservationOutcome.OK.value if complete else ObservationOutcome.HALT.value,
-        "reason": "" if complete else ("; ".join(report.discrepancies) or report.status.value or final.halt_reason or ""),
+        "outcome": outcome,
+        "reason": reason,
         "backend": settings.execution_backend,
         "dry_run": False,
         "order": mcp_result,

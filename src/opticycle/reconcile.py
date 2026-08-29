@@ -1,9 +1,13 @@
 """Broker reconciliation: only MATCHED completes a cycle.
 
 `submitted=True` means MCP returned a non-error payload. It is not a fill
-and not completion. Unknown or mismatched broker state HALTs new trades.
-Partial fills use a predefined deterministic containment plan. No model,
-no channel switch, no resubmit, no CLI.
+and not completion. Working broker states (new/accepted/...) are PENDING
+and must be waited on — not a permanent HALT. Terminal filled/canceled
+states complete as MATCHED, mismatch-HALT, or canceled/partial containment.
+Unknown or mismatched broker state HALTs new trades. Query failure and a
+missing order with no prior accept still HALT. Partial fills use a
+predefined deterministic containment plan. No model, no channel switch,
+no resubmit, no CLI.
 """
 
 from __future__ import annotations
@@ -38,6 +42,20 @@ PARTIAL_FILL_CONTAINMENT = (
 
 _FILLED_STATUSES = frozenset({"filled", "fill", "done_for_day"})
 _PARTIAL_STATUSES = frozenset({"partially_filled", "partial_fill", "partial"})
+_WORKING_STATUSES = frozenset(
+    {
+        "new",
+        "accepted",
+        "pending_new",
+        "accepted_for_bidding",
+        "pending_replace",
+        "pending_cancel",
+        "held",
+        "calculated",
+        "stopped",
+        "suspended",
+    }
+)
 
 
 def _now() -> datetime:
@@ -110,6 +128,11 @@ def _is_credit_vertical(payload: CanonicalOrderPayload) -> bool:
     if sell.option_type == OptionType.PUT:
         return sell.strike_price > buy.strike_price
     return sell.strike_price < buy.strike_price
+
+
+def is_working_broker_status(status: str) -> bool:
+    """True for non-terminal working states that must wait, not HALT."""
+    return _lower(status) in _WORKING_STATUSES
 
 
 def _fill_within_limit(payload: CanonicalOrderPayload, filled_price: Decimal | None) -> bool:
@@ -358,7 +381,13 @@ def reconcile(
         0 < filled_qty < int(payload.qty)
     )
     is_filled_status = broker_status in _FILLED_STATUSES
-    expected_status = "filled" if not is_partial_status else "partially_filled"
+    is_working_status = is_working_broker_status(broker_status)
+    if is_working_status:
+        expected_status = broker_status or "pending"
+    elif is_partial_status:
+        expected_status = "partially_filled"
+    else:
+        expected_status = "filled"
     comparisons.append(_compare("status", expected_status, broker_status or "unknown"))
     comparisons.append(_compare("filled_qty", payload.qty if is_filled_status else filled_qty, filled_qty))
     comparisons.append(_compare_fill_price(payload, filled_price, is_filled=is_filled_status))
@@ -398,6 +427,24 @@ def reconcile(
             halt_triggered=True,
             comparisons=tuple(comparisons),
             containment=PARTIAL_FILL_CONTAINMENT,
+            account_id=account_id,
+        )
+
+    if is_working_status and identity_ok:
+        return ReconciliationReport(
+            report_id=report_id,
+            cycle_id=cycle,
+            client_order_id=payload.client_order_id,
+            broker_order_id=broker_order_id or receipt.broker_order_id,
+            status=ReconciliationStatus.PENDING,
+            reconciled_at=clock,
+            broker_status=broker_status or "pending",
+            filled_qty=filled_qty,
+            filled_avg_price=filled_price,
+            discrepancies=(),
+            halt_triggered=False,
+            comparisons=tuple(comparisons),
+            containment=(),
             account_id=account_id,
         )
 
