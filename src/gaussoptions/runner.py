@@ -6,6 +6,8 @@ from typing import Any, Mapping, Protocol
 
 from src.gaussoptions.profile import HackathonProfile
 from src.gaussoptions.risk import check_order
+from src.gaussoptions.journal import append as journal_append
+from pathlib import Path
 
 
 class OptionExecutor(Protocol):
@@ -39,6 +41,13 @@ def run_once(
     order = decide_option_order(profile, market)
     check_order(profile, order, book)
     submitted = executor.place_option_order(order)
+    record = {
+        "backend": backend,
+        "decision": order,
+        "execution": submitted,
+        "status": "filled_or_submitted",
+    }
+    journal_append(Path("artifacts/journal.json"), record)
     return {
         "backend": backend,
         "decision": order,

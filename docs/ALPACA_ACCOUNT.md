@@ -1,5 +1,8 @@
-# Paper account
+# Paper account (ID only)
 
-Use the dedicated $100k paper account already created for this event.
+Event: alpaca-trading-agents-2026
+Account type: dedicated $100k paper book, already created for this event
+API keys: never store here
 
-Record the account ID only at submission time. Do not put API keys in this file or in git.
+Account ID:
+(pending coordinator — do not invent)
