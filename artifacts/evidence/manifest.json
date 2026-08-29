@@ -1,19 +1,19 @@
 {
   "claims": {
-    "opticycle:v1:ERROR:el-3400d966514a4c2f8c3e4d564165eab9:fc974f1ae3119fd9d8207cd23468ca79f864f6f2": {
+    "opticycle:v1:ERROR:el-2047d1376880433b8777f3532f4b2a3f:4648149bece7e70a44de065931de9e84a15fce77": {
       "caveat": null,
       "channel": "fault_injection",
-      "commit_sha": "fc974f1ae3119fd9d8207cd23468ca79f864f6f2",
+      "commit_sha": "4648149bece7e70a44de065931de9e84a15fce77",
       "incomplete": [],
       "live_fill": false,
       "live_mleg_submit": false,
       "outcome": "ERROR",
-      "record_id": "el-3400d966514a4c2f8c3e4d564165eab9"
+      "record_id": "el-2047d1376880433b8777f3532f4b2a3f"
     },
-    "opticycle:v1:HALT:el-009a99570d494d1fbf2be1bf11257ba2:fc974f1ae3119fd9d8207cd23468ca79f864f6f2": {
+    "opticycle:v1:HALT:el-677b8ca6b22f49908843dcf8793fbf9b:4648149bece7e70a44de065931de9e84a15fce77": {
       "caveat": null,
       "channel": "live_paper",
-      "commit_sha": "fc974f1ae3119fd9d8207cd23468ca79f864f6f2",
+      "commit_sha": "4648149bece7e70a44de065931de9e84a15fce77",
       "incomplete": [
         "live_mleg_submit",
         "live_broker_receipt",
@@ -23,17 +23,17 @@
       "live_fill": false,
       "live_mleg_submit": false,
       "outcome": "HALT",
-      "record_id": "el-009a99570d494d1fbf2be1bf11257ba2"
+      "record_id": "el-677b8ca6b22f49908843dcf8793fbf9b"
     },
-    "opticycle:v1:MATCHED:el-12da1988e56d4c13aa799050b0adea66:fc974f1ae3119fd9d8207cd23468ca79f864f6f2": {
-      "caveat": null,
+    "opticycle:v1:MATCHED:el-b343a68b56e542d383077f608477d6d5:4648149bece7e70a44de065931de9e84a15fce77": {
+      "caveat": "replay/fixture MATCHED chain; not a live_paper fill; not public completion; Monday live fill is not done",
       "channel": "replay",
-      "commit_sha": "fc974f1ae3119fd9d8207cd23468ca79f864f6f2",
+      "commit_sha": "4648149bece7e70a44de065931de9e84a15fce77",
       "incomplete": [],
       "live_fill": false,
       "live_mleg_submit": false,
       "outcome": "MATCHED",
-      "record_id": "el-12da1988e56d4c13aa799050b0adea66"
+      "record_id": "el-b343a68b56e542d383077f608477d6d5"
     },
     "opticycle:v1:NO_TRADE:el-6b67a01c2bdd448388e813633f90e890:18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b": {
       "caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
@@ -50,27 +50,29 @@
       "outcome": "NO_TRADE",
       "record_id": "el-6b67a01c2bdd448388e813633f90e890"
     },
-    "opticycle:v1:NO_TRADE:el-7e27c4f8821041a4a502bd2ad2bc1f1f:fc974f1ae3119fd9d8207cd23468ca79f864f6f2": {
+    "opticycle:v1:NO_TRADE:el-c6d3d844a6cd4fe3ae9e79a6591fd04c:4648149bece7e70a44de065931de9e84a15fce77": {
       "caveat": null,
       "channel": "replay",
-      "commit_sha": "fc974f1ae3119fd9d8207cd23468ca79f864f6f2",
+      "commit_sha": "4648149bece7e70a44de065931de9e84a15fce77",
       "incomplete": [],
       "live_fill": false,
       "live_mleg_submit": false,
       "outcome": "NO_TRADE",
-      "record_id": "el-7e27c4f8821041a4a502bd2ad2bc1f1f"
+      "record_id": "el-c6d3d844a6cd4fe3ae9e79a6591fd04c"
     },
-    "opticycle:v1:VETO:el-3f2cbe29749f46b78d03a16d8e7b9f21:fc974f1ae3119fd9d8207cd23468ca79f864f6f2": {
+    "opticycle:v1:VETO:el-1f83e71fd1aa475b80c48de55aa16c57:4648149bece7e70a44de065931de9e84a15fce77": {
       "caveat": null,
       "channel": "replay",
-      "commit_sha": "fc974f1ae3119fd9d8207cd23468ca79f864f6f2",
+      "commit_sha": "4648149bece7e70a44de065931de9e84a15fce77",
       "incomplete": [],
       "live_fill": false,
       "live_mleg_submit": false,
       "outcome": "VETO",
-      "record_id": "el-3f2cbe29749f46b78d03a16d8e7b9f21"
+      "record_id": "el-1f83e71fd1aa475b80c48de55aa16c57"
     }
   },
+  "demo_mp4": "deleted; Remotion demo is Gate 12",
+  "genuine_no_trade_recorded": false,
   "incomplete_live": {
     "live_broker_receipt": "TODO: Yun authorized one Alpaca paper MLEG. Cloud VM has no keys and must not submit. Live receipt/fill/P&L stay incomplete until sanitized broker JSON is ingested (order_id, legs, limit, status, filled_avg_price, client_order_id). Do not invent MATCHED.",
     "live_fill": "TODO: Yun authorized one Alpaca paper MLEG. Cloud VM has no keys and must not submit. Live receipt/fill/P&L stay incomplete until sanitized broker JSON is ingested (order_id, legs, limit, status, filled_avg_price, client_order_id). Do not invent MATCHED.",
@@ -79,8 +81,11 @@
   },
   "injected_no_trade_promoted": false,
   "live_fill_claimed": false,
+  "live_quotes_available": false,
   "matched_claimed": false,
   "no_trade_injected_quote_caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
+  "sanitized_json_provided": false,
   "schema": "opticycle.claim-evidence.v1",
-  "source": "sanitized_public_ledger"
+  "source": "sanitized_public_ledger",
+  "yun_authorized_one_paper_mleg": true
 }

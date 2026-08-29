@@ -160,9 +160,17 @@ def is_injected_no_trade(record: Mapping[str, Any]) -> bool:
     return "SPY quote missing" in reason
 
 
+REPLAY_MATCHED_CAVEAT = (
+    "replay/fixture MATCHED chain; not a live_paper fill; not public completion; "
+    "Monday live fill is not done"
+)
+
+
 def claim_caveat(record: Mapping[str, Any]) -> str | None:
     if is_injected_no_trade(record) and record.get("channel") == "live_paper":
         return NO_TRADE_CAVEAT
+    if record.get("channel") == "replay" and str(record.get("outcome") or "") == "MATCHED":
+        return REPLAY_MATCHED_CAVEAT
     return None
 
 
@@ -289,8 +297,10 @@ def render_evidence_page(
     claim_rows: list[str] = []
     for claim, mapped in (manifest.get("claims") or {}).items():
         claim_status = "incomplete live slots" if mapped.get("incomplete") else "non-live / keyless replay"
-        if mapped.get("caveat"):
+        if mapped.get("caveat") == NO_TRADE_CAVEAT:
             claim_status = "injected-quote NO_TRADE — not fill evidence"
+        elif mapped.get("outcome") == "MATCHED" or (mapped.get("caveat") and "replay/fixture MATCHED" in str(mapped.get("caveat"))):
+            claim_status = "replay/fixture — not live fill / not completion"
         claim_rows.append(
             "<tr>"
             f"<td><code>{html.escape(str(claim))}</code></td>"
@@ -361,7 +371,8 @@ def render_evidence_page(
     ingest_note = (
         "Yun authorized one paper MLEG. Cloud VM cannot submit. "
         "Waiting for sanitized broker JSON (order_id, legs, limit, status, filled_avg_price, client_order_id). "
-        "MATCHED is not claimed."
+        "Live MATCHED is not claimed. Replay MATCHED is a fixture chain, not public completion. "
+        "Monday live fill is not done."
     )
     embedded = html.escape(canonical_dumps({"records": records, "manifest": manifest, "gate11": gate11}))
     return f"""<!DOCTYPE html>
