@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import Any
 
-from gaussoptions.settings import HackathonSettings
+from opticycle.settings import HackathonSettings
 from trade.orders import OptionOrderRequest
 
 
@@ -41,7 +41,7 @@ def build_cycle_plan(
     dry_run: bool = True,
 ) -> CyclePlan:
     """Build an option order from the pin wheel / vertical_spread ActionPlan."""
-    from gaussoptions.pin_option import build_pin_cycle_plan
+    from opticycle.pin_option import build_pin_cycle_plan
 
     return build_pin_cycle_plan(
         settings,

@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "gaussoptions-agent"
+name = "opticycle"
 version = "0.1.0"
 description = "Autonomous paper options agent using Alpaca MCP or CLI"
 readme = "README.md"
@@ -28,7 +28,7 @@ dev = [
 ]
 
 [project.scripts]
-gaussoptions = "gaussoptions.cli:main"
+opticycle = "opticycle.cli:main"
 
 [tool.setuptools.package-dir]
 "" = "src"

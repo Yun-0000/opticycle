@@ -5,6 +5,10 @@ from pathlib import Path
 FORBIDDEN = (
     "GaussWorldTrader",
     "Gauss World Trader",
+    "gauss-world-trader",
+    "GaussOptions",
+    "gaussoptions",
+    "Gauss",
     "Magica-Chen",
     "Magica Chen",
     "github.com/Magica",

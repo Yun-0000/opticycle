@@ -1,4 +1,4 @@
-"""GaussOptions Agent — autonomous options paper trader."""
+"""Opticycle — autonomous options paper trader."""
 
 from __future__ import annotations
 

@@ -10,7 +10,7 @@
 
 ## 1. Executive summary
 
-Build **GaussOptions Agent** — an autonomous, options-first AI trading agent on Alpaca paper — by wiring the pinned MIT snapshot at `vendor/pin-31374551/` (commit `31374551bae6fd34a0fe56fe11d208f4ff04fbb4`) into an Alpaca-connected strategy/execution skeleton, multi-agent analysis loop, and existing options modules (`wheel`, `vertical_spread`, `TradingOptionEngine`).
+Build **Opticycle** — an autonomous, options-first AI trading agent on Alpaca paper — by wiring the pinned MIT snapshot at `vendor/pin-31374551/` (commit `31374551bae6fd34a0fe56fe11d208f4ff04fbb4`) into an Alpaca-connected strategy/execution skeleton, multi-agent analysis loop, and existing options modules (`wheel`, `vertical_spread`, `TradingOptionEngine`).
 
 The judged artifact is **not** a generic stock-trading platform demo. It is a **fresh-paper, options-mandatory, MCP-routed autonomous agent** that places real paper orders through **Alpaca MCP Server** (primary) with **Alpaca CLI** as a documented fallback, enforces **$100,000 paper risk gates** on the **already-created dedicated hackathon paper account**, and ships MIT-licensed submission materials including a one-page write-up, the paper account ID document, and a **Remotion-produced demo video** (not a screen recording). API keys never enter the repo or chat.
 
@@ -65,13 +65,13 @@ The judged artifact is **not** a generic stock-trading platform demo. It is a **
 
 ## 4. Product direction
 
-**Product name (working):** GaussOptions Agent
+**Product name (working):** Opticycle
 
 **One-line pitch:** An autonomous agent that analyzes underlyings with a multi-agent committee, selects option structures (wheel / vertical spreads) from the pin `wheel` and `vertical_spread` modules, passes configurable risk gates sized for a $100k paper book, and executes exclusively through Alpaca MCP on a dedicated hackathon paper account.
 
 **Primary user flow (MVP):**
 
-1. Operator starts agent with hackathon profile: `python -m gaussoptions run --profile hackathon --backend mcp`
+1. Operator starts agent with hackathon profile: `python -m opticycle run --profile hackathon --backend mcp`
 2. Agent loads env-configured **fresh paper** Alpaca credentials and validates account equity ≈ $100k and options approval
 3. Autonomous cycle runs on a configurable interval (default 15 min during market hours):
    - Fetch watchlist underlyings + option chains via `alpaca-py`
@@ -94,7 +94,7 @@ The judged artifact is **not** a generic stock-trading platform demo. It is a **
 2. **MCP execution adapter** — `src/trade/mcp/alpaca_mcp_executor.py` spawning `uvx alpaca-mcp-server==2.3.0`; integrate at `ExecutionEngine.execute_decision()` when `EXECUTION_BACKEND=mcp`
 3. **CLI execution adapter (fallback)** — `src/trade/cli/alpaca_cli_executor.py` using official `alpacahq/cli`; selectable via `EXECUTION_BACKEND=cli`
 4. **Hackathon profile** — `pydantic-settings` block: `starting_capital=100_000`, `require_options=true`, `execution_backend`, risk limits; enforced pre-order
-5. **Options-first autonomous runner** — `gaussoptions run` module: unattended loop over option strategies only
+5. **Options-first autonomous runner** — `opticycle run` module: unattended loop over option strategies only
 6. **Risk gate hardening** — Extend existing limits with portfolio greeks checks using `vollib` (replace/enhance hand-rolled greeks)
 7. **Verification & tests** — Unit tests for risk gates and MCP adapter mocking; integration script `scripts/verify-paper-mcp-order.py` (dry-run without live keys in CI; live paper run documented as env-only credentials)
 8. **Submission docs + Remotion demo** — `docs/SUBMISSION_WRITEUP.md`, `docs/ALPACA_ACCOUNT.md` (ID only, no keys), `remotion/` source, rendered `artifacts/demo.mp4`, shot list, updated README, `THIRD_PARTY_NOTICES.md`
@@ -142,7 +142,7 @@ flowchart TB
     RG[Risk gates + vollib greeks]
     MCPX[MCP executor]
     CLIX[CLI executor fallback]
-    RUN[gaussoptions autonomous runner]
+    RUN[opticycle autonomous runner]
     LOG[Trade journal + structured logs]
   end
 
@@ -163,7 +163,7 @@ flowchart TB
 
 ```
 vendor/pin-31374551/           # pinned MIT snapshot
-src/gaussoptions/              # hackathon profile, runner, config
+src/opticycle/                 # hackathon profile, runner, config
 src/trade/mcp/                   # MCP client + executor
 src/trade/cli/                   # CLI executor
 docs/                            # write-up, account template, demo script
@@ -220,7 +220,7 @@ Builder may add only these unless Plan is revised:
 | **B1 Foundation import** | Vendor tree, NOTICES, runnable baseline smoke test |
 | **B2 Execution adapters** | MCP + CLI paths wired through `ExecutionEngine` |
 | **B3 Hackathon profile** | Settings, options-only guard, $100k checks |
-| **B4 Autonomous runner** | `gaussoptions run` + logging/journal |
+| **B4 Autonomous runner** | `opticycle run` + logging/journal |
 | **B5 Risk gates** | vollib greeks, pre-trade veto tests |
 | **B6 Verification** | pytest suite + verify script + Remotion shot list |
 | **B7 Submission pack** | Write-up, README, account ID doc, Remotion source + rendered `artifacts/demo.mp4` |
@@ -236,7 +236,7 @@ Builder may add only these unless Plan is revised:
 - `pytest tests/` — risk gates, settings validation, MCP adapter mock, execution routing
 - `python -m compileall src/` — syntax check
 - `python scripts/verify-paper-mcp-order.py --dry-run` — MCP order flow passes without keys
-- Manual/automated smoke: `gaussoptions run --profile hackathon --once --dry-run` completes one cycle without error
+- Manual/automated smoke: `opticycle run --profile hackathon --once --dry-run` completes one cycle without error
 
 ### E2E (project-appropriate)
 

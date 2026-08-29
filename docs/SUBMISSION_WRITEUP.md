@@ -1,6 +1,6 @@
-# GaussOptions Agent — submission write-up
+# Opticycle — submission write-up
 
-GaussOptions Agent is an autonomous paper options trader. Each cycle produces one options decision, runs risk gates sized for a $100,000 paper book, and sends the order through Alpaca MCP (primary) or the official Alpaca CLI (fallback). Equity-only orders are disabled.
+Opticycle is an autonomous paper options trader. Each cycle produces one options decision, runs risk gates sized for a $100,000 paper book, and sends the order through Alpaca MCP (primary) or the official Alpaca CLI (fallback). Equity-only orders are disabled.
 
 ## AI decision logic
 

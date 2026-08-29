@@ -1,33 +1,38 @@
-import { Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { Audio, Easing, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { colors } from "../theme";
 import { SceneFrame } from "./SceneFrame";
 
-export const SceneOneLiner: React.FC = () => {
+export const SceneOneLiner: React.FC<{ durationInFrames?: number }> = ({
+  durationInFrames = 300,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
   return (
-    <SceneFrame>
+    <SceneFrame durationInFrames={durationInFrames}>
+      <Audio src={staticFile("sfx/whoosh.wav")} volume={0.35} />
+      <Audio src={staticFile("sfx/hit.wav")} startFrom={0} volume={0.3} />
+
       <div
         style={{
           position: "absolute",
           left: 96,
           right: 96,
           top: 210,
-          opacity: interpolate(frame, [8, 28], [0, 1], {
+          opacity: interpolate(frame, [14, 34], [0, 1], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
             easing: Easing.bezier(0.16, 1, 0.3, 1),
           }),
-          translate: interpolate(frame, [8, 28], ["0px 28px", "0px 0px"], {
+          translate: interpolate(frame, [14, 34], ["0px 24px", "0px 0px"], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
             easing: Easing.bezier(0.16, 1, 0.3, 1),
           }),
         }}
       >
-        <div style={{ fontSize: 104, fontWeight: 700, lineHeight: 1.05, letterSpacing: -2 }}>
-          GaussOptions Agent
+        <div style={{ fontSize: 104, fontWeight: 800, lineHeight: 1.05, letterSpacing: -2 }}>
+          Opticycle
         </div>
         <div
           style={{
@@ -39,17 +44,18 @@ export const SceneOneLiner: React.FC = () => {
             fontWeight: 500,
           }}
         >
-          Autonomous options-only paper agent. One cycle: decide, gate, then send an option order.
+          Autonomous options-only paper trading agent on Alpaca. One cycle: decide, gate, then send an option order.
         </div>
       </div>
+
       <div
         style={{
           position: "absolute",
           left: 96,
           bottom: 120,
           display: "flex",
-          gap: 18,
-          opacity: interpolate(frame, [0.7 * fps, 1.15 * fps], [0, 1], {
+          gap: 20,
+          opacity: interpolate(frame, [0.8 * fps, 1.2 * fps], [0, 1], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
           }),
@@ -62,10 +68,11 @@ export const SceneOneLiner: React.FC = () => {
               border: `1px solid ${colors.line}`,
               backgroundColor: colors.bgLift,
               color: colors.teal,
-              padding: "16px 22px",
+              padding: "16px 24px",
               fontSize: 26,
               fontWeight: 600,
-              letterSpacing: 1.4,
+              letterSpacing: 1.5,
+              borderRadius: 4,
             }}
           >
             {label}

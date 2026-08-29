@@ -1,19 +1,28 @@
-import { Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { Audio, Easing, Sequence, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { colors, monoFont } from "../theme";
 import { SceneFrame } from "./SceneFrame";
 
-export const SceneExecution: React.FC = () => {
+export const SceneExecution: React.FC<{ durationInFrames?: number }> = ({
+  durationInFrames = 300,
+}) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
   return (
-    <SceneFrame accent={colors.teal} kicker="EXECUTION">
+    <SceneFrame accent={colors.teal} kicker="EXECUTION" durationInFrames={durationInFrames}>
+      <Audio src={staticFile("sfx/whoosh.wav")} volume={0.35} />
+      <Audio src={staticFile("sfx/hit.wav")} volume={0.3} />
+
+      {/* Positive confirm chime when primary MCP highlights */}
+      <Sequence from={35} layout="none">
+        <Audio src={staticFile("sfx/confirm_beep.wav")} volume={0.45} />
+      </Sequence>
+
       <div
         style={{
           position: "absolute",
           left: 96,
           top: 180,
-          opacity: interpolate(frame, [4, 22], [0, 1], {
+          opacity: interpolate(frame, [14, 34], [0, 1], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
             easing: Easing.bezier(0.16, 1, 0.3, 1),
@@ -27,6 +36,7 @@ export const SceneExecution: React.FC = () => {
           Orders do not use alpaca-py submit_order on this path. Paper flags stay forced.
         </div>
       </div>
+
       <div
         style={{
           position: "absolute",
@@ -42,8 +52,10 @@ export const SceneExecution: React.FC = () => {
             flex: 1.15,
             backgroundColor: colors.bgLift,
             border: `1px solid ${colors.teal}`,
+            boxShadow: `0 0 20px rgba(62, 224, 176, 0.15)`,
             padding: "40px 44px",
-            opacity: interpolate(frame, [0.5 * fps, 0.9 * fps], [0, 1], {
+            borderRadius: 6,
+            opacity: interpolate(frame, [25, 45], [0, 1], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
             }),
@@ -61,6 +73,7 @@ export const SceneExecution: React.FC = () => {
               color: colors.text,
               backgroundColor: "#071018",
               padding: "18px 22px",
+              borderRadius: 4,
             }}
           >
             uvx alpaca-mcp-server==2.3.0
@@ -68,13 +81,15 @@ export const SceneExecution: React.FC = () => {
             place_option_order
           </div>
         </div>
+
         <div
           style={{
             flex: 1,
             backgroundColor: colors.bgLift,
             border: `1px solid ${colors.line}`,
             padding: "40px 44px",
-            opacity: interpolate(frame, [0.75 * fps, 1.15 * fps], [0, 1], {
+            borderRadius: 6,
+            opacity: interpolate(frame, [45, 65], [0, 1], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
             }),
@@ -92,6 +107,7 @@ export const SceneExecution: React.FC = () => {
               color: colors.text,
               backgroundColor: "#071018",
               padding: "18px 22px",
+              borderRadius: 4,
             }}
           >
             alpaca order submit

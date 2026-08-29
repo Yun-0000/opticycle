@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from gaussoptions.risk import PortfolioSnapshot
-from gaussoptions.settings import HackathonSettings
+from opticycle.risk import PortfolioSnapshot
+from opticycle.settings import HackathonSettings
 from trade.orders import ExecutionRejected
 
 

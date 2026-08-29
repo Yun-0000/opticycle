@@ -1,5 +1,5 @@
 /**
- * Remotion CLI config for the GaussOptions Agent demo.
+ * Remotion CLI config for the Opticycle demo.
  * Scene motion uses useCurrentFrame() and interpolate(), not CSS animation.
  */
 

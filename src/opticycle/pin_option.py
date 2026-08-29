@@ -12,8 +12,8 @@ from typing import Any
 
 import pandas as pd
 
-from gaussoptions.plans import CyclePlan, occ_symbol
-from gaussoptions.settings import HackathonSettings
+from opticycle.plans import CyclePlan, occ_symbol
+from opticycle.settings import HackathonSettings
 from trade.orders import ExecutionRejected, OptionOrderRequest
 
 PIN_ROOT = Path(__file__).resolve().parents[2] / "vendor" / "pin-31374551"

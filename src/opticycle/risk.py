@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from gaussoptions.settings import HackathonSettings
+from opticycle.settings import HackathonSettings
 from trade.orders import OCC_SYMBOL_RE, ExecutionRejected, OptionOrderRequest
 
 OPTION_MULTIPLIER = 100

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from gaussoptions.risk import RiskGate, PortfolioSnapshot
-from gaussoptions.runner import run_once
-from gaussoptions.settings import HackathonSettings
+from opticycle.risk import RiskGate, PortfolioSnapshot
+from opticycle.runner import run_once
+from opticycle.settings import HackathonSettings
 from trade.mcp.alpaca_mcp_executor import MCP_SERVER_SPEC, PLACE_OPTION_ORDER, _stdio_params
 from trade.orders import ExecutionRejected, OptionOrderRequest
 

@@ -6,10 +6,10 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from gaussoptions.plans import build_cycle_plan
-from gaussoptions.runner import run_once
-from gaussoptions.settings import HackathonSettings
-from gaussoptions.cli import main as cli_main
+from opticycle.plans import build_cycle_plan
+from opticycle.runner import run_once
+from opticycle.settings import HackathonSettings
+from opticycle.cli import main as cli_main
 
 
 def test_stock_strategy_rejected_by_settings() -> None:
@@ -44,7 +44,7 @@ def test_vertical_spread_plan_is_multileg() -> None:
 
 def test_run_once_decision_gate_mcp_order(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
-    from gaussoptions.journal import TradeJournal
+    from opticycle.journal import TradeJournal
 
     settings = HackathonSettings(execution_backend="mcp", strategy="wheel")
     result = run_once(settings, dry_run=True, journal=TradeJournal(tmp_path / "journal.jsonl"))

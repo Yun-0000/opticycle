@@ -4,8 +4,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from gaussoptions.risk import GateResult, PortfolioSnapshot, RiskGate, contract_greeks, scale_greeks
-from gaussoptions.settings import HackathonSettings
+from opticycle.risk import GateResult, PortfolioSnapshot, RiskGate, contract_greeks, scale_greeks
+from opticycle.settings import HackathonSettings
 from trade.orders import ExecutionRejected, OptionOrderRequest
 
 

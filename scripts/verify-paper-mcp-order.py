@@ -30,8 +30,8 @@ for path in (str(VENDOR), str(SRC)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-from gaussoptions.runner import run_once
-from gaussoptions.settings import HackathonSettings
+from opticycle.runner import run_once
+from opticycle.settings import HackathonSettings
 
 
 def _require_paper_env() -> None:

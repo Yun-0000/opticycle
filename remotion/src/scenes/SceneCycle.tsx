@@ -1,19 +1,23 @@
-import { Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { Audio, Easing, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { colors, monoFont } from "../theme";
 import { SceneFrame } from "./SceneFrame";
 
-export const SceneCycle: React.FC = () => {
+export const SceneCycle: React.FC<{ durationInFrames?: number }> = ({
+  durationInFrames = 360,
+}) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
   return (
-    <SceneFrame accent={colors.blue} kicker="AI CYCLE">
+    <SceneFrame accent={colors.blue} kicker="AI CYCLE" durationInFrames={durationInFrames}>
+      <Audio src={staticFile("sfx/whoosh.wav")} volume={0.35} />
+      <Audio src={staticFile("sfx/hit.wav")} volume={0.3} />
+
       <div
         style={{
           position: "absolute",
           left: 96,
           top: 180,
-          opacity: interpolate(frame, [4, 22], [0, 1], {
+          opacity: interpolate(frame, [14, 34], [0, 1], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
             easing: Easing.bezier(0.16, 1, 0.3, 1),
@@ -27,6 +31,7 @@ export const SceneCycle: React.FC = () => {
           Each unattended cycle asks the pin option modules for an ActionPlan, then maps it to OCC.
         </div>
       </div>
+
       <div
         style={{
           position: "absolute",
@@ -43,11 +48,12 @@ export const SceneCycle: React.FC = () => {
             backgroundColor: colors.bgLift,
             border: `1px solid ${colors.line}`,
             padding: "40px 44px",
-            opacity: interpolate(frame, [0.5 * fps, 0.95 * fps], [0, 1], {
+            borderRadius: 6,
+            opacity: interpolate(frame, [25, 45], [0, 1], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
             }),
-            translate: interpolate(frame, [0.5 * fps, 0.95 * fps], ["-24px 0px", "0px 0px"], {
+            translate: interpolate(frame, [25, 45], ["-20px 0px", "0px 0px"], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
               easing: Easing.bezier(0.16, 1, 0.3, 1),
@@ -62,17 +68,19 @@ export const SceneCycle: React.FC = () => {
             Sell a put you are willing to be assigned on. If shares land, rotate into a covered call.
           </div>
         </div>
+
         <div
           style={{
             flex: 1,
             backgroundColor: colors.bgLift,
             border: `1px solid ${colors.line}`,
             padding: "40px 44px",
-            opacity: interpolate(frame, [0.75 * fps, 1.2 * fps], [0, 1], {
+            borderRadius: 6,
+            opacity: interpolate(frame, [45, 65], [0, 1], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
             }),
-            translate: interpolate(frame, [0.75 * fps, 1.2 * fps], ["24px 0px", "0px 0px"], {
+            translate: interpolate(frame, [45, 65], ["20px 0px", "0px 0px"], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
               easing: Easing.bezier(0.16, 1, 0.3, 1),

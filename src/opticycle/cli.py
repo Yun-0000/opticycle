@@ -1,4 +1,4 @@
-"""CLI: python -m gaussoptions run --profile hackathon --backend mcp --once --dry-run"""
+"""CLI: python -m opticycle run --profile hackathon --backend mcp --once --dry-run"""
 
 from __future__ import annotations
 
@@ -7,12 +7,12 @@ import os
 import sys
 from typing import Sequence
 
-from gaussoptions.runner import run_loop
-from gaussoptions.settings import HackathonSettings, STOCK_STRATEGIES
+from opticycle.runner import run_loop
+from opticycle.settings import HackathonSettings, STOCK_STRATEGIES
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="gaussoptions", description="GaussOptions Agent")
+    parser = argparse.ArgumentParser(prog="opticycle", description="Opticycle")
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run", help="Run the autonomous options cycle")
     run.add_argument("--profile", default="hackathon", choices=["hackathon"])

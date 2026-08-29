@@ -19,7 +19,7 @@ export const SCENE_FRAMES = {
   cycle: 360,
   risk: 360,
   execution: 300,
-  runOnce: 330,
+  runOnce: 360,
 } as const;
 
 export const DEMO_DURATION_IN_FRAMES =
@@ -33,32 +33,37 @@ export const DEMO_DURATION_IN_FRAMES =
 
 const fadeTiming = linearTiming({ durationInFrames: TRANSITION_FRAMES });
 
-export const GaussOptionsDemo: React.FC = () => {
+export const OpticycleDemo: React.FC = () => {
   return (
     <AbsoluteFill>
       <TransitionSeries>
         <TransitionSeries.Sequence durationInFrames={SCENE_FRAMES.oneLiner} name="OneLiner">
-          <SceneOneLiner />
+          <SceneOneLiner durationInFrames={SCENE_FRAMES.oneLiner} />
         </TransitionSeries.Sequence>
         <TransitionSeries.Transition presentation={fade()} timing={fadeTiming} />
+
         <TransitionSeries.Sequence durationInFrames={SCENE_FRAMES.paperBook} name="PaperBook">
-          <ScenePaperBook />
+          <ScenePaperBook durationInFrames={SCENE_FRAMES.paperBook} />
         </TransitionSeries.Sequence>
         <TransitionSeries.Transition presentation={fade()} timing={fadeTiming} />
+
         <TransitionSeries.Sequence durationInFrames={SCENE_FRAMES.cycle} name="Cycle">
-          <SceneCycle />
+          <SceneCycle durationInFrames={SCENE_FRAMES.cycle} />
         </TransitionSeries.Sequence>
         <TransitionSeries.Transition presentation={fade()} timing={fadeTiming} />
+
         <TransitionSeries.Sequence durationInFrames={SCENE_FRAMES.risk} name="Risk">
-          <SceneRisk />
+          <SceneRisk durationInFrames={SCENE_FRAMES.risk} />
         </TransitionSeries.Sequence>
         <TransitionSeries.Transition presentation={fade()} timing={fadeTiming} />
+
         <TransitionSeries.Sequence durationInFrames={SCENE_FRAMES.execution} name="Execution">
-          <SceneExecution />
+          <SceneExecution durationInFrames={SCENE_FRAMES.execution} />
         </TransitionSeries.Sequence>
         <TransitionSeries.Transition presentation={fade()} timing={fadeTiming} />
+
         <TransitionSeries.Sequence durationInFrames={SCENE_FRAMES.runOnce} name="RunOnce">
-          <SceneRunOnce />
+          <SceneRunOnce durationInFrames={SCENE_FRAMES.runOnce} />
         </TransitionSeries.Sequence>
       </TransitionSeries>
     </AbsoluteFill>

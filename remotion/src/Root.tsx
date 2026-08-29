@@ -3,11 +3,11 @@ import { Composition, Folder } from "remotion";
 import {
   DEMO_DURATION_IN_FRAMES,
   FPS,
-  GaussOptionsDemo,
   HEIGHT,
+  OpticycleDemo,
   SCENE_FRAMES,
   WIDTH,
-} from "./GaussOptionsDemo";
+} from "./OpticycleDemo";
 import { SceneCycle } from "./scenes/SceneCycle";
 import { SceneExecution } from "./scenes/SceneExecution";
 import { SceneOneLiner } from "./scenes/SceneOneLiner";
@@ -18,7 +18,7 @@ import { SceneRunOnce } from "./scenes/SceneRunOnce";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
-      <Folder name="GaussOptions-Scenes">
+      <Folder name="Opticycle-Scenes">
         <Composition
           id="SceneOneLiner"
           component={SceneOneLiner}
@@ -69,8 +69,8 @@ export const RemotionRoot: React.FC = () => {
         />
       </Folder>
       <Composition
-        id="GaussOptionsDemo"
-        component={GaussOptionsDemo}
+        id="OpticycleDemo"
+        component={OpticycleDemo}
         durationInFrames={DEMO_DURATION_IN_FRAMES}
         fps={FPS}
         width={WIDTH}

@@ -1,14 +1,14 @@
-# GaussOptions Agent
+# Opticycle
 
 Autonomous options trader for the Alpaca AI Trading Agents Hackathon.
 
-GaussOptions Agent runs an unattended paper cycle: it selects a wheel cash-secured put or a vertical put credit spread, applies $100k book risk gates (position size, daily trades, buying power, portfolio delta/vega), and places **option** orders through **Alpaca MCP Server 2.3.0** (primary) or the official **Alpaca CLI** (fallback). Stock-only orders are rejected.
+Opticycle runs an unattended paper cycle: it selects a wheel cash-secured put or a vertical put credit spread, applies $100k book risk gates (position size, daily trades, buying power, portfolio delta/vega), and places **option** orders through **Alpaca MCP Server 2.3.0** (primary) or the official **Alpaca CLI** (fallback). Stock-only orders are rejected.
 
 ## Quick start (dry-run, no keys)
 
 ```bash
 python3 -m pip install -r requirements-hackathon.txt
-PYTHONPATH=vendor/pin-31374551:src python3 -m gaussoptions run --profile hackathon --backend mcp --once --dry-run
+PYTHONPATH=vendor/pin-31374551:src python3 -m opticycle run --profile hackathon --backend mcp --once --dry-run
 PYTHONPATH=vendor/pin-31374551:src python3 scripts/verify-paper-mcp-order.py --dry-run
 PYTHONPATH=vendor/pin-31374551:src python3 -m pytest tests/ -q
 ```

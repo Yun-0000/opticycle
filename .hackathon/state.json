@@ -2,7 +2,7 @@
   "schemaVersion": 5,
   "eventId": "alpaca-trading-agents-2026",
   "state": "BUILDING",
-  "planSha256": "23168c99a2a14f7bc2ca5e0e097ad3235d85149cceaa0d7dabe957e964867dbd",
+  "planSha256": "2d13c234befc10150e7a48e5e5aa5609bbfc52fdf91887a06bf79e1b5925ff61",
   "artifactRequirements": [
     {
       "id": "submission-repository",
@@ -47,15 +47,15 @@
       "description": "THIRD_PARTY_NOTICES.md and README attribution for the pinned MIT snapshot and Alpaca SDK/MCP/CLI dependencies."
     }
   ],
-  "buildId": "6fb9c450533e510678244dd3d98e95351f842ba4",
+  "buildId": null,
   "planApproval": {
-    "command": "APPROVE PLAN alpaca-trading-agents-2026 23168c99a2a14f7bc2ca5e0e097ad3235d85149cceaa0d7dabe957e964867dbd",
+    "command": "APPROVE PLAN alpaca-trading-agents-2026 2d13c234befc10150e7a48e5e5aa5609bbfc52fdf91887a06bf79e1b5925ff61",
     "eventId": "alpaca-trading-agents-2026",
-    "planSha256": "23168c99a2a14f7bc2ca5e0e097ad3235d85149cceaa0d7dabe957e964867dbd",
+    "planSha256": "2d13c234befc10150e7a48e5e5aa5609bbfc52fdf91887a06bf79e1b5925ff61",
     "approvedAt": "2026-08-29T00:53:23Z"
   },
   "builderRun": {
-    "idempotencyKey": "builder-v3:alpaca-trading-agents-2026:23168c99a2a14f7bc2ca5e0e097ad3235d85149cceaa0d7dabe957e964867dbd",
+    "idempotencyKey": "builder-v3:alpaca-trading-agents-2026:2d13c234befc10150e7a48e5e5aa5609bbfc52fdf91887a06bf79e1b5925ff61",
     "attempt": 1,
     "status": "running",
     "startedAt": "2026-08-29T00:53:23Z",
@@ -75,5 +75,5 @@
       "review": null
     }
   },
-  "updatedAt": "2026-08-29T01:56:08Z"
+  "updatedAt": "2026-08-29T02:40:15Z"
 }

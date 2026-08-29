@@ -1,20 +1,25 @@
-import { Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { Audio, Easing, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { colors } from "../theme";
 import { SceneFrame } from "./SceneFrame";
 
-export const ScenePaperBook: React.FC = () => {
+export const ScenePaperBook: React.FC<{ durationInFrames?: number }> = ({
+  durationInFrames = 270,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
   return (
-    <SceneFrame accent={colors.gold} kicker="PAPER BOOK">
+    <SceneFrame accent={colors.gold} kicker="PAPER BOOK" durationInFrames={durationInFrames}>
+      <Audio src={staticFile("sfx/whoosh.wav")} volume={0.35} />
+      <Audio src={staticFile("sfx/hit.wav")} volume={0.3} />
+
       <div
         style={{
           position: "absolute",
           left: 96,
           right: 96,
           top: 200,
-          opacity: interpolate(frame, [6, 24], [0, 1], {
+          opacity: interpolate(frame, [14, 34], [0, 1], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
             easing: Easing.bezier(0.16, 1, 0.3, 1),
@@ -28,6 +33,7 @@ export const ScenePaperBook: React.FC = () => {
           A hackathon-only paper account. Live trading stays off. Keys never appear on screen or in git.
         </div>
       </div>
+
       <div
         style={{
           position: "absolute",
@@ -36,7 +42,7 @@ export const ScenePaperBook: React.FC = () => {
           bottom: 130,
           display: "flex",
           gap: 28,
-          opacity: interpolate(frame, [0.55 * fps, 1.05 * fps], [0, 1], {
+          opacity: interpolate(frame, [0.65 * fps, 1.15 * fps], [0, 1], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
           }),
@@ -54,6 +60,7 @@ export const ScenePaperBook: React.FC = () => {
               backgroundColor: colors.bgLift,
               border: `1px solid ${colors.line}`,
               padding: "36px 40px",
+              borderRadius: 6,
             }}
           >
             <div style={{ fontSize: 56, fontWeight: 700, color: colors.gold }}>{value}</div>

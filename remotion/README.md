@@ -1,10 +1,10 @@
-# GaussOptions Agent demo (Remotion)
+# Opticycle demo (Remotion)
 
-Official programmatic demo for GaussOptions Agent. Not a screen recording.
+Official programmatic demo for Opticycle. Not a screen recording.
 
 ```bash
 npm i
-npx remotion render GaussOptionsDemo ../artifacts/demo.mp4
+npx remotion render OpticycleDemo ../artifacts/demo.mp4
 ```
 
-Composition: `GaussOptionsDemo` · 1920×1080 · 30 fps. Shot list: `docs/DEMO_SHOTLIST.md`.
+Composition: `OpticycleDemo` · 1920×1080 · 30 fps. Shot list: `docs/DEMO_SHOTLIST.md`.

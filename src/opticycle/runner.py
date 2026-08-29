@@ -7,11 +7,11 @@ import time
 from dataclasses import asdict
 from typing import Any
 
-from gaussoptions.journal import TradeJournal
-from gaussoptions.plans import build_cycle_plan
-from gaussoptions.preflight import assert_paper_env, dry_run_portfolio
-from gaussoptions.risk import RiskGate, contract_greeks, scale_greeks
-from gaussoptions.settings import ALLOWED_STRATEGIES, HackathonSettings
+from opticycle.journal import TradeJournal
+from opticycle.plans import build_cycle_plan
+from opticycle.preflight import assert_paper_env, dry_run_portfolio
+from opticycle.risk import RiskGate, contract_greeks, scale_greeks
+from opticycle.settings import ALLOWED_STRATEGIES, HackathonSettings
 from trade.cli.alpaca_cli_executor import AlpacaCliExecutor
 from trade.mcp.alpaca_mcp_executor import AlpacaMcpExecutor
 from trade.routing import dry_run_option_order
