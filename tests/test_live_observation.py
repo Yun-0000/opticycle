@@ -39,6 +39,12 @@ class _OfflineClient:
     def fetch_option_chain(self, symbol: str):
         raise ConnectionError("simulated offline")
 
+    def fetch_order(self, *, order_id: str | None = None, client_order_id: str | None = None):
+        raise ConnectionError("simulated offline")
+
+    def fetch_orders_by_client_id(self, client_order_id: str):
+        raise ConnectionError("simulated offline")
+
 
 class _PartialClient:
     def __init__(self, *, account=None, quote=None, bars=None, chain=None) -> None:
@@ -70,6 +76,12 @@ class _PartialClient:
 
     def fetch_option_chain(self, symbol: str):
         return self.chain if self.chain is not None else {}
+
+    def fetch_order(self, *, order_id: str | None = None, client_order_id: str | None = None):
+        return None
+
+    def fetch_orders_by_client_id(self, client_order_id: str):
+        return []
 
 
 def _account(**kwargs):

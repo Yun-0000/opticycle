@@ -105,8 +105,12 @@ class ExecutionStatus(str, Enum):
 
 class ReconciliationStatus(str, Enum):
     MATCHED = "matched"
-    DISCREPANCY = "discrepancy"
-    UNKNOWN_BROKER_STATE = "unknown_broker_state"
+    MISMATCH = "mismatch"
+    UNKNOWN = "unknown"
+    DUPLICATE = "duplicate"
+    PARTIAL_FILL = "partial_fill"
+    DISCREPANCY = "mismatch"
+    UNKNOWN_BROKER_STATE = "unknown"
     HALTED = "halted"
 
 
@@ -652,8 +656,26 @@ class ExecutionAttempt:
 
 
 @dataclass(frozen=True, slots=True)
+class FieldComparison:
+    """One authorized-vs-broker field comparison."""
+
+    field: str
+    expected: str
+    observed: str
+    matched: bool
+
+    def canonical_dict(self) -> dict[str, Any]:
+        return {
+            "expected": self.expected,
+            "field": self.field,
+            "matched": self.matched,
+            "observed": self.observed,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class BrokerReceipt:
-    """Immediate response from Alpaca broker via MCP."""
+    """Immediate MCP response. Success here is not a fill and not completion."""
     receipt_id: str
     cycle_id: str
     client_order_id: str
@@ -663,6 +685,7 @@ class BrokerReceipt:
     is_success: bool
     error_message: str | None = None
     response_payload: dict[str, Any] = field(default_factory=dict)
+    submitted: bool = False
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "received_at", ensure_utc(self.received_at))
@@ -670,7 +693,7 @@ class BrokerReceipt:
 
 @dataclass(frozen=True, slots=True)
 class ReconciliationReport:
-    """Post-trade broker state reconciliation verifying fills and positions."""
+    """Post-trade broker state reconciliation. Only MATCHED completes a cycle."""
     report_id: str
     cycle_id: str
     client_order_id: str
@@ -682,9 +705,16 @@ class ReconciliationReport:
     filled_avg_price: Decimal | None
     discrepancies: tuple[str, ...] = ()
     halt_triggered: bool = False
+    comparisons: tuple[FieldComparison, ...] = ()
+    containment: tuple[str, ...] = ()
+    account_id: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "reconciled_at", ensure_utc(self.reconciled_at))
+
+    @property
+    def complete(self) -> bool:
+        return self.status == ReconciliationStatus.MATCHED and not self.halt_triggered
 
 
 @dataclass(frozen=True, slots=True)

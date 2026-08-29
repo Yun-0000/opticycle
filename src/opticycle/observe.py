@@ -51,6 +51,8 @@ class MarketReadClient(Protocol):
     def fetch_quote(self, symbol: str) -> Any: ...
     def fetch_bars(self, symbol: str) -> Any: ...
     def fetch_option_chain(self, symbol: str) -> Any: ...
+    def fetch_order(self, *, order_id: str | None = None, client_order_id: str | None = None) -> Any: ...
+    def fetch_orders_by_client_id(self, client_order_id: str) -> Any: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -149,6 +151,48 @@ class AlpacaReadClient:
         return self._option_data.get_option_chain(
             OptionChainRequest(underlying_symbol=symbol)
         )
+
+    def fetch_order(self, *, order_id: str | None = None, client_order_id: str | None = None) -> Any:
+        if order_id:
+            getter = getattr(self._trading, "get_order_by_id", None) or getattr(
+                self._trading, "get_order", None
+            )
+            if getter is None:
+                return None
+            return getter(order_id)
+        if client_order_id:
+            getter = getattr(self._trading, "get_order_by_client_id", None) or getattr(
+                self._trading, "get_order_by_client_order_id", None
+            )
+            if getter is None:
+                return None
+            return getter(client_order_id)
+        return None
+
+    def fetch_orders_by_client_id(self, client_order_id: str) -> list[Any]:
+        wanted = str(client_order_id or "")
+        found: list[Any] = []
+        seen: set[str] = set()
+        for bucket in (self.fetch_open_orders(), self.fetch_fills()):
+            for item in list(bucket or []):
+                cid = str(
+                    getattr(item, "client_order_id", None)
+                    or (item.get("client_order_id") if isinstance(item, dict) else "")
+                    or ""
+                )
+                oid = str(
+                    getattr(item, "id", None)
+                    or (item.get("id") if isinstance(item, dict) else "")
+                    or ""
+                )
+                if cid != wanted:
+                    continue
+                key = oid or cid
+                if key in seen:
+                    continue
+                seen.add(key)
+                found.append(item)
+        return found
 
 
 def _now() -> datetime:

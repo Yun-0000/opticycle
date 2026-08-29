@@ -10,11 +10,18 @@ from decimal import Decimal
 from typing import Any
 
 from opticycle.journal import TradeJournal
-from opticycle.observe import MarketReadClient, ObservationResult, observe_live
+from opticycle.observe import AlpacaReadClient, MarketReadClient, ObservationClosed, ObservationResult, observe_live
 from opticycle.pin_option import ObservedBook, ObservedChainAdapter, ObservedFred, PinMarket
 from opticycle.plans import build_cycle_plan
 from opticycle.preflight import assert_paper_env, dry_run_portfolio
 from opticycle.protocol import ObservationOutcome, ThesisStance
+from opticycle.reconcile import (
+    HaltLedger,
+    receipt_as_dict,
+    receipt_from_mcp,
+    reconcile,
+    report_as_dict,
+)
 from opticycle.risk import (
     RiskEngine,
     evidence_from_chain_rows,
@@ -78,10 +85,12 @@ def run_once(
     journal: TradeJournal | None = None,
     mcp_executor: AlpacaMcpExecutor | None = None,
     observer: MarketReadClient | None = None,
+    broker: MarketReadClient | None = None,
     market: PinMarket | None = None,
     underlying_price: float | None = None,
     llm_client: Any | None = None,
     stance: ThesisStance | str | None = None,
+    halt_ledger: HaltLedger | None = None,
 ) -> dict[str, Any]:
     settings = settings or HackathonSettings()
     configure_backend(settings)
@@ -89,6 +98,21 @@ def run_once(
     if settings.strategy not in ALLOWED_STRATEGIES:
         raise ValueError("only SPY defined-risk vertical is enabled")
     log = journal or TradeJournal()
+    ledger = halt_ledger or HaltLedger(log.path.with_name("halt.json"))
+
+    if not dry_run and ledger.is_halted():
+        return {
+            "ok": False,
+            "complete": False,
+            "submitted": False,
+            "outcome": ObservationOutcome.HALT.value,
+            "reason": ledger.reason(),
+            "backend": "mcp",
+            "dry_run": False,
+            "order": None,
+            "journal": None,
+            "correlation_id": "",
+        }
 
     if not dry_run:
         if market is not None:
@@ -322,13 +346,88 @@ def run_once(
             "arguments_hash": result.get("arguments_hash"),
             "timestamp": result.get("timestamp"),
             "raw_result_hash": result.get("raw_result_hash"),
+            "authorized_payload": payload.to_canonical_dict(),
         },
     )
+    if dry_run:
+        return {
+            "ok": True,
+            "complete": False,
+            "submitted": False,
+            "strategy": plan.strategy,
+            "backend": settings.execution_backend,
+            "dry_run": True,
+            "gate": {"approved": certificate.approval, "reasons": list(certificate.reasons)},
+            "certificate": {
+                "payload_hash": certificate.payload_hash,
+                "evidence_hash": certificate.evidence_hash,
+                "account_hash": certificate.account_hash,
+                "approval": certificate.approval,
+                "veto": certificate.veto,
+            },
+            "order": result,
+            "journal": entry,
+        }
+
+    receipt = receipt_from_mcp(
+        cycle_id=client_order_id,
+        payload=payload,
+        mcp_result=result,
+    )
+    log.record(
+        "broker_receipt",
+        {
+            "authorized_payload": payload.to_canonical_dict(),
+            "mcp_raw": result.get("raw"),
+            "receipt": receipt_as_dict(receipt),
+            "submitted": receipt.submitted,
+            "complete": False,
+        },
+    )
+    reader = broker or observer
+    if reader is None:
+        try:
+            reader = AlpacaReadClient.from_env()
+        except ObservationClosed:
+            reader = None
+    report = reconcile(
+        payload=payload,
+        receipt=receipt,
+        broker=reader,
+        settings=settings,
+        cycle_id=client_order_id,
+    )
+    if report.halt_triggered:
+        ledger.trip(
+            status=report.status.value,
+            reason="; ".join(report.discrepancies) or report.status.value,
+            report_id=report.report_id,
+        )
+    recon_entry = log.record(
+        "reconciliation",
+        {
+            "authorized_payload": payload.to_canonical_dict(),
+            "mcp_raw": result.get("raw"),
+            "broker_receipt": receipt_as_dict(receipt),
+            "comparisons": [item.canonical_dict() for item in report.comparisons],
+            "verdict": report.status.value,
+            "complete": report.complete,
+            "halt_triggered": report.halt_triggered,
+            "containment": list(report.containment),
+            "discrepancies": list(report.discrepancies),
+            "report": report_as_dict(report),
+        },
+    )
+    complete = report.complete
     return {
-        "ok": True,
+        "ok": complete,
+        "complete": complete,
+        "submitted": bool(receipt.submitted),
+        "outcome": ObservationOutcome.OK.value if complete else ObservationOutcome.HALT.value,
+        "reason": "" if complete else ("; ".join(report.discrepancies) or report.status.value),
         "strategy": plan.strategy,
         "backend": settings.execution_backend,
-        "dry_run": dry_run,
+        "dry_run": False,
         "gate": {"approved": certificate.approval, "reasons": list(certificate.reasons)},
         "certificate": {
             "payload_hash": certificate.payload_hash,
@@ -338,7 +437,9 @@ def run_once(
             "veto": certificate.veto,
         },
         "order": result,
-        "journal": entry,
+        "receipt": receipt_as_dict(receipt),
+        "reconciliation": report_as_dict(report),
+        "journal": recon_entry,
     }
 
 
