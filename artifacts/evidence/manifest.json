@@ -61,7 +61,7 @@
       "record_id": "el-37ef9739745b4d4d917b170082d4de79"
     }
   },
-  "demo_mp4": "NOT submission footage",
+  "demo_mp4": "deleted; Remotion demo is Gate 12",
   "genuine_no_trade_recorded": false,
   "incomplete_live": {
     "live_broker_receipt": "TODO: Yun authorized one Alpaca paper MLEG. Cloud VM has no keys and must not submit. Live receipt/fill/P&L stay incomplete until sanitized broker JSON is ingested (order_id, legs, limit, status, filled_avg_price, client_order_id). Do not invent MATCHED.",

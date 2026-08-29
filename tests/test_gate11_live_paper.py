@@ -133,30 +133,20 @@ def test_record_live_fill_script_cannot_submit() -> None:
     assert payload["submitted"] is False
 
 
-def test_shotlist_matches_locked_product() -> None:
-    text = (ROOT / "docs" / "DEMO_SHOTLIST.md").read_text(encoding="utf-8").lower()
-    assert "wheel" not in text
-    assert "cli fallback" not in text
-    assert "alpaca order submit" not in text
-    assert "channel switch" not in text or "no channel switch" in text
-    assert "defined-risk" in text
-    assert "alpaca-mcp-server==2.3.0" in text
-    assert "mleg" in text
-    assert "certificate" in text
-    assert "reconcile" in text
-    assert "ledger" in text
-    assert "not submission footage" in text
-
-
-def test_demo_mp4_labeled_not_for_submit() -> None:
-    assert (ROOT / "artifacts" / "demo.mp4").is_file()
-    label = (ROOT / "artifacts" / "DEMO_NOT_SUBMISSION.md").read_text(encoding="utf-8").lower()
-    sidecar = (ROOT / "artifacts" / "demo.mp4.NOT_SUBMISSION").read_text(encoding="utf-8").lower()
-    readme = (ROOT / "README.md").read_text(encoding="utf-8").lower()
-    html = PAGE_PATH.read_text(encoding="utf-8").lower()
-    for blob in (label, sidecar, readme, html):
-        assert "not submission" in blob or "not submission footage" in blob
-    assert "gate 12" in label
+def test_old_demo_artifacts_are_deleted() -> None:
+    assert not (ROOT / "docs" / "DEMO_SHOTLIST.md").exists()
+    assert not (ROOT / "artifacts" / "demo.mp4").exists()
+    assert not (ROOT / "artifacts" / "DEMO_NOT_SUBMISSION.md").exists()
+    assert not (ROOT / "artifacts" / "demo.mp4.NOT_SUBMISSION").exists()
+    assert not (ROOT / "artifacts" / "opticycle-demo.mp4").exists()
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    html = PAGE_PATH.read_text(encoding="utf-8")
+    workflow = (ROOT / ".github" / "workflows" / "hackathon-tests.yml").read_text(encoding="utf-8")
+    for blob in (readme, html, workflow):
+        assert "DEMO_SHOTLIST.md" not in blob
+        assert "artifacts/demo.mp4" not in blob
+        assert "DEMO_NOT_SUBMISSION" not in blob
+        assert "opticycle-demo.mp4" not in blob
 
 
 def test_injected_no_trade_not_promoted_and_fill_incomplete() -> None:

@@ -13,6 +13,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from opticycle.evidence_public import (  # noqa: E402
+    DEMO_VIDEO_STATUS,
     MANIFEST_PATH,
     PAGE_PATH,
     build_manifest,
@@ -32,7 +33,7 @@ def main() -> int:
     manifest["genuine_no_trade_recorded"] = bool(status.get("genuine_no_trade_recorded"))
     manifest["live_quotes_available"] = bool(status.get("live_quotes_available"))
     manifest["injected_no_trade_promoted"] = False
-    manifest["demo_mp4"] = status.get("demo_mp4") or "NOT submission footage"
+    manifest["demo_mp4"] = status.get("demo_mp4") or DEMO_VIDEO_STATUS
     manifest["live_fill_claimed"] = False
     manifest["matched_claimed"] = False
     manifest["yun_authorized_one_paper_mleg"] = True

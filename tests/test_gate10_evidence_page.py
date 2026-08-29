@@ -141,7 +141,6 @@ def test_foundation_md_is_scoped_and_present() -> None:
 def test_upstream_names_stay_out_of_readme_demo_and_evidence_page() -> None:
     paths = [
         ROOT / "README.md",
-        ROOT / "docs" / "DEMO_SHOTLIST.md",
         PAGE_PATH,
         PUBLIC_JSONL,
         NO_TRADE_JSONL,

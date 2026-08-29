@@ -16,6 +16,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from opticycle.evidence_public import DEMO_VIDEO_STATUS  # noqa: E402
 from opticycle.live_quotes import probe_live_quotes  # noqa: E402
 from opticycle.observe import observe_live  # noqa: E402
 from opticycle.protocol import ObservationOutcome  # noqa: E402
@@ -36,7 +37,7 @@ def _status_payload(probe: dict, *, extra: dict | None = None) -> dict:
             "NOT fill evidence; NOT a live MATCHED / MLEG / fill claim"
         ),
         "live_quote_gap": probe.get("reason"),
-        "demo_mp4": "NOT submission footage",
+        "demo_mp4": DEMO_VIDEO_STATUS,
         "pnl_reconcile": "fixture-tested; not stamped as live",
     }
     if extra:

@@ -37,6 +37,8 @@ NO_TRADE_CAVEAT = (
     "NOT fill evidence; NOT a live MATCHED / MLEG / fill claim"
 )
 
+DEMO_VIDEO_STATUS = "deleted; Remotion demo is Gate 12"
+
 INCOMPLETE_LIVE_CLAIMS = {
     "live_mleg_submit": LIVE_PAPER_INCOMPLETE["detail"],
     "live_broker_receipt": LIVE_PAPER_INCOMPLETE["detail"],
@@ -93,7 +95,7 @@ def load_gate11_status() -> dict[str, Any]:
         "live_quotes_available": False,
         "genuine_no_trade_recorded": False,
         "injected_no_trade_promoted": False,
-        "demo_mp4": "NOT submission footage",
+        "demo_mp4": DEMO_VIDEO_STATUS,
         "live_quote_gap": "live Alpaca quotes were not available without keys",
         "pnl_reconcile": "fixture-tested; not stamped as live",
         "yun_authorized_one_paper_mleg": True,
@@ -353,7 +355,6 @@ def render_evidence_page(
     )
     gate11 = dict(status or load_gate11_status())
     quote_gap = html.escape(str(gate11.get("live_quote_gap") or ""))
-    demo_label = html.escape(str(gate11.get("demo_mp4") or "NOT submission footage"))
     genuine = "yes" if gate11.get("genuine_no_trade_recorded") else "no — gap recorded honestly"
     ingest_note = (
         "Yun authorized one paper MLEG. Cloud VM cannot submit. "
@@ -387,7 +388,7 @@ def render_evidence_page(
     <p>{html.escape(NO_TRADE_CAVEAT)}</p>
     <p>Genuine live NO_TRADE this gate: {html.escape(genuine)}. {quote_gap}</p>
     <p>{html.escape(ingest_note)}</p>
-    <p><strong>artifacts/demo.mp4</strong>: {demo_label}. Remotion rewrite is Gate 12.</p>
+    <p>No demo video is committed in this packet. Remotion demo is Gate 12.</p>
     <ul>{incomplete}</ul>
   </div>
   <h2>Claim → record → commit</h2>
