@@ -37,7 +37,7 @@ EPISODE_FIELDS = (
 )
 
 CHANNELS = ("replay", "live_paper", "fault_injection")
-OUTCOMES = ("NO_TRADE", "HALT", "VETO", "ERROR", "PROFIT", "LOSS")
+OUTCOMES = ("NO_TRADE", "HALT", "VETO", "ERROR", "PROFIT", "LOSS", "MATCHED")
 LEDGER_CLASS_PRIVATE = "private_raw"
 LEDGER_CLASS_PUBLIC = "public_sanitized"
 GENESIS_HASH = "0" * 64
@@ -216,13 +216,12 @@ def _apply_live_paper_block(
     channel: str,
     extra: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Live paper never claims MATCHED/P&L until a real broker fill exists.
-
-    Sanitized-JSON ingest may keep broker_receipt only. It still cannot stamp MATCHED.
-    """
+    """Block invented live MATCHED/P&L. A broker-terminal MATCHED complete is kept."""
     if channel != "live_paper":
         return episode
     extra = extra or {}
+    if bool(extra.get("operational_complete")) and str(extra.get("operational_verdict") or "").lower() == "matched":
+        return episode
     ingest = bool(extra.get("ingest_sanitized_broker_json"))
     blocked = dict(episode)
     keep = {"broker_receipt"} if ingest else set()
@@ -311,6 +310,10 @@ class EvidenceLedger:
         seq = int(previous["seq"]) + 1 if previous else 1
         record_id = f"el-{uuid.uuid4().hex}"
         claim = make_claim(record_id=record_id, commit_sha=sha, outcome=outcome)
+        extra_dict = dict(extra or {})
+        matched_complete = bool(extra_dict.get("operational_complete")) and str(
+            extra_dict.get("operational_verdict") or ""
+        ).lower() == "matched"
         body = {
             "record_id": record_id,
             "seq": seq,
@@ -325,8 +328,12 @@ class EvidenceLedger:
             "claim": claim,
             "ts": _now(),
             "episode": episode,
-            "live_paper_incomplete": dict(LIVE_PAPER_INCOMPLETE) if channel == "live_paper" else None,
-            "extra": dict(extra or {}),
+            "live_paper_incomplete": (
+                None
+                if matched_complete
+                else (dict(LIVE_PAPER_INCOMPLETE) if channel == "live_paper" else None)
+            ),
+            "extra": extra_dict,
         }
         prev_hash = str(previous["record_hash"]) if previous else GENESIS_HASH
         record_hash = sha256_json({"prev_hash": prev_hash, "body": body})

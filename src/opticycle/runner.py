@@ -18,7 +18,7 @@ from opticycle.cycle import (
     CycleStore,
 )
 from opticycle.journal import TradeJournal
-from opticycle.ledger import CHANNELS, EpisodeBuilder, snapshot_from_observation
+from opticycle.ledger import CHANNELS, EpisodeBuilder, OUTCOMES, snapshot_from_observation
 from opticycle.observe import AlpacaReadClient, MarketReadClient, ObservationClosed, ObservationResult, observe_live
 from opticycle.pin_option import ObservedBook, ObservedChainAdapter, ObservedFred, PinMarket
 from opticycle.plans import build_cycle_plan
@@ -75,7 +75,7 @@ def _commit_episode(
     builder = episode if episode is not None else _CURRENT_EPISODE.get()
     if builder is None:
         return None
-    mapped = outcome if outcome in {"NO_TRADE", "HALT", "VETO", "ERROR", "PROFIT", "LOSS"} else "HALT"
+    mapped = outcome if outcome in OUTCOMES else "HALT"
     return builder.commit(
         outcome=mapped,
         reason=reason,
@@ -195,6 +195,46 @@ def _receipt_from_record(record: CycleRecord, payload: CanonicalOrderPayload) ->
     )
 
 
+def _pnl_from_broker(broker: Any) -> Any | None:
+    if broker is None:
+        return None
+    try:
+        snap = snapshot_from_client(broker, source=SOURCE_LIVE_BROKER)
+        return pnl_from_snapshot(snap)
+    except Exception:
+        return None
+
+
+def _stamp_matched_episode(
+    *,
+    report: Any,
+    receipt: BrokerReceipt,
+    pnl: Any | None,
+) -> dict[str, Any]:
+    """Write fill + P&L onto the open episode. Missing P&L is omitted, not invented."""
+    fill = {
+        "filled_qty": int(report.filled_qty),
+        "filled_avg_price": str(report.filled_avg_price) if report.filled_avg_price is not None else None,
+        "realized_pnl": None if pnl is None or pnl.realized_pnl is None else str(pnl.realized_pnl),
+        "unrealized_pnl": None if pnl is None or pnl.unrealized_pnl is None else str(pnl.unrealized_pnl),
+        "end_of_cycle_equity": (
+            None if pnl is None or pnl.end_of_cycle_equity is None else str(pnl.end_of_cycle_equity)
+        ),
+    }
+    builder = _CURRENT_EPISODE.get()
+    if builder is None:
+        return fill
+    builder.set("reconciliation", report_as_dict(report), reason="broker terminal MATCHED fill")
+    builder.set("broker_receipt", receipt_as_dict(receipt), reason="broker receipt for MATCHED fill")
+    if fill["end_of_cycle_equity"] is not None:
+        builder.set("end_of_cycle_equity", fill["end_of_cycle_equity"], reason="account equity after MATCHED fill")
+    if fill["unrealized_pnl"] is not None:
+        builder.set("unrealized_pnl", fill["unrealized_pnl"], reason="broker snapshot unrealized P&L")
+    if fill["realized_pnl"] is not None:
+        builder.set("realized_pnl", fill["realized_pnl"], reason="broker snapshot realized P&L")
+    return fill
+
+
 def _finalize_reconciliation(
     *,
     store: CycleStore,
@@ -206,6 +246,7 @@ def _finalize_reconciliation(
     log: TradeJournal,
     mcp_result: dict[str, Any] | None,
     settings: HackathonSettings,
+    broker: Any = None,
 ) -> dict[str, Any]:
     pending = report.status is ReconciliationStatus.PENDING and not report.halt_triggered
     if report.halt_triggered:
@@ -222,7 +263,6 @@ def _finalize_reconciliation(
     elif pending:
         if record.state is CycleState.ACKNOWLEDGED:
             store.transition(record.cycle_id, CycleState.RECONCILING, reason="waiting for terminal broker state")
-        # RECONCILING (or ACKNOWLEDGED→RECONCILING) stays open. Do not HALT.
     else:
         if record.state is CycleState.RECONCILING:
             store.transition(record.cycle_id, CycleState.RECONCILED, reason="matched")
@@ -252,28 +292,40 @@ def _finalize_reconciliation(
         },
     )
     complete = report.complete and final.state is CycleState.COMPLETED
+    fill_pnl: dict[str, Any] = {}
+    pnl = None
+    if complete:
+        pnl = _pnl_from_broker(broker)
+        fill_pnl = _stamp_matched_episode(report=report, receipt=receipt, pnl=pnl)
     evidence_row = None
     if not pending:
+        extra = {
+            "operational_complete": complete,
+            "operational_verdict": report.status.value,
+            "live_fill_claimed": False,
+        }
+        extra.update(fill_pnl)
+        if complete:
+            ledger_outcome = "MATCHED"
+            ledger_reason = "broker fill MATCHED"
+        else:
+            ledger_outcome = "HALT"
+            ledger_reason = (
+                "; ".join(report.discrepancies) or report.status.value or final.halt_reason or ""
+            ) or "reconciliation halted"
         evidence_row = _commit_episode(
-            outcome="HALT" if not complete else "HALT",
-            reason=(
-                "" if complete else ("; ".join(report.discrepancies) or report.status.value or final.halt_reason or "")
-            )
-            or "sanitized broker JSON not ingested; MATCHED not claimed",
+            outcome=ledger_outcome,
+            reason=ledger_reason,
             cycle_id=final.cycle_id,
             client_order_id=final.client_order_id,
-            extra={
-                "operational_complete": complete,
-                "operational_verdict": report.status.value,
-                "live_fill_claimed": False,
-            },
+            extra=extra,
         )
     if pending:
         outcome = "PENDING"
         reason = "waiting for broker terminal state"
     elif complete:
-        outcome = ObservationOutcome.OK.value
-        reason = ""
+        outcome = "MATCHED"
+        reason = "broker fill MATCHED"
     else:
         outcome = ObservationOutcome.HALT.value
         reason = "; ".join(report.discrepancies) or report.status.value or final.halt_reason or ""
@@ -298,6 +350,11 @@ def _finalize_reconciliation(
         "claim": (evidence_row or {}).get("claim", ""),
         "commit_sha": (evidence_row or {}).get("commit_sha", ""),
         "channel": (evidence_row or {}).get("channel", ""),
+        "filled_qty": fill_pnl.get("filled_qty", report.filled_qty if complete else None),
+        "filled_avg_price": fill_pnl.get("filled_avg_price"),
+        "realized_pnl": fill_pnl.get("realized_pnl"),
+        "unrealized_pnl": fill_pnl.get("unrealized_pnl"),
+        "end_of_cycle_equity": fill_pnl.get("end_of_cycle_equity"),
     }
 
 
@@ -333,6 +390,7 @@ def _reconcile_open_cycle(
         log=log,
         mcp_result=mcp_result,
         settings=settings,
+        broker=broker,
     )
 
 

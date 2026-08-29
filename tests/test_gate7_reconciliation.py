@@ -27,7 +27,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _account(account_id: str = "PA3V84C40PJQ") -> SimpleNamespace:
-    return SimpleNamespace(id=account_id, account_number=account_id)
+    return SimpleNamespace(
+        id=account_id,
+        account_number=account_id,
+        equity="100000.00",
+        cash="100000.00",
+        long_market_value="0",
+        short_market_value="0",
+    )
 
 
 def _legs():
@@ -65,15 +72,35 @@ def _order(**kwargs) -> SimpleNamespace:
 
 
 class FakeBroker:
-    def __init__(self, account=None, orders=None, *, fail: bool = False) -> None:
+    def __init__(
+        self,
+        account=None,
+        orders=None,
+        *,
+        fail: bool = False,
+        positions=None,
+        fills=None,
+    ) -> None:
         self.account = account if account is not None else _account()
         self.orders = list(orders or [])
+        self.positions = list(positions or [])
+        self.fills = list(fills) if fills is not None else []
         self.fail = fail
 
     def fetch_account(self):
         if self.fail:
             raise ConnectionError("broker offline")
         return self.account
+
+    def fetch_positions(self):
+        if self.fail:
+            raise ConnectionError("broker offline")
+        return list(self.positions)
+
+    def fetch_fills(self):
+        if self.fail:
+            raise ConnectionError("broker offline")
+        return list(self.fills)
 
     def fetch_order(self, *, order_id: str | None = None, client_order_id: str | None = None):
         if self.fail:
