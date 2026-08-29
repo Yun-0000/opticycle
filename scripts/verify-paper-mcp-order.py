@@ -26,12 +26,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 VENDOR = ROOT / "vendor" / "pin-31374551"
-for path in (str(VENDOR), str(SRC)):
+for path in (str(ROOT), str(VENDOR), str(SRC)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
 from opticycle.runner import run_once
 from opticycle.settings import HackathonSettings
+from opticycle.pin_option import PinMarket
 
 
 def _require_paper_env() -> None:
@@ -68,7 +69,12 @@ def main(argv: list[str] | None = None) -> int:
         execution_backend="mcp",
         strategy="vertical_spread",
     )
-    result = run_once(settings, dry_run=args.dry_run)
+    market: PinMarket | None = None
+    if args.dry_run:
+        from tests.fixtures.market import make_pin_market
+
+        market = make_pin_market()
+    result = run_once(settings, dry_run=args.dry_run, market=market)
     if not result.get("ok"):
         print(json.dumps(result, default=str), file=sys.stderr)
         return 1

@@ -33,7 +33,9 @@ def test_cli_backend_rejected_by_settings() -> None:
 
 
 def test_vertical_spread_plan_is_multileg() -> None:
-    plan = build_cycle_plan(HackathonSettings(strategy="vertical_spread"), underlying_price=500)
+    from tests.fixtures.market import make_pin_market
+
+    plan = build_cycle_plan(HackathonSettings(strategy="vertical_spread"), market=make_pin_market())
     assert plan.strategy == "vertical_spread"
     assert plan.metadata.get("strategy_class") == "VerticalSpreadStrategy"
     plan.request.assert_options_instrument()
@@ -45,8 +47,15 @@ def test_run_once_decision_gate_mcp_order(tmp_path: Path, monkeypatch: pytest.Mo
     monkeypatch.chdir(tmp_path)
     from opticycle.journal import TradeJournal
 
+    from tests.fixtures.market import make_pin_market
+
     settings = HackathonSettings(execution_backend="mcp", strategy="vertical_spread")
-    result = run_once(settings, dry_run=True, journal=TradeJournal(tmp_path / "journal.jsonl"))
+    result = run_once(
+        settings,
+        dry_run=True,
+        journal=TradeJournal(tmp_path / "journal.jsonl"),
+        market=make_pin_market(),
+    )
     assert result["ok"] is True
     assert result["backend"] == "mcp"
     assert result["dry_run"] is True

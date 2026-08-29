@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import importlib.util
-import os
 import sys
 import types
-from datetime import date, datetime, timedelta
+from dataclasses import dataclass, field
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +19,56 @@ from trade.orders import ExecutionRejected, OptionOrderRequest
 PIN_ROOT = Path(__file__).resolve().parents[2] / "vendor" / "pin-31374551"
 PIN_SRC = PIN_ROOT / "src"
 PIN_COMMIT = "31374551"
+
+
+@dataclass(slots=True)
+class ObservedBook:
+    """Account book adapter over already-observed equity. Not a fixture generator."""
+
+    equity: float
+    cash: float
+    positions: dict[str, Any] = field(default_factory=dict)
+    option_positions: dict[str, Any] = field(default_factory=dict)
+
+    def get_portfolio_value(self, _prices: Any = None) -> float:
+        return float(self.equity)
+
+    def get_available_cash(self) -> float:
+        return float(self.cash)
+
+
+class ObservedChainAdapter:
+    """Wrap an already-fetched option chain. Does not synthesize contracts."""
+
+    def __init__(self, chain: pd.DataFrame) -> None:
+        self._chain = chain
+
+    def get_options_chain(self, _symbol: str) -> pd.DataFrame:
+        return self._chain.copy()
+
+
+class ObservedFred:
+    """Risk-free rate adapter. Live callers pass an observed rate; default is unused on live path."""
+
+    def __init__(self, percent: float = 4.0) -> None:
+        self._percent = percent
+
+    def get_treasury_yield(self, _maturity: str = "3M") -> pd.DataFrame:
+        return pd.DataFrame({"value": [self._percent]})
+
+
+@dataclass(slots=True)
+class PinMarket:
+    """Caller-supplied market context. Live path must pass observed data, never fixtures."""
+
+    spot: float
+    bars: pd.DataFrame
+    chain: pd.DataFrame
+    equity: float
+    cash: float
+    book: ObservedBook
+    provider: ObservedChainAdapter
+    fred: ObservedFred
 
 
 def _pin_on_path() -> None:
@@ -51,114 +101,7 @@ def _load_file(fullname: str, path: Path) -> types.ModuleType:
     return module
 
 
-def _has_alpaca_keys() -> bool:
-    key = (os.environ.get("ALPACA_API_KEY") or "").strip()
-    secret = (os.environ.get("ALPACA_SECRET_KEY") or "").strip()
-    return bool(key and secret)
-
-
-class _PaperBook:
-    """Minimal book the pin wheel sizer expects."""
-
-    positions: dict[str, Any] = {}
-    option_positions: dict[str, Any] = {}
-
-    def __init__(self, equity: float = 100_000.0) -> None:
-        self.equity = equity
-
-    def get_portfolio_value(self, _prices: Any = None) -> float:
-        return float(self.equity)
-
-    def get_available_cash(self) -> float:
-        return float(self.equity)
-
-
-class _FixtureAlpaca:
-    def __init__(self, chain: pd.DataFrame) -> None:
-        self._chain = chain
-
-    def get_options_chain(self, _symbol: str) -> pd.DataFrame:
-        return self._chain.copy()
-
-
-class _FixtureFred:
-    def get_treasury_yield(self, _maturity: str = "3M") -> pd.DataFrame:
-        return pd.DataFrame({"value": [4.0]})
-
-
-def _demo_expiration(days: int = 21) -> date:
-    target = date.today() + timedelta(days=days)
-    while target.weekday() != 4:
-        target += timedelta(days=1)
-    return target
-
-
-def _historical_bars(spot: float, rows: int = 60) -> pd.DataFrame:
-    """Uptrend bars so vertical_spread can emit a bullish signal."""
-    start = spot * 0.86
-    step = (spot - start) / max(rows - 1, 1)
-    closes = [start + step * index for index in range(rows)]
-    closes[-1] = spot
-    return pd.DataFrame(
-        {
-            "close": closes,
-            "high": [value * 1.004 for value in closes],
-            "low": [value * 0.996 for value in closes],
-            "open": closes,
-            "volume": [1_000_000] * rows,
-        }
-    )
-
-
-def _chain_frame(
-    underlying: str,
-    spot: float,
-    expiration: date,
-    bs_price: Any,
-) -> pd.DataFrame:
-    t_years = max((expiration - date.today()).days, 1) / 365.0
-    rate = 0.04
-    vol = 0.70
-    rows: list[dict[str, Any]] = []
-    strikes = [round(spot * factor, 0) for factor in (
-        0.90, 0.93, 0.95, 0.97, 0.99, 1.00, 1.01, 1.03, 1.05, 1.07, 1.10
-    )]
-    for strike in strikes:
-        for kind, flag in (("P", "put"), ("C", "call")):
-            mid = float(
-                bs_price(
-                    spot=spot,
-                    strike=strike,
-                    time_to_expiry=t_years,
-                    risk_free_rate=rate,
-                    volatility=vol,
-                    option_type=flag,
-                )
-            )
-            mid = max(mid, 0.15)
-            delta = 0.22 if kind == "P" else 0.22
-            symbol = occ_symbol(underlying, expiration, kind == "P", strike)
-            rows.append(
-                {
-                    "symbol": symbol,
-                    "underlying_symbol": underlying,
-                    "option_type": kind,
-                    "strike_price": float(strike),
-                    "expiration_date": pd.Timestamp(expiration),
-                    "bid_price": round(mid * 0.97, 2),
-                    "ask_price": round(mid * 1.03, 2),
-                    "last_price": round(mid, 2),
-                    "bid": round(mid * 0.97, 2),
-                    "ask": round(mid * 1.03, 2),
-                    "delta": -delta if kind == "P" else delta,
-                    "volume": 500,
-                    "open_interest": 2_000,
-                }
-            )
-    return pd.DataFrame(rows)
-
-
-def _install_pin_modules(*, live_data: bool, chain: pd.DataFrame) -> dict[str, Any]:
+def _install_pin_modules(market: PinMarket) -> dict[str, Any]:
     """Import pin option classes without executing src.strategy package __init__."""
     _pin_on_path()
     _pkg("src", PIN_SRC)
@@ -182,25 +125,16 @@ def _install_pin_modules(*, live_data: bool, chain: pd.DataFrame) -> dict[str, A
         manager_mod = sys.modules["src.watchlist.watchlist_manager"]
         watchlist_pkg.WatchlistManager = manager_mod.WatchlistManager
 
-    fixture = _FixtureAlpaca(chain)
-    fred = _FixtureFred()
-    if live_data:
-        alpaca_mod = _load_file(
-            "src.data.alpaca_provider", PIN_SRC / "data" / "alpaca_provider.py"
-        )
-        provider_cls = alpaca_mod.AlpacaDataProvider
-    else:
-        alpaca_mod = types.ModuleType("src.data.alpaca_provider")
-        alpaca_mod.AlpacaDataProvider = lambda: fixture
-        sys.modules["src.data.alpaca_provider"] = alpaca_mod
-        provider_cls = alpaca_mod.AlpacaDataProvider
+    alpaca_mod = types.ModuleType("src.data.alpaca_provider")
+    alpaca_mod.AlpacaDataProvider = lambda: market.provider
+    sys.modules["src.data.alpaca_provider"] = alpaca_mod
 
     fred_mod = types.ModuleType("src.data.fred_provider")
-    fred_mod.FREDProvider = lambda: fred
+    fred_mod.FREDProvider = lambda: market.fred
     sys.modules["src.data.fred_provider"] = fred_mod
 
     data_pkg = sys.modules["src.data"]
-    data_pkg.AlpacaDataProvider = provider_cls
+    data_pkg.AlpacaDataProvider = alpaca_mod.AlpacaDataProvider
 
     wheel_mod = _load_file("src.strategy.option.wheel", PIN_SRC / "strategy" / "option" / "wheel.py")
     spread_mod = _load_file(
@@ -210,8 +144,6 @@ def _install_pin_modules(*, live_data: bool, chain: pd.DataFrame) -> dict[str, A
     return {
         "WheelStrategy": wheel_mod.WheelStrategy,
         "VerticalSpreadStrategy": spread_mod.VerticalSpreadStrategy,
-        "fixture_provider": fixture,
-        "bs_price": sys.modules["src.analysis.option_greeks"].bs_price,
     }
 
 
@@ -287,33 +219,29 @@ def _spread_request(plan: Any, underlying: str) -> OptionOrderRequest:
 def build_pin_cycle_plan(
     settings: HackathonSettings,
     *,
-    underlying_price: float = 500.0,
+    market: PinMarket | None = None,
     dry_run: bool = True,
+    underlying_price: float | None = None,
 ) -> CyclePlan:
     """Call the pin vertical_spread path and map the ActionPlan to an option order."""
     if settings.strategy != "vertical_spread":
         raise ExecutionRejected("only SPY defined-risk vertical is enabled")
+    if market is None:
+        raise ExecutionRejected("market observation required; live path cannot synthesize fixtures")
+    if not dry_run and underlying_price is not None:
+        raise ExecutionRejected("live path cannot use a hardcoded underlying price")
+
     wheel_path = PIN_SRC / "strategy" / "option" / "wheel.py"
     spread_path = PIN_SRC / "strategy" / "option" / "vertical_spread.py"
     if not wheel_path.is_file() or not spread_path.is_file():
         raise RuntimeError("pin option strategies are missing under vendor/pin-31374551")
 
     underlying = settings.symbols[0]
-    expiration = _demo_expiration(days=14)
-    live_data = (not dry_run) and _has_alpaca_keys()
-    greeks_spec = importlib.util.spec_from_file_location(
-        "_pin_bs_bootstrap", PIN_SRC / "analysis" / "option_greeks.py"
-    )
-    if greeks_spec is None or greeks_spec.loader is None:
-        raise RuntimeError("pin option_greeks is missing")
-    bootstrap = importlib.util.module_from_spec(greeks_spec)
-    greeks_spec.loader.exec_module(bootstrap)
-    chain = _chain_frame(underlying, underlying_price, expiration, bootstrap.bs_price)
-    loaded = _install_pin_modules(live_data=live_data, chain=chain)
-
-    book = _PaperBook(settings.starting_capital)
+    loaded = _install_pin_modules(market)
+    book = market.book
     now = datetime.now()
-    bars = _historical_bars(underlying_price)
+    bars = market.bars
+    spot = float(market.spot)
     params = {
         "max_stock_price": 10_000.0,
         "min_stock_price": 1.0,
@@ -325,20 +253,19 @@ def build_pin_cycle_plan(
     if settings.strategy == "vertical_spread":
         strategy = loaded["VerticalSpreadStrategy"](params)
         strategy.symbol_list = [underlying]
-        if not live_data:
-            strategy.provider = loaded["fixture_provider"]
-            strategy.fred = _FixtureFred()
+        strategy.provider = market.provider
+        strategy.fred = market.fred
         snapshot = strategy.get_signal(
             symbol=underlying,
             current_date=now,
-            current_price=underlying_price,
+            current_price=spot,
             current_data={},
             historical_data=bars,
             portfolio=book,
         )
         if snapshot is None:
             raise ExecutionRejected("vertical_spread returned no signal")
-        action_plan = strategy.get_action_plan(snapshot, underlying_price, now)
+        action_plan = strategy.get_action_plan(snapshot, spot, now)
         if action_plan is None or action_plan.action == "HOLD":
             raise ExecutionRejected(
                 f"vertical_spread did not produce an order: {getattr(snapshot, 'reason', '')}"
@@ -352,19 +279,20 @@ def build_pin_cycle_plan(
             metadata={"pin": PIN_COMMIT, "strategy_class": "VerticalSpreadStrategy"},
         )
 
+    # Dead WheelStrategy branch retained for Gate 4 deletion. Not an execution path.
     strategy = loaded["WheelStrategy"](params)
     strategy.symbol_list = [underlying]
     snapshot = strategy.get_signal(
         symbol=underlying,
         current_date=now,
-        current_price=underlying_price,
+        current_price=spot,
         current_data={},
         historical_data=bars,
         portfolio=book,
     )
     if snapshot is None:
         raise ExecutionRejected("wheel returned no signal")
-    action_plan = strategy.get_action_plan(snapshot, underlying_price, now)
+    action_plan = strategy.get_action_plan(snapshot, spot, now)
     if action_plan is None or action_plan.action == "HOLD":
         raise ExecutionRejected(
             f"wheel did not produce an order: {getattr(snapshot, 'reason', '')}"

@@ -37,14 +37,16 @@ def demo_expiration(days: int = 21) -> date:
 def build_cycle_plan(
     settings: HackathonSettings,
     *,
-    underlying_price: float = 500.0,
+    market: Any | None = None,
     dry_run: bool = True,
+    underlying_price: float | None = None,
 ) -> CyclePlan:
     """Build a SPY defined-risk vertical from the pin ActionPlan."""
     from opticycle.pin_option import build_pin_cycle_plan
 
     return build_pin_cycle_plan(
         settings,
-        underlying_price=underlying_price,
+        market=market,
         dry_run=dry_run,
+        underlying_price=underlying_price,
     )

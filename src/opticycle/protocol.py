@@ -91,6 +91,28 @@ class ReconciliationStatus(str, Enum):
     HALTED = "halted"
 
 
+class ObservationOutcome(str, Enum):
+    OK = "OK"
+    NO_TRADE = "NO_TRADE"
+    HALT = "HALT"
+
+
+@dataclass(frozen=True, slots=True)
+class ObservedDatum:
+    """One observed market or account datum with provenance."""
+
+    kind: str
+    source: str
+    timestamp: datetime
+    freshness_seconds: Decimal
+    correlation_id: str
+    ok: bool
+    detail: str = ""
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "timestamp", ensure_utc(self.timestamp))
+
+
 @dataclass(frozen=True, slots=True)
 class OptionContractQuote:
     """Point-in-time quote for a single OCC option contract."""
@@ -127,6 +149,9 @@ class EvidenceSnapshot:
     is_fresh: bool
     chain_quotes: tuple[OptionContractQuote, ...] = ()
     indicators: tuple[tuple[str, Decimal], ...] = ()
+    datums: tuple[ObservedDatum, ...] = ()
+    correlation_id: str = ""
+    account_id: str | None = None
 
     def __post_init__(self) -> None:
         if self.spot_price <= Decimal("0"):

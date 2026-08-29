@@ -19,9 +19,12 @@ def test_mcp_stdio_spawns_pinned_server() -> None:
 
 def test_options_main_path_mcp_dry_run(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
+    from tests.fixtures.market import make_pin_market
+
     result = run_once(
         HackathonSettings(execution_backend="mcp", strategy="vertical_spread"),
         dry_run=True,
+        market=make_pin_market(),
     )
     assert result["ok"] is True
     assert result["strategy"] == "vertical_spread"
