@@ -29,6 +29,8 @@ from opticycle.settings import HackathonSettings
 
 MAX_QUOTE_AGE_SECONDS = Decimal("120")
 BARS_LIMIT = 60
+DEFAULT_EQUITY_FEED = "iex"
+ALLOWED_EQUITY_FEEDS = frozenset({"iex", "sip", "delayed_sip"})
 
 
 class ObservationClosed(Exception):
@@ -38,6 +40,32 @@ class ObservationClosed(Exception):
         super().__init__(reason)
         self.outcome = outcome
         self.reason = reason
+
+
+def equity_data_feed() -> str:
+    """Paper accounts are entitled to IEX, not SIP. Never default to SIP."""
+    raw = (
+        os.environ.get("ALPACA_DATA_FEED")
+        or os.environ.get("HACKATHON_DATA_FEED")
+        or DEFAULT_EQUITY_FEED
+    ).strip().lower()
+    if raw not in ALLOWED_EQUITY_FEEDS:
+        return DEFAULT_EQUITY_FEED
+    return raw
+
+
+def feed_denial_reason(exc: BaseException) -> str | None:
+    """SIP/IEX subscription denial is a data error, not a fake or missing quote."""
+    text = str(exc).lower()
+    if "subscription does not permit" in text or "does not permit querying" in text or "not entitled" in text:
+        if "sip" in text:
+            return "SIP feed not permitted (data error, not a quote)"
+        if "iex" in text:
+            return "IEX feed not permitted"
+        if "opra" in text:
+            return "OPRA feed not permitted"
+        return "market data feed not permitted"
+    return None
 
 
 class MarketReadClient(Protocol):
@@ -75,10 +103,15 @@ class AlpacaReadClient:
         trading: Any,
         stock_data: Any,
         option_data: Any,
+        *,
+        equity_feed: str | None = None,
     ) -> None:
         self._trading = trading
         self._stock_data = stock_data
         self._option_data = option_data
+        self._equity_feed = (equity_feed or equity_data_feed()).strip().lower()
+        if self._equity_feed not in ALLOWED_EQUITY_FEEDS:
+            self._equity_feed = DEFAULT_EQUITY_FEED
 
     @classmethod
     def from_env(cls) -> "AlpacaReadClient":
@@ -97,6 +130,7 @@ class AlpacaReadClient:
             trading=TradingClient(key, secret, paper=True),
             stock_data=StockHistoricalDataClient(key, secret),
             option_data=OptionHistoricalDataClient(key, secret),
+            equity_feed=equity_data_feed(),
         )
 
     def fetch_account(self) -> Any:
@@ -123,33 +157,84 @@ class AlpacaReadClient:
         return self._trading.get_clock()
 
     def fetch_quote(self, symbol: str) -> Any:
+        from alpaca.data.enums import DataFeed
+
+        preferred = DataFeed(self._equity_feed)
+        try:
+            return self._get_stock_latest_quote(symbol, preferred)
+        except ObservationClosed:
+            raise
+        except Exception as exc:
+            denial = feed_denial_reason(exc)
+            if denial and preferred != DataFeed.IEX:
+                try:
+                    return self._get_stock_latest_quote(symbol, DataFeed.IEX)
+                except Exception as iex_exc:
+                    iex_denial = feed_denial_reason(iex_exc)
+                    raise ObservationClosed(
+                        ObservationOutcome.HALT,
+                        iex_denial or "IEX feed not permitted",
+                    ) from iex_exc
+            if denial:
+                raise ObservationClosed(ObservationOutcome.HALT, denial) from exc
+            raise
+
+    def _get_stock_latest_quote(self, symbol: str, feed: Any) -> Any:
         from alpaca.data.requests import StockLatestQuoteRequest
 
         return self._stock_data.get_stock_latest_quote(
-            StockLatestQuoteRequest(symbol_or_symbols=symbol)
+            StockLatestQuoteRequest(symbol_or_symbols=symbol, feed=feed)
         )
 
     def fetch_bars(self, symbol: str) -> Any:
+        from alpaca.data.enums import DataFeed
         from alpaca.data.requests import StockBarsRequest
         from alpaca.data.timeframe import TimeFrame
 
         end = datetime.now(timezone.utc)
         start = end - timedelta(days=120)
-        return self._stock_data.get_stock_bars(
-            StockBarsRequest(
-                symbol_or_symbols=symbol,
-                timeframe=TimeFrame.Day,
-                start=start,
-                end=end,
-                limit=BARS_LIMIT,
+        feed = DataFeed(self._equity_feed)
+        try:
+            return self._stock_data.get_stock_bars(
+                StockBarsRequest(
+                    symbol_or_symbols=symbol,
+                    timeframe=TimeFrame.Day,
+                    start=start,
+                    end=end,
+                    limit=BARS_LIMIT,
+                    feed=feed,
+                )
             )
-        )
+        except Exception as exc:
+            denial = feed_denial_reason(exc)
+            if denial and feed != DataFeed.IEX:
+                try:
+                    return self._stock_data.get_stock_bars(
+                        StockBarsRequest(
+                            symbol_or_symbols=symbol,
+                            timeframe=TimeFrame.Day,
+                            start=start,
+                            end=end,
+                            limit=BARS_LIMIT,
+                            feed=DataFeed.IEX,
+                        )
+                    )
+                except Exception as iex_exc:
+                    iex_denial = feed_denial_reason(iex_exc)
+                    raise ObservationClosed(
+                        ObservationOutcome.HALT,
+                        iex_denial or "IEX feed not permitted",
+                    ) from iex_exc
+            if denial:
+                raise ObservationClosed(ObservationOutcome.HALT, denial) from exc
+            raise
 
     def fetch_option_chain(self, symbol: str) -> Any:
+        from alpaca.data.enums import OptionsFeed
         from alpaca.data.requests import OptionChainRequest
 
         return self._option_data.get_option_chain(
-            OptionChainRequest(underlying_symbol=symbol)
+            OptionChainRequest(underlying_symbol=symbol, feed=OptionsFeed.INDICATIVE)
         )
 
     def fetch_order(self, *, order_id: str | None = None, client_order_id: str | None = None) -> Any:
@@ -402,6 +487,12 @@ def observe_live(
         except ObservationClosed:
             raise
         except Exception as exc:
+            denial = feed_denial_reason(exc)
+            if denial:
+                datums.append(
+                    _datum(kind, source, correlation_id, ok=False, timestamp=clock_now, detail=denial)
+                )
+                raise ObservationClosed(ObservationOutcome.HALT, denial) from exc
             datums.append(
                 _datum(kind, source, correlation_id, ok=False, timestamp=clock_now, detail=type(exc).__name__)
             )
