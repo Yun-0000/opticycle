@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 import pandas as pd
@@ -77,6 +77,11 @@ def chain_frame(
                     "bid": round(mid * 0.97, 2),
                     "ask": round(mid * 1.03, 2),
                     "delta": -delta if kind == "P" else delta,
+                    "gamma": 0.01,
+                    "theta": -0.04,
+                    "vega": 0.08,
+                    "implied_volatility": vol,
+                    "quote_timestamp": datetime.now(timezone.utc),
                     "volume": 500,
                     "open_interest": 2_000,
                 }

@@ -284,6 +284,50 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _portfolio_greeks(positions: list[Any]) -> tuple[float | None, float | None, float | None, float | None]:
+    """Sum broker position greeks. Empty book is 0. Missing inputs are omitted, not 0."""
+    if not positions:
+        return 0.0, 0.0, 0.0, 0.0
+    totals = {"delta": Decimal("0"), "gamma": Decimal("0"), "theta": Decimal("0"), "vega": Decimal("0")}
+    for item in positions:
+        getter = item.get if isinstance(item, dict) else lambda key, default=None: getattr(item, key, default)
+        nested = getter("greeks", None)
+        parsed = {
+            "delta": _first_decimal(
+                getter("delta", None),
+                getattr(nested, "delta", None) if nested is not None else None,
+                nested.get("delta") if isinstance(nested, dict) else None,
+            ),
+            "gamma": _first_decimal(
+                getter("gamma", None),
+                getattr(nested, "gamma", None) if nested is not None else None,
+                nested.get("gamma") if isinstance(nested, dict) else None,
+            ),
+            "theta": _first_decimal(
+                getter("theta", None),
+                getattr(nested, "theta", None) if nested is not None else None,
+                nested.get("theta") if isinstance(nested, dict) else None,
+            ),
+            "vega": _first_decimal(
+                getter("vega", None),
+                getattr(nested, "vega", None) if nested is not None else None,
+                nested.get("vega") if isinstance(nested, dict) else None,
+            ),
+        }
+        if any(value is None for value in parsed.values()):
+            return None, None, None, None
+        if all(value == Decimal("0") for value in parsed.values()):
+            return None, None, None, None
+        for key, value in parsed.items():
+            totals[key] += value
+    return (
+        float(totals["delta"]),
+        float(totals["gamma"]),
+        float(totals["theta"]),
+        float(totals["vega"]),
+    )
+
+
 def _as_decimal(value: Any) -> Decimal | None:
     if value is None:
         return None
@@ -294,6 +338,14 @@ def _as_decimal(value: Any) -> Decimal | None:
     if number.is_nan():
         return None
     return number
+
+
+def _first_decimal(*values: Any) -> Decimal | None:
+    for value in values:
+        parsed = _as_decimal(value)
+        if parsed is not None:
+            return parsed
+    return None
 
 
 def _freshness(ts: datetime, now: datetime) -> Decimal:
@@ -373,10 +425,26 @@ def _chain_from_payload(payload: Any, underlying: str) -> tuple[pd.DataFrame, tu
         quote_ts = getattr(latest, "timestamp", None) or getattr(snap, "timestamp", None)
         if not isinstance(quote_ts, datetime):
             quote_ts = None
-        delta = _as_decimal(getattr(greeks, "delta", None) or getattr(snap, "delta", None)) or Decimal("0")
-        gamma = _as_decimal(getattr(greeks, "gamma", None)) or Decimal("0")
-        theta = _as_decimal(getattr(greeks, "theta", None)) or Decimal("0")
-        vega = _as_decimal(getattr(greeks, "vega", None)) or Decimal("0")
+        delta = _first_decimal(
+            getattr(greeks, "delta", None) if greeks is not None else None,
+            getattr(snap, "delta", None),
+        )
+        gamma = _first_decimal(
+            getattr(greeks, "gamma", None) if greeks is not None else None,
+            getattr(snap, "gamma", None),
+        )
+        theta = _first_decimal(
+            getattr(greeks, "theta", None) if greeks is not None else None,
+            getattr(snap, "theta", None),
+        )
+        vega = _first_decimal(
+            getattr(greeks, "vega", None) if greeks is not None else None,
+            getattr(snap, "vega", None),
+        )
+        iv = _first_decimal(
+            getattr(snap, "implied_volatility", None),
+            getattr(greeks, "implied_volatility", None) if greeks is not None else None,
+        )
         option_type = OptionType.PUT if kind == "P" else OptionType.CALL
         rows.append(
             {
@@ -390,10 +458,12 @@ def _chain_from_payload(payload: Any, underlying: str) -> tuple[pd.DataFrame, tu
                 "last_price": float(last),
                 "bid": float(bid),
                 "ask": float(ask),
-                "delta": float(delta),
-                "gamma": float(gamma),
-                "theta": float(theta),
-                "vega": float(vega),
+                "delta": float(delta) if delta is not None else None,
+                "gamma": float(gamma) if gamma is not None else None,
+                "theta": float(theta) if theta is not None else None,
+                "vega": float(vega) if vega is not None else None,
+                "implied_volatility": float(iv) if iv is not None else None,
+                "quote_timestamp": quote_ts,
                 "volume": int(getattr(snap, "volume", 0) or 0),
                 "open_interest": int(getattr(snap, "open_interest", 0) or 0),
             }
@@ -414,6 +484,7 @@ def _chain_from_payload(payload: Any, underlying: str) -> tuple[pd.DataFrame, tu
                     theta=theta,
                     vega=vega,
                     quote_timestamp=quote_ts,
+                    implied_volatility=iv,
                 )
             )
         except ValueError:
@@ -607,6 +678,7 @@ def observe_live(
     if status in {"0", "none", "None"}:
         options_approved = False
 
+    net_delta, net_gamma, net_theta, net_vega = _portfolio_greeks(position_list)
     portfolio = PortfolioSnapshot(
         equity=float(equity),
         buying_power=float(buying_power),
@@ -616,8 +688,10 @@ def observe_live(
         options_approved=options_approved,
         trades_today=int(getattr(account, "daytrade_count", 0) or 0),
         open_positions=len(position_list),
-        net_delta=0.0,
-        net_vega=0.0,
+        net_delta=net_delta,
+        net_vega=net_vega,
+        net_gamma=net_gamma,
+        net_theta=net_theta,
         positions=[{"symbol": getattr(item, "symbol", "")} for item in position_list],
     )
     if open_list:

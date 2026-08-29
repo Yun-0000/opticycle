@@ -6,7 +6,7 @@ The pin 0.85 limit fallback never enters calculated risk.
 
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -69,11 +69,18 @@ def _quote(
     strike: str,
     bid: str,
     ask: str,
-    delta: str = "0",
-    vega: str = "0",
-    gamma: str = "0",
-    theta: str = "0",
+    delta: str | None = "-0.20",
+    vega: str | None = "0.08",
+    gamma: str | None = "0.01",
+    theta: str | None = "-0.04",
+    quote_timestamp: datetime | None | object = ...,
+    implied_volatility: str | None = None,
 ) -> OptionContractQuote:
+    ts: datetime | None
+    if quote_timestamp is ...:
+        ts = datetime.now(timezone.utc)
+    else:
+        ts = quote_timestamp  # type: ignore[assignment]
     return OptionContractQuote(
         symbol=symbol,
         underlying="SPY",
@@ -83,10 +90,12 @@ def _quote(
         bid=Decimal(bid),
         ask=Decimal(ask),
         last=(Decimal(bid) + Decimal(ask)) / Decimal("2"),
-        delta=Decimal(delta),
-        vega=Decimal(vega),
-        gamma=Decimal(gamma),
-        theta=Decimal(theta),
+        delta=None if delta is None else Decimal(delta),
+        vega=None if vega is None else Decimal(vega),
+        gamma=None if gamma is None else Decimal(gamma),
+        theta=None if theta is None else Decimal(theta),
+        quote_timestamp=ts,
+        implied_volatility=None if implied_volatility is None else Decimal(implied_volatility),
     )
 
 
@@ -663,7 +672,8 @@ def test_certificate_binds_required_hashes_and_times() -> None:
     engine = RiskEngine(_settings())
     now = datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc)
     payload = _payload(_bull_put_legs())
-    evidence = _evidence(_bull_put_quotes(), now=now)
+    quotes = tuple(replace(quote, quote_timestamp=now) for quote in _bull_put_quotes())
+    evidence = _evidence(quotes, now=now)
     portfolio = _portfolio()
     cert = engine.issue(payload, portfolio, evidence, now=now, cycle_id="cycle-bind")
     assert cert.payload_hash == payload.payload_hash

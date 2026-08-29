@@ -29,6 +29,14 @@ def ensure_utc(dt: datetime | None = None) -> datetime:
     return dt.astimezone(timezone.utc)
 
 
+def freshness_seconds(timestamp: datetime | None, now: datetime) -> Decimal | None:
+    """Age in seconds from a real timestamp. Missing timestamp is None, never 0."""
+    if timestamp is None:
+        return None
+    delta = ensure_utc(now) - ensure_utc(timestamp)
+    return Decimal(str(max(delta.total_seconds(), 0.0)))
+
+
 def format_decimal(d: Decimal, places: int = 2) -> str:
     """Canonical string formatting for financial decimal numbers."""
     q = Decimal("10") ** -places
@@ -148,13 +156,14 @@ class OptionContractQuote:
     bid: Decimal
     ask: Decimal
     last: Decimal
-    delta: Decimal
-    gamma: Decimal = Decimal("0")
-    theta: Decimal = Decimal("0")
-    vega: Decimal = Decimal("0")
+    delta: Decimal | None = None
+    gamma: Decimal | None = None
+    theta: Decimal | None = None
+    vega: Decimal | None = None
     open_interest: int = 0
     volume: int = 0
     quote_timestamp: datetime | None = None
+    implied_volatility: Decimal | None = None
 
     def __post_init__(self) -> None:
         if not OCC_SYMBOL_RE.fullmatch(self.symbol):
@@ -417,16 +426,19 @@ def evidence_canonical_dict(evidence: EvidenceSnapshot) -> dict[str, Any]:
             {
                 "ask": format_decimal(quote.ask, 4),
                 "bid": format_decimal(quote.bid, 4),
-                "delta": format_decimal(quote.delta, 6),
+                "delta": format_decimal(quote.delta, 6) if quote.delta is not None else "",
                 "expiration": ensure_utc(quote.expiration).strftime("%Y-%m-%d"),
-                "gamma": format_decimal(quote.gamma, 6),
+                "gamma": format_decimal(quote.gamma, 6) if quote.gamma is not None else "",
+                "implied_volatility": (
+                    format_decimal(quote.implied_volatility, 6) if quote.implied_volatility is not None else ""
+                ),
                 "last": format_decimal(quote.last, 4),
                 "option_type": quote.option_type.value,
                 "strike_price": format_decimal(quote.strike_price, 2),
                 "symbol": quote.symbol,
-                "theta": format_decimal(quote.theta, 6),
+                "theta": format_decimal(quote.theta, 6) if quote.theta is not None else "",
                 "underlying": quote.underlying,
-                "vega": format_decimal(quote.vega, 6),
+                "vega": format_decimal(quote.vega, 6) if quote.vega is not None else "",
                 "quote_timestamp": (
                     ensure_utc(quote.quote_timestamp).isoformat() if quote.quote_timestamp is not None else ""
                 ),
@@ -512,6 +524,8 @@ class LegRisk:
     vega: Decimal
     gamma: Decimal
     theta: Decimal
+    quote_timestamp: datetime | None = None
+    quote_age_seconds: Decimal | None = None
 
     def canonical_dict(self) -> dict[str, Any]:
         return {
@@ -519,6 +533,12 @@ class LegRisk:
             "bid": format_decimal(self.bid, 4),
             "delta": format_decimal(self.delta, 6),
             "gamma": format_decimal(self.gamma, 6),
+            "quote_age_seconds": (
+                format_decimal(self.quote_age_seconds, 3) if self.quote_age_seconds is not None else ""
+            ),
+            "quote_timestamp": (
+                ensure_utc(self.quote_timestamp).isoformat() if self.quote_timestamp is not None else ""
+            ),
             "ratio_qty": self.ratio_qty,
             "side": self.side,
             "symbol": self.symbol,

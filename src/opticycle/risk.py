@@ -30,6 +30,7 @@ from opticycle.protocol import (
     ensure_utc,
     evidence_digest,
     format_decimal,
+    freshness_seconds,
     parse_occ_symbol,
 )
 from opticycle.settings import HackathonSettings
@@ -42,7 +43,6 @@ DAILY_LOSS_FRACTION = Decimal("0.02")
 MAX_ABS_GAMMA = Decimal("40")
 MAX_ABS_THETA = Decimal("400")
 VOLLIB_RATE = 0.04
-VOLLIB_SIGMA = 0.20
 
 # Pin leftover. Never used as a quote, premium, or certificate price.
 PIN_LIMIT_FALLBACK = Decimal("0.85")
@@ -58,10 +58,10 @@ class PortfolioSnapshot:
     options_approved: bool = True
     trades_today: int = 0
     open_positions: int = 0
-    net_delta: float = 0.0
-    net_vega: float = 0.0
-    net_gamma: float = 0.0
-    net_theta: float = 0.0
+    net_delta: float | None = None
+    net_vega: float | None = None
+    net_gamma: float | None = None
+    net_theta: float | None = None
     daily_loss: float = 0.0
     open_risk: float = 0.0
     positions: list[dict[str, Any]] = field(default_factory=list)
@@ -77,6 +77,12 @@ class GateResult:
             raise ExecutionRejected("; ".join(self.reasons) or "risk gate rejected the order")
 
 
+def _optional_greek_str(value: float | None) -> str:
+    if value is None:
+        return ""
+    return format_decimal(Decimal(str(value)), 6)
+
+
 def account_canonical_dict(portfolio: PortfolioSnapshot) -> dict[str, Any]:
     positions = []
     for item in portfolio.positions:
@@ -90,10 +96,10 @@ def account_canonical_dict(portfolio: PortfolioSnapshot) -> dict[str, Any]:
         "cash": format_decimal(Decimal(str(portfolio.cash)), 2),
         "daily_loss": format_decimal(Decimal(str(portfolio.daily_loss)), 2),
         "equity": format_decimal(Decimal(str(portfolio.equity)), 2),
-        "net_delta": format_decimal(Decimal(str(portfolio.net_delta)), 6),
-        "net_gamma": format_decimal(Decimal(str(portfolio.net_gamma)), 6),
-        "net_theta": format_decimal(Decimal(str(portfolio.net_theta)), 6),
-        "net_vega": format_decimal(Decimal(str(portfolio.net_vega)), 6),
+        "net_delta": _optional_greek_str(portfolio.net_delta),
+        "net_gamma": _optional_greek_str(portfolio.net_gamma),
+        "net_theta": _optional_greek_str(portfolio.net_theta),
+        "net_vega": _optional_greek_str(portfolio.net_vega),
         "open_positions": int(portfolio.open_positions),
         "open_risk": format_decimal(Decimal(str(portfolio.open_risk)), 2),
         "options_approved": bool(portfolio.options_approved),
@@ -182,6 +188,29 @@ def scale_greeks(greeks: dict[str, float], qty: int, side: str) -> dict[str, flo
 
 def quotes_by_symbol(evidence: EvidenceSnapshot) -> dict[str, OptionContractQuote]:
     return {quote.symbol: quote for quote in evidence.chain_quotes}
+
+
+def _optional_decimal(value: Any) -> Decimal | None:
+    if value is None or value == "":
+        return None
+    try:
+        parsed = Decimal(str(value))
+    except Exception:
+        return None
+    if parsed.is_nan():
+        return None
+    return parsed
+
+
+def observed_greeks(quote: OptionContractQuote) -> bool:
+    """True when all four greeks are present as real inputs, not defaulted zeros."""
+    values = (quote.delta, quote.gamma, quote.theta, quote.vega)
+    if any(item is None for item in values):
+        return False
+    if all(item == Decimal("0") for item in values):
+        # Fixture-only zeros are not a live greek observation, even if IV is set.
+        return False
+    return True
 
 
 def payload_from_request(
@@ -276,6 +305,10 @@ def evidence_from_chain_rows(
         last = Decimal(str(getter("last_price") if getter("last_price") is not None else getter("last") or 0))
         kind = str(getter("option_type") or option_type.value)
         resolved_type = OptionType.PUT if str(kind).upper().startswith("P") else OptionType.CALL
+        quote_ts = getter("quote_timestamp") or getter("timestamp")
+        if not isinstance(quote_ts, datetime):
+            quote_ts = None
+        iv = _optional_decimal(getter("implied_volatility") if getter("implied_volatility") is not None else getter("iv"))
         quotes.append(
             OptionContractQuote(
                 symbol=symbol,
@@ -286,10 +319,12 @@ def evidence_from_chain_rows(
                 bid=bid,
                 ask=ask,
                 last=last,
-                delta=Decimal(str(getter("delta") or 0)),
-                gamma=Decimal(str(getter("gamma") or 0)),
-                theta=Decimal(str(getter("theta") or 0)),
-                vega=Decimal(str(getter("vega") or 0)),
+                delta=_optional_decimal(getter("delta")),
+                gamma=_optional_decimal(getter("gamma")),
+                theta=_optional_decimal(getter("theta")),
+                vega=_optional_decimal(getter("vega")),
+                quote_timestamp=quote_ts,
+                implied_volatility=iv,
             )
         )
     return EvidenceSnapshot(
@@ -302,6 +337,7 @@ def evidence_from_chain_rows(
         chain_quotes=tuple(quotes),
         correlation_id=correlation_id,
         account_id=account_id,
+        quote_timestamp=now,
     )
 
 
@@ -357,12 +393,15 @@ class RiskGate:
         if notional > portfolio.buying_power:
             reasons.append("insufficient buying power")
 
-        new_delta = abs(portfolio.net_delta + proposed_delta)
-        new_vega = abs(portfolio.net_vega + proposed_vega)
-        if new_delta > self.settings.max_abs_delta:
-            reasons.append("portfolio delta limit exceeded")
-        if new_vega > self.settings.max_abs_vega:
-            reasons.append("portfolio vega limit exceeded")
+        if portfolio.net_delta is None or portfolio.net_vega is None:
+            reasons.append("NO_TRADE: missing portfolio greeks")
+        else:
+            new_delta = abs(portfolio.net_delta + proposed_delta)
+            new_vega = abs(portfolio.net_vega + proposed_vega)
+            if new_delta > self.settings.max_abs_delta:
+                reasons.append("portfolio delta limit exceeded")
+            if new_vega > self.settings.max_abs_vega:
+                reasons.append("portfolio vega limit exceeded")
 
         return GateResult(approved=not reasons, reasons=reasons)
 
@@ -539,7 +578,10 @@ class RiskEngine:
 
         quote_age = evidence.quote_age_seconds
         quote_fresh = bool(evidence.is_fresh) and quote_age <= limits.max_quote_age_seconds
-        if not quote_fresh or quote_age > limits.max_quote_age_seconds:
+        if evidence.quote_timestamp is None and quote_age == 0 and not evidence.is_fresh:
+            reasons.append("stale quote")
+            quote_fresh = False
+        elif not quote_fresh or quote_age > limits.max_quote_age_seconds:
             reasons.append("stale quote")
 
         width = Decimal("0")
@@ -565,12 +607,26 @@ class RiskEngine:
                     missing_quote = True
                     reasons.append(f"NO_TRADE: missing quote for {leg.symbol}")
                     continue
-                bid = quote.bid
-                ask = quote.ask
+                leg_age = freshness_seconds(quote.quote_timestamp, now)
+                if quote.quote_timestamp is None or leg_age is None:
+                    missing_quote = True
+                    reasons.append(f"NO_TRADE: missing quote timestamp for {leg.symbol}")
+                    continue
+                if leg_age > limits.max_quote_age_seconds:
+                    missing_quote = True
+                    quote_fresh = False
+                    reasons.append(f"NO_TRADE: stale quote for {leg.symbol}")
+                    continue
                 greeks = _leg_greeks(leg, quote, evidence.spot_price, now)
+                if greeks is None:
+                    missing_quote = True
+                    reasons.append(f"NO_TRADE: missing greeks for {leg.symbol}")
+                    continue
                 signed = _signed_greeks(greeks, payload.qty, leg.ratio_qty, leg.side)
                 for key in combo:
                     combo[key] += signed[key]
+                bid = quote.bid
+                ask = quote.ask
                 leg_risks.append(
                     LegRisk(
                         symbol=leg.symbol,
@@ -582,6 +638,8 @@ class RiskEngine:
                         vega=signed["vega"],
                         gamma=signed["gamma"],
                         theta=signed["theta"],
+                        quote_timestamp=quote.quote_timestamp,
+                        quote_age_seconds=leg_age,
                     )
                 )
                 premium = bid if leg.side == OrderSide.SELL else ask
@@ -636,18 +694,30 @@ class RiskEngine:
             if open_risk > limits.max_open_risk:
                 reasons.append("open risk limit exceeded")
 
-        portfolio_delta = Decimal(str(portfolio.net_delta)) + combo["delta"]
-        portfolio_vega = Decimal(str(portfolio.net_vega)) + combo["vega"]
-        portfolio_gamma = Decimal(str(portfolio.net_gamma)) + combo["gamma"]
-        portfolio_theta = Decimal(str(portfolio.net_theta)) + combo["theta"]
-        if abs(portfolio_delta) > limits.max_abs_delta:
-            reasons.append("portfolio delta limit exceeded")
-        if abs(portfolio_vega) > limits.max_abs_vega:
-            reasons.append("portfolio vega limit exceeded")
-        if abs(portfolio_gamma) > limits.max_abs_gamma:
-            reasons.append("portfolio gamma limit exceeded")
-        if abs(portfolio_theta) > limits.max_abs_theta:
-            reasons.append("portfolio theta limit exceeded")
+        if (
+            portfolio.net_delta is None
+            or portfolio.net_vega is None
+            or portfolio.net_gamma is None
+            or portfolio.net_theta is None
+        ):
+            reasons.append("NO_TRADE: missing portfolio greeks")
+            portfolio_delta = combo["delta"]
+            portfolio_vega = combo["vega"]
+            portfolio_gamma = combo["gamma"]
+            portfolio_theta = combo["theta"]
+        else:
+            portfolio_delta = Decimal(str(portfolio.net_delta)) + combo["delta"]
+            portfolio_vega = Decimal(str(portfolio.net_vega)) + combo["vega"]
+            portfolio_gamma = Decimal(str(portfolio.net_gamma)) + combo["gamma"]
+            portfolio_theta = Decimal(str(portfolio.net_theta)) + combo["theta"]
+            if abs(portfolio_delta) > limits.max_abs_delta:
+                reasons.append("portfolio delta limit exceeded")
+            if abs(portfolio_vega) > limits.max_abs_vega:
+                reasons.append("portfolio vega limit exceeded")
+            if abs(portfolio_gamma) > limits.max_abs_gamma:
+                reasons.append("portfolio gamma limit exceeded")
+            if abs(portfolio_theta) > limits.max_abs_theta:
+                reasons.append("portfolio theta limit exceeded")
 
         calculated = CalculatedRisk(
             is_credit=is_credit,
@@ -704,15 +774,19 @@ def _leg_greeks(
     quote: OptionContractQuote,
     spot: Decimal,
     now: datetime,
-) -> dict[str, Decimal]:
-    quoted = {
-        "delta": quote.delta,
-        "vega": quote.vega,
-        "gamma": quote.gamma,
-        "theta": quote.theta,
-    }
-    if any(value != 0 for value in quoted.values()):
-        return quoted
+) -> dict[str, Decimal] | None:
+    if observed_greeks(quote):
+        assert quote.delta is not None and quote.vega is not None
+        assert quote.gamma is not None and quote.theta is not None
+        return {
+            "delta": quote.delta,
+            "vega": quote.vega,
+            "gamma": quote.gamma,
+            "theta": quote.theta,
+        }
+    iv = quote.implied_volatility
+    if iv is None or iv <= 0 or spot <= 0:
+        return None
     expiry = ensure_utc(leg.expiration)
     t_years = max((expiry - ensure_utc(now)).total_seconds(), 1.0) / (365.0 * 24 * 3600)
     flag = "p" if leg.option_type == OptionType.PUT else "c"
@@ -722,7 +796,7 @@ def _leg_greeks(
         float(leg.strike_price),
         t_years,
         VOLLIB_RATE,
-        VOLLIB_SIGMA,
+        float(iv),
     )
     return {key: Decimal(str(value)) for key, value in raw.items()}
 

@@ -19,6 +19,8 @@ def dry_run_portfolio(settings: HackathonSettings) -> PortfolioSnapshot:
         open_positions=0,
         net_delta=0.0,
         net_vega=0.0,
+        net_gamma=0.0,
+        net_theta=0.0,
     )
 
 
