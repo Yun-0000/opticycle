@@ -12,7 +12,7 @@
 
 Build **GaussOptions Agent** — an autonomous, options-first AI trading agent on Alpaca paper — by upgrading the pinned **Gauss World Trader** baseline while preserving its Alpaca-connected strategy/execution skeleton, multi-agent analysis loop, and existing options modules (`wheel`, `vertical_spread`, `TradingOptionEngine`).
 
-The judged artifact is **not** the upstream stock-trading platform demo. It is a **fresh-paper, options-mandatory, MCP-routed autonomous agent** that places real paper orders through **Alpaca MCP Server** (primary) with **Alpaca CLI** as a documented fallback, enforces **$100,000 paper risk gates**, and ships MIT-licensed submission materials including a one-page write-up and Alpaca account ID placeholder for the user to fill at submission time.
+The judged artifact is **not** the upstream stock-trading platform demo. It is a **fresh-paper, options-mandatory, MCP-routed autonomous agent** that places real paper orders through **Alpaca MCP Server** (primary) with **Alpaca CLI** as a documented fallback, enforces **$100,000 paper risk gates** on the **already-created dedicated hackathon paper account**, and ships MIT-licensed submission materials including a one-page write-up, the paper account ID document, and a **Remotion-produced demo video** (not a screen recording). API keys never enter the repo or chat.
 
 **Submission deadline:** 2026-09-04 08:00 PDT (America/Los_Angeles).
 
@@ -26,7 +26,7 @@ The judged artifact is **not** the upstream stock-trading platform demo. It is a
 | Alpaca Trading API | Sponsor tech | Keep `alpaca-py` data/account clients; paper `TradingClient` for verification and contract discovery |
 | Alpaca MCP **or** CLI for orders | Pass/fail gate | **Primary:** `alpaca-mcp-server` via MCP Python SDK; **Fallback:** official `alpacahq/cli` subprocess adapter |
 | Strategy **must include options** | Pass/fail gate | Default live path runs option strategies only (`wheel`, `vertical_spread`); stock-only paths disabled in hackathon profile |
-| Fresh Alpaca paper account, $100k | Pass/fail gate | Document + env gate for dedicated paper keys; reject reuse of dev account IDs in submission checklist |
+| Fresh Alpaca paper account, $100k | Pass/fail gate | Use the already-created dedicated $100k hackathon paper account; keys stay in local `.env` only; never commit secrets |
 | Submit project (MIT), write-up, account ID | Submission rules | Repo MIT + `docs/SUBMISSION_WRITEUP.md` + `docs/ALPACA_ACCOUNT.md` template |
 | Original work with prior-code disclosure | Terms §16 | `THIRD_PARTY_NOTICES.md` + README attribution for GWT foundation and Alpaca SDKs |
 | Solo team (1 person) | Guidelines | Single-operator build; no team coordination artifacts |
@@ -80,7 +80,7 @@ The judged artifact is **not** the upstream stock-trading platform demo. It is a
    - Approved plans route to **MCP executor** → `alpaca-mcp-server` tools for option order submit
    - Structured JSON logs + SQLite/JSON trade journal record every decision and order ID
 4. Operator runs verification script to prove MCP order path and options leg on paper
-5. Submission pack: repo, write-up, account ID doc, demo recording script
+5. Submission pack: repo, write-up, account ID doc, Remotion project + rendered demo MP4
 
 **Differentiation vs upstream GWT:** Mandatory MCP execution path, hackathon-only options-first profile, fresh-account compliance checklist, and submission-oriented documentation — not a generic multi-asset trading platform demo.
 
@@ -97,7 +97,7 @@ The judged artifact is **not** the upstream stock-trading platform demo. It is a
 5. **Options-first autonomous runner** — `gaussoptions run` module: unattended loop over option strategies only
 6. **Risk gate hardening** — Extend existing limits with portfolio greeks checks using `vollib` (replace/enhance hand-rolled greeks)
 7. **Verification & tests** — Unit tests for risk gates and MCP adapter mocking; integration script `scripts/verify-paper-mcp-order.py` (dry-run/mock without live keys in CI; live run documented for user credentials)
-8. **Submission docs** — `docs/SUBMISSION_WRITEUP.md`, `docs/ALPACA_ACCOUNT.md`, `docs/DEMO_SCRIPT.md`, updated README, `THIRD_PARTY_NOTICES.md`
+8. **Submission docs + Remotion demo** — `docs/SUBMISSION_WRITEUP.md`, `docs/ALPACA_ACCOUNT.md` (ID only, no keys), `remotion/` source, rendered `artifacts/demo.mp4`, shot list, updated README, `THIRD_PARTY_NOTICES.md`
 9. **Attribution** — Preserve MIT license chain; Apache-2.0 notices for Alpaca SDK/CLI
 
 ### Non-goals (explicitly out of Build scope)
@@ -197,9 +197,9 @@ Builder may add only these unless Plan is revised:
 | Action | When | Blocker if missing |
 | --- | --- | --- |
 | Register on lablab.ai event page | Before submission | Cannot submit |
-| Create **brand-new** Alpaca paper account for hackathon only | Before live E2E demo | Cannot pass account-ID artifact |
+| Dedicated $100k hackathon paper account (already created) | Live E2E / submit | Use this account only; do not open another |
 | Provide paper API key/secret via local `.env` (never commit) | Before live verification | Live MCP order test blocked |
-| Fill `docs/ALPACA_ACCOUNT.md` with real account ID | At submission | Incomplete submission |
+| Confirm account ID in `docs/ALPACA_ACCOUNT.md` (ID only) | At submission | Incomplete submission |
 | Accept lablab/Alpaca terms, W-8BEN/KYC, bank details | If winning | Payout only |
 | Final lablab platform submission | By 2026-09-04 08:00 PDT | — |
 | Optional: LLM provider key (OpenAI/Anthropic/etc.) for `llm` multi-agent mode | For full agent demo | `fast` mode remains default without LLM key |
@@ -209,7 +209,7 @@ Builder may add only these unless Plan is revised:
 - **Execution backend:** MCP primary; CLI fallback documented
 - **Agent mode:** `fast` multi-agent (no LLM billing) unless user supplies LLM keys
 - **Autonomous interval:** 15 minutes; single-symbol watchlist default `SPY` for demo reproducibility
-- **Paper account:** Builder uses mocks/fixtures in CI; live paper proof is user-credential gated but scripted
+- **Paper account:** Use the existing dedicated $100k hackathon paper account. Builder uses mocks/fixtures in CI; live paper proof is local-credential gated and scripted. No keys in git.
 
 ---
 
@@ -222,8 +222,8 @@ Builder may add only these unless Plan is revised:
 | **B3 Hackathon profile** | Settings, options-only guard, $100k checks |
 | **B4 Autonomous runner** | `gaussoptions run` + logging/journal |
 | **B5 Risk gates** | vollib greeks, pre-trade veto tests |
-| **B6 Verification** | pytest suite + verify script + demo script |
-| **B7 Submission pack** | Write-up, README, screenshots list, account template |
+| **B6 Verification** | pytest suite + verify script + Remotion shot list |
+| **B7 Submission pack** | Write-up, README, account ID doc, Remotion source + rendered `artifacts/demo.mp4` |
 
 **Build branch (post-approval):** `cursor/alpaca-trading-agents-build-622b` off approved Plan commit.
 
@@ -242,7 +242,7 @@ Builder may add only these unless Plan is revised:
 
 Full path: **config load → agent decision → risk gate → MCP tool call (mock or live paper) → journal entry → verification script success**.
 
-Live paper E2E with real Alpaca keys is **documented** in `docs/DEMO_SCRIPT.md` and run by operator; CI uses mocks. Submission-ready evidence binds to commit with mock E2E passing; live run notes included in write-up when user completes it.
+Live paper E2E with local Alpaca keys is scripted; CI uses mocks. Submission-ready evidence binds to commit with mock E2E passing plus a Remotion-rendered demo video. Keys never appear in git, Plan, or chat.
 
 ### Final review (Reviewer child)
 
@@ -256,8 +256,8 @@ Fresh Reviewer validates exact `buildId` commit against this Plan SHA, artifact 
 | --- | --- | --- |
 | MIT source repo | This GitHub repository | Builder |
 | One-page write-up | `docs/SUBMISSION_WRITEUP.md` | Builder |
-| Alpaca paper account ID | `docs/ALPACA_ACCOUNT.md` (user fills ID) | User at submit |
-| Demo evidence | `docs/DEMO_SCRIPT.md` + optional terminal recording | Builder script; user records |
+| Alpaca paper account ID | `docs/ALPACA_ACCOUNT.md` (ID only, no keys) | Confirm existing account at submit |
+| Remotion demo video | `remotion/` source + `artifacts/demo.mp4` + shot list | Builder; formal video, not a screen recording |
 | Third-party notices | `THIRD_PARTY_NOTICES.md` | Builder |
 
 No hosted deployment URL required unless user later requests demo hosting (excluded from MVP).
@@ -317,7 +317,8 @@ No hosted deployment URL required unless user later requests demo hosting (exclu
 3. **MVP agent mode:** `fast` (no LLM API cost) unless user opts in with keys
 4. **Demo symbol:** SPY options wheel/vertical spread rotation
 5. **No hosted deployment** in artifact contract
-6. **Live paper proof** is user-credential gated but fully scripted
+6. **Paper account** is the already-created dedicated $100k hackathon account; keys stay local
+7. **Demo video** is Remotion-produced and bound to `buildId`; a screen recording or empty script fails review
 
 Revise via natural language in this Project Root thread; each revision updates this file and invalidates prior approval commands.
 
@@ -339,7 +340,7 @@ Revise via natural language in this Project Root thread; each revision updates t
     "id": "alpaca-paper-account-id",
     "kind": "document",
     "source": "event_rules",
-    "description": "Fresh Alpaca paper trading account ID for hackathon submission, recorded in docs/ALPACA_ACCOUNT.md for the user to confirm before platform submit."
+    "description": "Dedicated $100k Alpaca paper account ID already created for this hackathon, recorded as ID-only in docs/ALPACA_ACCOUNT.md. Never store API keys in the repository."
   },
   {
     "id": "alpaca-mcp-cli-integration",
@@ -354,10 +355,10 @@ Revise via natural language in this Project Root thread; each revision updates t
     "description": "Autonomous agent strategy that includes options trades (wheel and/or vertical spreads) on Alpaca paper, not stock-only execution."
   },
   {
-    "id": "autonomous-agent-demo",
-    "kind": "demo",
+    "id": "remotion-demo-video",
+    "kind": "video",
     "source": "approved_plan",
-    "description": "End-to-end autonomous agent cycle documented in docs/DEMO_SCRIPT.md with structured logs showing agent decision, risk gate pass, and MCP order routing."
+    "description": "Formal Remotion-produced demo video of the autonomous options agent (decision, risk gate, MCP/CLI paper order). Source in remotion/, rendered MP4 at artifacts/demo.mp4, plus shot list. Screen recordings or empty scripts do not satisfy this requirement."
   },
   {
     "id": "third-party-notices",
