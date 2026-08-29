@@ -1,0 +1,60 @@
+name: Project state validation
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-project-state:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out trusted validator from the current base
+        if: github.repository != 'yun-hackathons/hackathon-template'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+          persist-credentials: false
+      - name: Check out pull request candidate without executing it
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          path: candidate
+          persist-credentials: false
+      - name: Prevent the project PR from changing its own guardrails
+        if: github.repository != 'yun-hackathons/hackathon-template'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: >-
+          git -C candidate diff --exit-code "$BASE_SHA" "$HEAD_SHA" --
+          .github/workflows/project-state-validation.yml
+          scripts/validate-project-state.py
+          scripts/approve-project.py
+          .hackathon/state.schema.json
+          .cursor/agents
+      - name: Validate durable Plan and project state
+        if: github.repository != 'yun-hackathons/hackathon-template'
+        run: python3 trusted/scripts/validate-project-state.py --repo-root candidate
+      - name: Confirm empty template sentinels and no event state
+        if: github.repository == 'yun-hackathons/hackathon-template'
+        run: |
+          set -euo pipefail
+          test -f candidate/.cursor/agents/planner.md
+          test -f candidate/.cursor/agents/builder.md
+          test -f candidate/.cursor/agents/reviewer.md
+          test -f candidate/.cursor/agents/reuse-scout.md
+          test -f candidate/.github/workflows/project-state-validation.yml
+          test -f candidate/.hackathon/state.schema.json
+          test -f candidate/scripts/validate-project-state.py
+          test -f candidate/scripts/approve-project.py
+          test -f candidate/README.md
+          test ! -e candidate/.hackathon/state.json
+          test ! -e candidate/.hackathon/event.json
+          test ! -e candidate/.hackathon/candidate-report.md
+          test ! -e candidate/PLAN.md
+          git -C candidate diff --check
+          echo "Empty template sentinels are present and provisionable."

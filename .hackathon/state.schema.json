@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yun-hackathons.local/schemas/project-state-v5.json",
+  "title": "Hackathon Project State v5",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "eventId",
+    "state",
+    "planSha256",
+    "artifactRequirements",
+    "buildId",
+    "planApproval",
+    "builderRun",
+    "qualityGates",
+    "updatedAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 5 },
+    "eventId": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "state": {
+      "enum": [
+        "PLAN_PENDING_APPROVAL",
+        "BUILDING",
+        "FINAL_REVIEW",
+        "SUBMISSION_READY"
+      ]
+    },
+    "planSha256": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      ]
+    },
+    "artifactRequirements": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifactRequirement" }
+    },
+    "buildId": {
+      "description": "The reviewed artifact/code commit SHA. A later metadata-only state commit is not the buildId.",
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^[a-f0-9]{40}$" }
+      ]
+    },
+    "planApproval": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/planApproval" }
+      ]
+    },
+    "builderRun": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/builderRun" }
+      ]
+    },
+    "qualityGates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mvp", "submissionReady"],
+      "properties": {
+        "mvp": { "$ref": "#/$defs/gate" },
+        "submissionReady": { "$ref": "#/$defs/submissionGate" }
+      }
+    },
+    "updatedAt": { "$ref": "#/$defs/timestamp" }
+  },
+  "$defs": {
+    "timestamp": { "type": "string", "format": "date-time" },
+    "artifactRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "source", "description"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "kind": {
+          "enum": [
+            "repository",
+            "url",
+            "game_build",
+            "installable",
+            "video",
+            "document",
+            "integration",
+            "demo",
+            "other"
+          ]
+        },
+        "source": { "enum": ["event_rules", "approved_plan"] },
+        "description": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "commitSha", "timestamp", "checkedBy"],
+      "properties": {
+        "type": { "enum": ["command", "test", "artifact"] },
+        "commitSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "timestamp": { "$ref": "#/$defs/timestamp" },
+        "checkedBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "command": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "exitCode": { "type": "integer", "const": 0 },
+        "requirementId": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "kind": {
+          "enum": [
+            "repository",
+            "url",
+            "game_build",
+            "installable",
+            "video",
+            "document",
+            "integration",
+            "demo",
+            "other"
+          ]
+        },
+        "locator": { "type": "string", "minLength": 1, "maxLength": 2048 }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "checkedAt", "evidence"],
+      "properties": {
+        "status": { "enum": ["pending", "running", "passed", "failed", "blocked"] },
+        "checkedAt": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/timestamp" }
+          ]
+        },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } }
+      }
+    },
+    "submissionGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "checkedAt", "evidence", "reviewRounds", "review"],
+      "properties": {
+        "status": { "enum": ["pending", "running", "passed", "failed", "blocked"] },
+        "checkedAt": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/timestamp" }
+          ]
+        },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "reviewRounds": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "review": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/reviewerRun" }
+          ]
+        }
+      }
+    },
+    "reviewerRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "childId",
+        "round",
+        "status",
+        "startedAt",
+        "finishedAt",
+        "reviewedCommit",
+        "verdict"
+      ],
+      "properties": {
+        "childId": {
+          "type": "string",
+          "pattern": "^bc-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "round": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "status": { "enum": ["running", "completed"] },
+        "startedAt": {
+          "description": "Null is allowed only when migrating a completed historical review whose start time was not retained.",
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/timestamp" }
+          ]
+        },
+        "finishedAt": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/timestamp" }
+          ]
+        },
+        "reviewedCommit": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^[a-f0-9]{40}$" }
+          ]
+        },
+        "verdict": {
+          "oneOf": [
+            { "type": "null" },
+            { "enum": ["PASS", "BLOCKERS"] }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "running" } } },
+          "then": {
+            "properties": {
+              "startedAt": { "$ref": "#/$defs/timestamp" },
+              "finishedAt": { "type": "null" },
+              "reviewedCommit": { "type": "null" },
+              "verdict": { "type": "null" }
+            }
+          },
+          "else": {
+            "properties": {
+              "finishedAt": { "$ref": "#/$defs/timestamp" },
+              "reviewedCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+              "verdict": { "enum": ["PASS", "BLOCKERS"] }
+            }
+          }
+        }
+      ]
+    },
+    "planApproval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "eventId", "planSha256", "approvedAt"],
+      "properties": {
+        "command": { "type": "string", "minLength": 1 },
+        "eventId": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "planSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "approvedAt": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "builderRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["idempotencyKey", "attempt", "status", "startedAt", "finishedAt"],
+      "properties": {
+        "idempotencyKey": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "attempt": { "type": "integer", "const": 1 },
+        "status": { "enum": ["running", "completed", "blocked"] },
+        "startedAt": { "$ref": "#/$defs/timestamp" },
+        "finishedAt": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/timestamp" }
+          ]
+        }
+      }
+    }
+  }
+}
