@@ -111,6 +111,20 @@ def _receipt(payload, *, order_id: str = "alp-ord-1", submitted: bool = True) ->
     )
 
 
+def test_price_improvement_is_matched() -> None:
+    payload = _payload(_bull_put_legs())
+    report = reconcile(
+        payload=payload,
+        receipt=_receipt(payload),
+        broker=FakeBroker(orders=[_order(filled_avg_price="1.31")]),
+        settings=_settings(),
+    )
+    assert report.status == ReconciliationStatus.MATCHED
+    assert report.complete is True
+    assert report.halt_triggered is False
+    assert report.filled_avg_price == Decimal("1.31")
+
+
 def test_matched_fill_is_the_only_completion() -> None:
     payload = _payload(_bull_put_legs())
     report = reconcile(

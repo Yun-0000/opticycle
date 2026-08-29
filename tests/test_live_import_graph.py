@@ -18,6 +18,7 @@ LIVE_MODULES = [
     ROOT / "src" / "opticycle" / "thesis.py",
     ROOT / "src" / "opticycle" / "risk.py",
     ROOT / "src" / "opticycle" / "reconcile.py",
+    ROOT / "src" / "opticycle" / "cycle.py",
     ROOT / "src" / "trade" / "routing.py",
     ROOT / "src" / "trade" / "__init__.py",
     ROOT / "src" / "trade" / "mcp" / "alpaca_mcp_executor.py",

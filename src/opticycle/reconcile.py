@@ -19,6 +19,8 @@ from opticycle.protocol import (
     BrokerReceipt,
     CanonicalOrderPayload,
     FieldComparison,
+    OptionType,
+    OrderSide,
     ReconciliationReport,
     ReconciliationStatus,
     ensure_utc,
@@ -86,7 +88,7 @@ def _attr(obj: Any, *names: str, default: Any = None) -> Any:
 def _compare(field: str, expected: Any, observed: Any) -> FieldComparison:
     exp = _text(expected)
     obs = _text(observed)
-    if field in {"limit", "filled_avg_price", "qty", "filled_qty", "ratio"}:
+    if field in {"limit", "qty", "filled_qty", "ratio"}:
         exp_num = _decimal(expected)
         obs_num = _decimal(observed)
         matched = exp_num is not None and obs_num is not None and exp_num == obs_num
@@ -97,6 +99,48 @@ def _compare(field: str, expected: Any, observed: Any) -> FieldComparison:
     else:
         matched = exp.lower() == obs.lower() if exp and obs else exp == obs
     return FieldComparison(field=field, expected=exp, observed=obs, matched=matched)
+
+
+def _is_credit_vertical(payload: CanonicalOrderPayload) -> bool:
+    sells = [leg for leg in payload.legs if leg.side == OrderSide.SELL]
+    buys = [leg for leg in payload.legs if leg.side == OrderSide.BUY]
+    if len(sells) != 1 or len(buys) != 1:
+        return True
+    sell, buy = sells[0], buys[0]
+    if sell.option_type == OptionType.PUT:
+        return sell.strike_price > buy.strike_price
+    return sell.strike_price < buy.strike_price
+
+
+def _fill_within_limit(payload: CanonicalOrderPayload, filled_price: Decimal | None) -> bool:
+    """Limit is a bound. Credit improvement (fill above limit) must not HALT."""
+    if filled_price is None:
+        return False
+    limit = payload.limit_price
+    if _is_credit_vertical(payload):
+        return filled_price >= limit
+    return filled_price <= limit
+
+
+def _compare_fill_price(
+    payload: CanonicalOrderPayload,
+    filled_price: Decimal | None,
+    *,
+    is_filled: bool,
+) -> FieldComparison:
+    limit = payload.limit_price
+    expected = format_decimal(limit, 4)
+    observed = format_decimal(filled_price, 4) if filled_price is not None else ""
+    if not is_filled:
+        matched = True
+    else:
+        matched = _fill_within_limit(payload, filled_price)
+    return FieldComparison(
+        field="filled_avg_price",
+        expected=expected,
+        observed=observed,
+        matched=matched,
+    )
 
 
 class HaltLedger:
@@ -317,9 +361,7 @@ def reconcile(
     expected_status = "filled" if not is_partial_status else "partially_filled"
     comparisons.append(_compare("status", expected_status, broker_status or "unknown"))
     comparisons.append(_compare("filled_qty", payload.qty if is_filled_status else filled_qty, filled_qty))
-    comparisons.append(
-        _compare("filled_avg_price", payload.limit_price if is_filled_status else (filled_price or ""), filled_price)
-    )
+    comparisons.append(_compare_fill_price(payload, filled_price, is_filled=is_filled_status))
 
     for item in comparisons:
         if not item.matched and item.field not in discrepancies:
@@ -360,7 +402,7 @@ def reconcile(
         )
 
     if is_filled_status and identity_ok and filled_qty == int(payload.qty) and filled_price is not None:
-        price_ok = all(item.matched for item in comparisons if item.field == "filled_avg_price")
+        price_ok = _fill_within_limit(payload, filled_price)
         if price_ok and all(item.matched for item in comparisons if item.field in {"status", "filled_qty"}):
             return ReconciliationReport(
                 report_id=report_id,

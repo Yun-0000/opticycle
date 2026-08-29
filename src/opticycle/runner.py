@@ -9,12 +9,26 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
 
+from opticycle.cycle import (
+    POST_SUBMIT_STATES,
+    TERMINAL_STATES,
+    CycleRecord,
+    CycleState,
+    CycleStore,
+)
 from opticycle.journal import TradeJournal
 from opticycle.observe import AlpacaReadClient, MarketReadClient, ObservationClosed, ObservationResult, observe_live
 from opticycle.pin_option import ObservedBook, ObservedChainAdapter, ObservedFred, PinMarket
 from opticycle.plans import build_cycle_plan
 from opticycle.preflight import assert_paper_env, dry_run_portfolio
-from opticycle.protocol import ObservationOutcome, ThesisStance
+from opticycle.protocol import (
+    BrokerReceipt,
+    CanonicalOrderPayload,
+    ObservationOutcome,
+    ThesisStance,
+    ensure_utc,
+    evidence_digest,
+)
 from opticycle.reconcile import (
     HaltLedger,
     receipt_as_dict,
@@ -65,9 +79,14 @@ def _closed_cycle(
     dry_run: bool,
     journal_entry: dict[str, Any] | None,
     correlation_id: str,
+    cycle_id: str = "",
+    client_order_id: str = "",
+    state: str = "",
 ) -> dict[str, Any]:
     return {
         "ok": False,
+        "complete": False,
+        "submitted": False,
         "outcome": outcome.value,
         "reason": reason,
         "backend": "mcp",
@@ -75,7 +94,367 @@ def _closed_cycle(
         "order": None,
         "journal": journal_entry,
         "correlation_id": correlation_id,
+        "cycle_id": cycle_id,
+        "client_order_id": client_order_id,
+        "state": state,
     }
+
+
+def _broker_reader(broker: MarketReadClient | None, observer: MarketReadClient | None) -> Any:
+    reader = broker or observer
+    if reader is not None:
+        return reader
+    try:
+        return AlpacaReadClient.from_env()
+    except ObservationClosed:
+        return None
+
+
+def _close_open_cycle(
+    store: CycleStore | None,
+    cycle: CycleRecord | None,
+    *,
+    outcome: ObservationOutcome,
+    reason: str,
+) -> CycleRecord | None:
+    if store is None or cycle is None:
+        return cycle
+    current = store.load(cycle.cycle_id)
+    if current.state in TERMINAL_STATES:
+        return current
+    if outcome == ObservationOutcome.HALT or current.state in POST_SUBMIT_STATES:
+        return store.halt(current.cycle_id, reason, forbids_new=current.state in POST_SUBMIT_STATES)
+    return store.veto(current.cycle_id, reason)
+
+
+def _receipt_from_record(record: CycleRecord, payload: CanonicalOrderPayload) -> BrokerReceipt:
+    _ = payload
+    return BrokerReceipt(
+        receipt_id=uuid.uuid4().hex,
+        cycle_id=record.cycle_id,
+        client_order_id=record.client_order_id,
+        broker_order_id=record.broker_order_id,
+        received_at=ensure_utc(),
+        raw_status=record.broker_status or "recovered",
+        is_success=record.attempts > 0 or bool(record.broker_order_id),
+        submitted=record.attempts > 0,
+        response_payload={"recovered": True, "state": record.state.value},
+    )
+
+
+def _finalize_reconciliation(
+    *,
+    store: CycleStore,
+    record: CycleRecord,
+    payload: CanonicalOrderPayload,
+    receipt: BrokerReceipt,
+    report: Any,
+    ledger: HaltLedger,
+    log: TradeJournal,
+    mcp_result: dict[str, Any] | None,
+    settings: HackathonSettings,
+) -> dict[str, Any]:
+    if report.halt_triggered:
+        store.halt(
+            record.cycle_id,
+            "; ".join(report.discrepancies) or report.status.value,
+            forbids_new=True,
+        )
+        ledger.trip(
+            status=report.status.value,
+            reason="; ".join(report.discrepancies) or report.status.value,
+            report_id=report.report_id,
+        )
+    else:
+        if record.state is CycleState.RECONCILING:
+            store.transition(record.cycle_id, CycleState.RECONCILED, reason="matched")
+        elif record.state is CycleState.ACKNOWLEDGED:
+            store.transition(record.cycle_id, CycleState.RECONCILING, reason="reconcile")
+            store.transition(record.cycle_id, CycleState.RECONCILED, reason="matched")
+        elif record.state is not CycleState.RECONCILED:
+            store.transition(record.cycle_id, CycleState.RECONCILED, reason="matched")
+        store.transition(record.cycle_id, CycleState.COMPLETED, reason="complete")
+    final = store.load(record.cycle_id)
+    recon_entry = log.record(
+        "reconciliation",
+        {
+            "authorized_payload": payload.to_canonical_dict(),
+            "mcp_raw": (mcp_result or {}).get("raw"),
+            "broker_receipt": receipt_as_dict(receipt),
+            "comparisons": [item.canonical_dict() for item in report.comparisons],
+            "verdict": report.status.value,
+            "complete": report.complete,
+            "halt_triggered": report.halt_triggered,
+            "containment": list(report.containment),
+            "discrepancies": list(report.discrepancies),
+            "report": report_as_dict(report),
+            "cycle_id": final.cycle_id,
+            "state": final.state.value,
+            "client_order_id": final.client_order_id,
+        },
+    )
+    complete = report.complete and final.state is CycleState.COMPLETED
+    return {
+        "ok": complete,
+        "complete": complete,
+        "submitted": bool(receipt.submitted) or final.attempts > 0,
+        "outcome": ObservationOutcome.OK.value if complete else ObservationOutcome.HALT.value,
+        "reason": "" if complete else ("; ".join(report.discrepancies) or report.status.value or final.halt_reason or ""),
+        "backend": settings.execution_backend,
+        "dry_run": False,
+        "order": mcp_result,
+        "receipt": receipt_as_dict(receipt),
+        "reconciliation": report_as_dict(report),
+        "journal": recon_entry,
+        "cycle_id": final.cycle_id,
+        "client_order_id": final.client_order_id,
+        "payload_hash": final.payload_hash,
+        "state": final.state.value,
+        "recovered": mcp_result is None,
+    }
+
+
+def _reconcile_open_cycle(
+    *,
+    store: CycleStore,
+    record: CycleRecord,
+    payload: CanonicalOrderPayload,
+    receipt: BrokerReceipt,
+    broker: Any,
+    ledger: HaltLedger,
+    log: TradeJournal,
+    settings: HackathonSettings,
+    mcp_result: dict[str, Any] | None,
+) -> dict[str, Any]:
+    current = record
+    if current.state is CycleState.ACKNOWLEDGED:
+        current = store.transition(current.cycle_id, CycleState.RECONCILING, reason="reconcile")
+    report = reconcile(
+        payload=payload,
+        receipt=receipt,
+        broker=broker,
+        settings=settings,
+        cycle_id=current.cycle_id,
+    )
+    return _finalize_reconciliation(
+        store=store,
+        record=store.load(current.cycle_id),
+        payload=payload,
+        receipt=receipt,
+        report=report,
+        ledger=ledger,
+        log=log,
+        mcp_result=mcp_result,
+        settings=settings,
+    )
+
+
+def _resume_post_submit(
+    *,
+    store: CycleStore,
+    record: CycleRecord,
+    ledger: HaltLedger,
+    log: TradeJournal,
+    settings: HackathonSettings,
+    broker: MarketReadClient | None,
+    observer: MarketReadClient | None,
+) -> dict[str, Any]:
+    """Kill/restart recovery. Same cycle, payload, client id. No second order."""
+    payload = record.payload()
+    if payload is None:
+        halted = store.halt(record.cycle_id, "recovered cycle missing payload", forbids_new=True)
+        ledger.trip(status="unknown", reason=halted.halt_reason or "unknown", report_id=halted.cycle_id)
+        return _closed_cycle(
+            outcome=ObservationOutcome.HALT,
+            reason=halted.halt_reason or "unknown",
+            dry_run=False,
+            journal_entry=None,
+            correlation_id="",
+            cycle_id=halted.cycle_id,
+            client_order_id=halted.client_order_id,
+            state=halted.state.value,
+        )
+    reader = _broker_reader(broker, observer)
+    if record.state is CycleState.SUBMITTING:
+        if reader is None:
+            halted = store.halt(record.cycle_id, "unknown broker state", forbids_new=True)
+            ledger.trip(status="unknown", reason="unknown broker state", report_id=halted.cycle_id)
+            return _closed_cycle(
+                outcome=ObservationOutcome.HALT,
+                reason="unknown broker state",
+                dry_run=False,
+                journal_entry=None,
+                correlation_id="",
+                cycle_id=halted.cycle_id,
+                client_order_id=halted.client_order_id,
+                state=halted.state.value,
+            )
+        receipt = _receipt_from_record(record, payload)
+        try:
+            listed = None
+            if hasattr(reader, "fetch_orders_by_client_id"):
+                listed = reader.fetch_orders_by_client_id(record.client_order_id)
+            orders = list(listed or [])
+        except Exception:
+            orders = None
+        if orders is None:
+            halted = store.halt(record.cycle_id, "unknown broker state", forbids_new=True)
+            ledger.trip(status="unknown", reason="unknown broker state", report_id=halted.cycle_id)
+            return _closed_cycle(
+                outcome=ObservationOutcome.HALT,
+                reason="unknown broker state",
+                dry_run=False,
+                journal_entry=None,
+                correlation_id="",
+                cycle_id=halted.cycle_id,
+                client_order_id=halted.client_order_id,
+                state=halted.state.value,
+            )
+        if not orders:
+            halted = store.halt(record.cycle_id, "unknown broker state", forbids_new=True)
+            ledger.trip(status="unknown", reason="unknown broker state forbids a new cycle", report_id=halted.cycle_id)
+            return _closed_cycle(
+                outcome=ObservationOutcome.HALT,
+                reason="unknown broker state",
+                dry_run=False,
+                journal_entry=None,
+                correlation_id="",
+                cycle_id=halted.cycle_id,
+                client_order_id=halted.client_order_id,
+                state=halted.state.value,
+            )
+        order = orders[0]
+        broker_order_id = str(getattr(order, "id", None) or getattr(order, "order_id", None) or record.broker_order_id or "")
+        broker_status = str(getattr(order, "status", "") or "recovered")
+        acked = store.transition(
+            record.cycle_id,
+            CycleState.ACKNOWLEDGED,
+            broker_order_id=broker_order_id or None,
+            broker_status=broker_status,
+            reason="recovered submit without resubmit",
+        )
+        receipt = BrokerReceipt(
+            receipt_id=uuid.uuid4().hex,
+            cycle_id=acked.cycle_id,
+            client_order_id=acked.client_order_id,
+            broker_order_id=acked.broker_order_id,
+            received_at=ensure_utc(),
+            raw_status=broker_status,
+            is_success=True,
+            submitted=True,
+            response_payload={"recovered": True, "id": broker_order_id, "status": broker_status},
+        )
+        return _reconcile_open_cycle(
+            store=store,
+            record=acked,
+            payload=payload,
+            receipt=receipt,
+            broker=reader,
+            ledger=ledger,
+            log=log,
+            settings=settings,
+            mcp_result=None,
+        )
+    receipt = _receipt_from_record(record, payload)
+    return _reconcile_open_cycle(
+        store=store,
+        record=record,
+        payload=payload,
+        receipt=receipt,
+        broker=reader,
+        ledger=ledger,
+        log=log,
+        settings=settings,
+        mcp_result=None,
+    )
+
+
+def _live_submit_and_reconcile(
+    *,
+    store: CycleStore,
+    record: CycleRecord,
+    payload: CanonicalOrderPayload,
+    certificate: Any,
+    portfolio: Any,
+    evidence: Any,
+    executor: AlpacaMcpExecutor,
+    broker: Any,
+    ledger: HaltLedger,
+    log: TradeJournal,
+    settings: HackathonSettings,
+    plan: Any,
+) -> dict[str, Any]:
+    submitting = store.transition(record.cycle_id, CycleState.SUBMITTING, reason="persist before mcp")
+    result = executor.place_certified_order_sync(
+        payload,
+        certificate,
+        portfolio,
+        evidence,
+        settings=settings,
+    )
+    receipt = receipt_from_mcp(
+        cycle_id=submitting.cycle_id,
+        payload=payload,
+        mcp_result=result,
+    )
+    store.record_attempt(
+        submitting.cycle_id,
+        mcp_tool=str(result.get("tool") or "place_option_order"),
+        arguments_hash=str(result.get("arguments_hash") or ""),
+        broker_order_id=receipt.broker_order_id,
+        raw_status=receipt.raw_status,
+        raw_hash=str(result.get("raw_result_hash") or ""),
+    )
+    acked = store.transition(
+        submitting.cycle_id,
+        CycleState.ACKNOWLEDGED,
+        broker_order_id=receipt.broker_order_id,
+        broker_status=receipt.raw_status,
+        reason="mcp acknowledged",
+    )
+    log.record(
+        "order",
+        {
+            "backend": settings.execution_backend,
+            "dry_run": False,
+            "result": result,
+            "symbol": plan.request.symbol,
+            "legs": plan.request.legs,
+            "payload_hash": payload.payload_hash,
+            "certificate_id": certificate.certificate_id,
+            "tool": result.get("tool"),
+            "arguments_hash": result.get("arguments_hash"),
+            "timestamp": result.get("timestamp"),
+            "raw_result_hash": result.get("raw_result_hash"),
+            "authorized_payload": payload.to_canonical_dict(),
+            "cycle_id": acked.cycle_id,
+            "client_order_id": acked.client_order_id,
+            "state": acked.state.value,
+        },
+    )
+    log.record(
+        "broker_receipt",
+        {
+            "authorized_payload": payload.to_canonical_dict(),
+            "mcp_raw": result.get("raw"),
+            "receipt": receipt_as_dict(receipt),
+            "submitted": receipt.submitted,
+            "complete": False,
+            "cycle_id": acked.cycle_id,
+            "client_order_id": acked.client_order_id,
+        },
+    )
+    return _reconcile_open_cycle(
+        store=store,
+        record=acked,
+        payload=payload,
+        receipt=receipt,
+        broker=broker,
+        ledger=ledger,
+        log=log,
+        settings=settings,
+        mcp_result=result,
+    )
 
 
 def run_once(
@@ -91,6 +470,7 @@ def run_once(
     llm_client: Any | None = None,
     stance: ThesisStance | str | None = None,
     halt_ledger: HaltLedger | None = None,
+    cycle_store: CycleStore | None = None,
 ) -> dict[str, Any]:
     settings = settings or HackathonSettings()
     configure_backend(settings)
@@ -99,6 +479,8 @@ def run_once(
         raise ValueError("only SPY defined-risk vertical is enabled")
     log = journal or TradeJournal()
     ledger = halt_ledger or HaltLedger(log.path.with_name("halt.json"))
+    store = cycle_store or (None if dry_run else CycleStore(log.path.with_name("cycles.sqlite")))
+    cycle: CycleRecord | None = None
 
     if not dry_run and ledger.is_halted():
         return {
@@ -119,6 +501,33 @@ def run_once(
             raise ExecutionRejected("live path cannot accept fixture market")
         if underlying_price is not None:
             raise ExecutionRejected("live path cannot use a hardcoded underlying price")
+        assert store is not None
+        if store.forbids_new_cycle():
+            return _closed_cycle(
+                outcome=ObservationOutcome.HALT,
+                reason="unknown broker state forbids a new cycle",
+                dry_run=False,
+                journal_entry=None,
+                correlation_id="",
+            )
+        active = store.active_cycle()
+        if active is not None and active.state in POST_SUBMIT_STATES:
+            return _resume_post_submit(
+                store=store,
+                record=active,
+                ledger=ledger,
+                log=log,
+                settings=settings,
+                broker=broker,
+                observer=observer,
+            )
+        if active is not None and active.state not in TERMINAL_STATES:
+            store.halt(
+                active.cycle_id,
+                "pre-submit restart abandoned without broker execution",
+                forbids_new=False,
+            )
+        cycle = store.begin_cycle()
         observation = observe_live(settings, client=observer)
         log.record(
             "observation",
@@ -141,66 +550,112 @@ def run_once(
             },
         )
         if observation.outcome != ObservationOutcome.OK:
+            closed = _close_open_cycle(
+                store, cycle, outcome=observation.outcome, reason=observation.reason
+            )
             return _closed_cycle(
                 outcome=observation.outcome,
                 reason=observation.reason,
                 dry_run=False,
                 journal_entry=None,
                 correlation_id=observation.correlation_id,
+                cycle_id=closed.cycle_id if closed else "",
+                client_order_id=closed.client_order_id if closed else "",
+                state=closed.state.value if closed else "",
             )
         portfolio = observation.portfolio
         if portfolio is None:
+            closed = _close_open_cycle(
+                store, cycle, outcome=ObservationOutcome.HALT, reason="account snapshot missing"
+            )
             return _closed_cycle(
                 outcome=ObservationOutcome.HALT,
                 reason="account snapshot missing",
                 dry_run=False,
                 journal_entry=None,
                 correlation_id=observation.correlation_id,
+                cycle_id=closed.cycle_id if closed else "",
+                client_order_id=closed.client_order_id if closed else "",
+                state=closed.state.value if closed else "",
             )
         if observation.evidence is None:
+            closed = _close_open_cycle(
+                store, cycle, outcome=ObservationOutcome.HALT, reason="live evidence missing"
+            )
             return _closed_cycle(
                 outcome=ObservationOutcome.HALT,
                 reason="live evidence missing",
                 dry_run=False,
                 journal_entry=None,
                 correlation_id=observation.correlation_id,
+                cycle_id=closed.cycle_id if closed else "",
+                client_order_id=closed.client_order_id if closed else "",
+                state=closed.state.value if closed else "",
             )
+        if store is not None and cycle is not None:
+            store.attach_snapshot(cycle.cycle_id, evidence_digest(observation.evidence))
         try:
             thesis_client = require_live_llm(llm_client)
         except ThesisDisabled as exc:
+            closed = _close_open_cycle(
+                store, cycle, outcome=ObservationOutcome.HALT, reason=str(exc)
+            )
             return _closed_cycle(
                 outcome=ObservationOutcome.HALT,
                 reason=str(exc),
                 dry_run=False,
                 journal_entry=None,
                 correlation_id=observation.correlation_id,
+                cycle_id=closed.cycle_id if closed else "",
+                client_order_id=closed.client_order_id if closed else "",
+                state=closed.state.value if closed else "",
             )
         thesis = ThesisAgent(thesis_client).evaluate(observation.evidence)
         persist_thesis_episode(log, observation.evidence, thesis)
         if thesis.reason_code == "LLM_DISABLED":
+            closed = _close_open_cycle(
+                store, cycle, outcome=ObservationOutcome.HALT, reason="live path requires a real model call"
+            )
             return _closed_cycle(
                 outcome=ObservationOutcome.HALT,
                 reason="live path requires a real model call",
                 dry_run=False,
                 journal_entry=None,
                 correlation_id=observation.correlation_id,
+                cycle_id=closed.cycle_id if closed else "",
+                client_order_id=closed.client_order_id if closed else "",
+                state=closed.state.value if closed else "",
             )
         if thesis.stance == ThesisStance.NO_TRADE or not thesis.accepted:
+            closed = _close_open_cycle(
+                store, cycle, outcome=ObservationOutcome.NO_TRADE, reason=thesis.reason_code
+            )
             return _closed_cycle(
                 outcome=ObservationOutcome.NO_TRADE,
                 reason=thesis.reason_code,
                 dry_run=False,
                 journal_entry=None,
                 correlation_id=observation.correlation_id,
+                cycle_id=closed.cycle_id if closed else "",
+                client_order_id=closed.client_order_id if closed else "",
+                state=closed.state.value if closed else "",
             )
         if not thesis.model_called:
+            closed = _close_open_cycle(
+                store, cycle, outcome=ObservationOutcome.HALT, reason="live path requires a real model call"
+            )
             return _closed_cycle(
                 outcome=ObservationOutcome.HALT,
                 reason="live path requires a real model call",
                 dry_run=False,
                 journal_entry=None,
                 correlation_id=observation.correlation_id,
+                cycle_id=closed.cycle_id if closed else "",
+                client_order_id=closed.client_order_id if closed else "",
+                state=closed.state.value if closed else "",
             )
+        if store is not None and cycle is not None:
+            cycle = store.transition(cycle.cycle_id, CycleState.THESIS_READY, reason="thesis accepted")
         pin_market = _pin_market_from_observation(observation)
         spot = pin_market.spot
         try:
@@ -212,12 +667,18 @@ def run_once(
             )
         except ExecutionRejected as exc:
             if str(exc).startswith("NO_TRADE"):
+                closed = _close_open_cycle(
+                    store, cycle, outcome=ObservationOutcome.NO_TRADE, reason=str(exc)
+                )
                 return _closed_cycle(
                     outcome=ObservationOutcome.NO_TRADE,
                     reason=str(exc),
                     dry_run=False,
                     journal_entry=None,
                     correlation_id=observation.correlation_id,
+                    cycle_id=closed.cycle_id if closed else "",
+                    client_order_id=closed.client_order_id if closed else "",
+                    state=closed.state.value if closed else "",
                 )
             raise
     else:
@@ -255,7 +716,10 @@ def run_once(
     )
 
     account_id = str(portfolio.account_id or settings.paper_account_id or "")
-    client_order_id = plan.request.client_order_id or f"oc-{uuid.uuid4().hex[:16]}"
+    if cycle is not None:
+        client_order_id = cycle.client_order_id
+    else:
+        client_order_id = plan.request.client_order_id or f"oc-{uuid.uuid4().hex[:16]}"
     plan.request.client_order_id = client_order_id
     payload = payload_from_request(
         plan.request,
@@ -276,22 +740,35 @@ def run_once(
         correlation_id = evidence.correlation_id
     else:
         if observation.evidence is None:
+            closed = _close_open_cycle(
+                store, cycle, outcome=ObservationOutcome.HALT, reason="live evidence missing"
+            )
             return _closed_cycle(
                 outcome=ObservationOutcome.HALT,
                 reason="live evidence missing",
                 dry_run=False,
                 journal_entry=None,
                 correlation_id=observation.correlation_id,
+                cycle_id=closed.cycle_id if closed else "",
+                client_order_id=closed.client_order_id if closed else "",
+                state=closed.state.value if closed else "",
             )
         evidence = observation.evidence
         correlation_id = observation.correlation_id
+        if store is not None and cycle is not None:
+            cycle = store.transition(
+                cycle.cycle_id,
+                CycleState.CANDIDATES_READY,
+                payload=payload,
+                reason="candidates ready",
+            )
 
     engine = RiskEngine(settings)
     certificate = engine.issue(
         payload,
         portfolio,
         evidence,
-        cycle_id=client_order_id,
+        cycle_id=cycle.cycle_id if cycle is not None else client_order_id,
         mode="demo" if dry_run else "live",
     )
     log.record(
@@ -315,15 +792,42 @@ def run_once(
         },
     )
     if certificate.veto:
+        closed = _close_open_cycle(
+            store, cycle, outcome=ObservationOutcome.NO_TRADE,
+            reason="; ".join(certificate.reasons) or "risk certificate veto",
+        )
         return _closed_cycle(
             outcome=ObservationOutcome.NO_TRADE,
             reason="; ".join(certificate.reasons) or "risk certificate veto",
             dry_run=dry_run,
             journal_entry=None,
             correlation_id=correlation_id,
+            cycle_id=closed.cycle_id if closed else "",
+            client_order_id=closed.client_order_id if closed else "",
+            state=closed.state.value if closed else "",
         )
+    if store is not None and cycle is not None:
+        cycle = store.authorize(cycle.cycle_id, payload, certificate)
 
     executor = mcp_executor or AlpacaMcpExecutor.from_env(dry_run=dry_run)
+    if not dry_run:
+        assert store is not None and cycle is not None
+        reader = _broker_reader(broker, observer)
+        return _live_submit_and_reconcile(
+            store=store,
+            record=cycle,
+            payload=payload,
+            certificate=certificate,
+            portfolio=portfolio,
+            evidence=evidence,
+            executor=executor,
+            broker=reader,
+            ledger=ledger,
+            log=log,
+            settings=settings,
+            plan=plan,
+        )
+
     result = executor.place_certified_order_sync(
         payload,
         certificate,
@@ -349,85 +853,13 @@ def run_once(
             "authorized_payload": payload.to_canonical_dict(),
         },
     )
-    if dry_run:
-        return {
-            "ok": True,
-            "complete": False,
-            "submitted": False,
-            "strategy": plan.strategy,
-            "backend": settings.execution_backend,
-            "dry_run": True,
-            "gate": {"approved": certificate.approval, "reasons": list(certificate.reasons)},
-            "certificate": {
-                "payload_hash": certificate.payload_hash,
-                "evidence_hash": certificate.evidence_hash,
-                "account_hash": certificate.account_hash,
-                "approval": certificate.approval,
-                "veto": certificate.veto,
-            },
-            "order": result,
-            "journal": entry,
-        }
-
-    receipt = receipt_from_mcp(
-        cycle_id=client_order_id,
-        payload=payload,
-        mcp_result=result,
-    )
-    log.record(
-        "broker_receipt",
-        {
-            "authorized_payload": payload.to_canonical_dict(),
-            "mcp_raw": result.get("raw"),
-            "receipt": receipt_as_dict(receipt),
-            "submitted": receipt.submitted,
-            "complete": False,
-        },
-    )
-    reader = broker or observer
-    if reader is None:
-        try:
-            reader = AlpacaReadClient.from_env()
-        except ObservationClosed:
-            reader = None
-    report = reconcile(
-        payload=payload,
-        receipt=receipt,
-        broker=reader,
-        settings=settings,
-        cycle_id=client_order_id,
-    )
-    if report.halt_triggered:
-        ledger.trip(
-            status=report.status.value,
-            reason="; ".join(report.discrepancies) or report.status.value,
-            report_id=report.report_id,
-        )
-    recon_entry = log.record(
-        "reconciliation",
-        {
-            "authorized_payload": payload.to_canonical_dict(),
-            "mcp_raw": result.get("raw"),
-            "broker_receipt": receipt_as_dict(receipt),
-            "comparisons": [item.canonical_dict() for item in report.comparisons],
-            "verdict": report.status.value,
-            "complete": report.complete,
-            "halt_triggered": report.halt_triggered,
-            "containment": list(report.containment),
-            "discrepancies": list(report.discrepancies),
-            "report": report_as_dict(report),
-        },
-    )
-    complete = report.complete
     return {
-        "ok": complete,
-        "complete": complete,
-        "submitted": bool(receipt.submitted),
-        "outcome": ObservationOutcome.OK.value if complete else ObservationOutcome.HALT.value,
-        "reason": "" if complete else ("; ".join(report.discrepancies) or report.status.value),
+        "ok": True,
+        "complete": False,
+        "submitted": False,
         "strategy": plan.strategy,
         "backend": settings.execution_backend,
-        "dry_run": False,
+        "dry_run": True,
         "gate": {"approved": certificate.approval, "reasons": list(certificate.reasons)},
         "certificate": {
             "payload_hash": certificate.payload_hash,
@@ -437,9 +869,7 @@ def run_once(
             "veto": certificate.veto,
         },
         "order": result,
-        "receipt": receipt_as_dict(receipt),
-        "reconciliation": report_as_dict(report),
-        "journal": recon_entry,
+        "journal": entry,
     }
 
 
