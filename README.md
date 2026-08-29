@@ -30,10 +30,6 @@ No demo video is committed in this packet. Remotion demo is Gate 12.
 
 Paper account ID is recorded in `docs/ALPACA_ACCOUNT.md` (ID only).
 
-## Prior code
-
-See `FOUNDATION.md` for the pinned MIT snapshot, license, reuse scope, and original-vs-reused checklist.
-
 ## Public evidence
 
 Judge packet (sanitized ledger only): `artifacts/evidence/index.html`. Live MLEG/fill claims are incomplete.
