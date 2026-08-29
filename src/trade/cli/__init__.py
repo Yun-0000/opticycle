@@ -1,3 +1,6 @@
-from .alpaca_cli_executor import AlpacaCliExecutor, ALPACA_CLI_TAG
+"""CLI adapter package is not importable on the Opticycle live profile."""
 
-__all__ = ["AlpacaCliExecutor", "ALPACA_CLI_TAG"]
+raise ImportError(
+    "Alpaca CLI is not importable on the Opticycle live profile; "
+    "it is not a live execution channel"
+)

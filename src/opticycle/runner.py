@@ -18,14 +18,12 @@ from opticycle.protocol import ObservationOutcome, ThesisStance
 from opticycle.risk import (
     RiskEngine,
     evidence_from_chain_rows,
-    option_request_from_payload,
     payload_from_request,
 )
 from opticycle.settings import ALLOWED_STRATEGIES, HackathonSettings
 from opticycle.thesis import ThesisDisabled, ThesisAgent, persist_thesis_episode, require_live_llm
 from trade.mcp.alpaca_mcp_executor import AlpacaMcpExecutor
 from trade.orders import ExecutionRejected
-from trade.routing import dry_run_option_order
 
 
 def configure_backend(settings: HackathonSettings) -> None:
@@ -301,19 +299,14 @@ def run_once(
             correlation_id=correlation_id,
         )
 
-    certified_request = option_request_from_payload(payload)
-    if dry_run:
-        engine.verify(certificate, payload, portfolio, evidence)
-        result = dry_run_option_order(certified_request, "mcp")
-    else:
-        executor = mcp_executor or AlpacaMcpExecutor.from_env(dry_run=False)
-        result = executor.place_certified_order_sync(
-            payload,
-            certificate,
-            portfolio,
-            evidence,
-            settings=settings,
-        )
+    executor = mcp_executor or AlpacaMcpExecutor.from_env(dry_run=dry_run)
+    result = executor.place_certified_order_sync(
+        payload,
+        certificate,
+        portfolio,
+        evidence,
+        settings=settings,
+    )
 
     entry = log.record(
         "order",
@@ -325,6 +318,10 @@ def run_once(
             "legs": plan.request.legs,
             "payload_hash": payload.payload_hash,
             "certificate_id": certificate.certificate_id,
+            "tool": result.get("tool"),
+            "arguments_hash": result.get("arguments_hash"),
+            "timestamp": result.get("timestamp"),
+            "raw_result_hash": result.get("raw_result_hash"),
         },
     )
     return {

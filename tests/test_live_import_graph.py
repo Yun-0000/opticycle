@@ -16,8 +16,10 @@ LIVE_MODULES = [
     ROOT / "src" / "opticycle" / "observe.py",
     ROOT / "src" / "opticycle" / "pin_option.py",
     ROOT / "src" / "opticycle" / "thesis.py",
+    ROOT / "src" / "opticycle" / "risk.py",
     ROOT / "src" / "trade" / "routing.py",
     ROOT / "src" / "trade" / "__init__.py",
+    ROOT / "src" / "trade" / "mcp" / "alpaca_mcp_executor.py",
 ]
 
 FIXTURE_MARKERS = (
@@ -96,3 +98,9 @@ def test_live_runner_does_not_call_dry_run_portfolio_on_live_branch() -> None:
     assert "dry_run_portfolio" not in live_chunk
     assert "500.0" not in live_chunk
     assert "observe_live" in live_chunk
+
+
+def test_live_runner_submits_only_via_certified_mcp() -> None:
+    text = (ROOT / "src" / "opticycle" / "runner.py").read_text(encoding="utf-8")
+    assert "place_certified_order_sync" in text
+    assert "place_option_order_sync" not in text

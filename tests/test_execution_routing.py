@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from trade.mcp.alpaca_mcp_executor import AlpacaMcpExecutor, PLACE_OPTION_ORDER
+from trade.mcp.alpaca_mcp_executor import AlpacaMcpExecutor
 from trade.orders import ExecutionRejected
 from trade.routing import execute_via_backend, dry_run_option_order
 from trade.orders import OptionOrderRequest
@@ -34,17 +34,17 @@ def _option_decision(**kwargs) -> SimpleNamespace:
     return SimpleNamespace(**payload)
 
 
-def test_routing_mcp_sends_option_order() -> None:
+def test_routing_live_cannot_submit_without_certificate() -> None:
     client = FakeMcpClient()
     engine = SimpleNamespace(execute=True, logger=None, mcp_client=client)
-    ok = execute_via_backend(
-        engine,
-        _option_decision(),
-        "mcp",
-        mcp_executor=AlpacaMcpExecutor(client=client, dry_run=False),
-    )
-    assert ok is True
-    assert client.calls[0][0] == PLACE_OPTION_ORDER
+    with pytest.raises(ExecutionRejected, match="place_certified_order_sync"):
+        execute_via_backend(
+            engine,
+            _option_decision(),
+            "mcp",
+            mcp_executor=AlpacaMcpExecutor(client=client, dry_run=False),
+        )
+    assert client.calls == []
 
 
 def test_routing_rejects_stock_only_decision() -> None:

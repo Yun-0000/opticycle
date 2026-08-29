@@ -91,9 +91,8 @@ class AlpacaReadClient:
         from alpaca.data.historical.stock import StockHistoricalDataClient
         from alpaca.trading.client import TradingClient
 
-        paper = (os.environ.get("ALPACA_LIVE_TRADE") or "").strip().lower() != "true"
         return cls(
-            trading=TradingClient(key, secret, paper=paper),
+            trading=TradingClient(key, secret, paper=True),
             stock_data=StockHistoricalDataClient(key, secret),
             option_data=OptionHistoricalDataClient(key, secret),
         )

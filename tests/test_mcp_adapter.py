@@ -43,29 +43,15 @@ def test_mcp_dry_run_does_not_call_client() -> None:
     assert client.calls == []
 
 
-def test_mcp_place_option_order_uses_tool_not_sdk() -> None:
+def test_mcp_place_option_order_cannot_submit_live_without_certificate() -> None:
     client = FakeMcpClient()
     executor = AlpacaMcpExecutor(client=client, dry_run=False)
-    result = executor.place_option_order_sync(_put())
-    assert result["id"] == "mcp-order-1"
-    assert client.calls == [
-        (
-            PLACE_OPTION_ORDER,
-            {
-                "qty": "1",
-                "type": "limit",
-                "time_in_force": "day",
-                "client_order_id": "csp-1",
-                "symbol": "SPY250919P00475000",
-                "side": "sell",
-                "position_intent": "sell_to_open",
-                "limit_price": "1.25",
-            },
-        )
-    ]
+    with pytest.raises(ExecutionRejected, match="Risk Certificate"):
+        executor.place_option_order_sync(_put())
+    assert client.calls == []
 
 
-def test_mcp_multileg_vertical_spread_payload() -> None:
+def test_mcp_uncertified_multileg_cannot_submit_live() -> None:
     client = FakeMcpClient()
     request = OptionOrderRequest(
         qty=1,
@@ -86,11 +72,9 @@ def test_mcp_multileg_vertical_spread_payload() -> None:
             },
         ],
     )
-    AlpacaMcpExecutor(client=client, dry_run=False).place_option_order_sync(request)
-    name, arguments = client.calls[0]
-    assert name == PLACE_OPTION_ORDER
-    assert arguments["order_class"] == "mleg"
-    assert len(arguments["legs"]) == 2
+    with pytest.raises(ExecutionRejected, match="Risk Certificate"):
+        AlpacaMcpExecutor(client=client, dry_run=False).place_option_order_sync(request)
+    assert client.calls == []
 
 
 def test_mcp_rejects_equity_symbol() -> None:
