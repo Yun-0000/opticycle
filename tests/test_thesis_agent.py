@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
+
 from opticycle.journal import TradeJournal
 from opticycle.observe import observe_live
 from opticycle.protocol import (
@@ -20,6 +22,7 @@ from opticycle.protocol import (
 from opticycle.runner import run_once
 from opticycle.settings import HackathonSettings
 from opticycle.thesis import (
+    STANCE_CREDIT_TYPE,
     ThesisAgent,
     features_to_prompt,
     persist_thesis_episode,
@@ -52,10 +55,31 @@ def _quote(symbol: str, strike: str) -> OptionContractQuote:
         ask=Decimal("1.40"),
         last=Decimal("1.30"),
         delta=Decimal("-0.20"),
+        quote_timestamp=datetime.now(timezone.utc),
     )
 
 
-def _evidence(*, bars: int = 40, quotes: int = 4, fresh: bool = True) -> EvidenceSnapshot:
+def _closes(start: str, end: str, count: int = 40) -> tuple[Decimal, ...]:
+    first = Decimal(start)
+    last = Decimal(end)
+    if count <= 1:
+        return (first,) * max(count, 0)
+    step = (last - first) / Decimal(count - 1)
+    return tuple(first + step * i for i in range(count))
+
+
+def _evidence(
+    *,
+    bars: int = 40,
+    quotes: int = 4,
+    fresh: bool = True,
+    direction: str = "bullish",
+    quote_timestamp: datetime | None | object = ...,
+    bid: Decimal | None = Decimal("560.20"),
+    ask: Decimal | None = Decimal("560.30"),
+    last: Decimal | None = Decimal("560.25"),
+    quote_age: Decimal = Decimal("1.5"),
+) -> EvidenceSnapshot:
     now = datetime.now(timezone.utc)
     chain = (
         _quote("SPY260918P00550000", "550"),
@@ -63,26 +87,45 @@ def _evidence(*, bars: int = 40, quotes: int = 4, fresh: bool = True) -> Evidenc
         _quote("SPY260918P00530000", "530"),
         _quote("SPY260918P00520000", "520"),
     )[:quotes]
+    if direction == "bearish":
+        closes = _closes("560.00", "548.00", bars)
+    elif direction == "flat":
+        closes = _closes("560.00", "560.05", bars)
+    else:
+        closes = _closes("548.00", "560.00", bars)
+    ts: datetime | None
+    if quote_timestamp is ...:
+        ts = now
+    else:
+        ts = quote_timestamp  # type: ignore[assignment]
     return EvidenceSnapshot(
         underlying="SPY",
         spot_price=Decimal("560.25"),
         timestamp=now,
         bars_count=bars,
-        quote_age_seconds=Decimal("1.5"),
+        quote_age_seconds=quote_age,
         is_fresh=fresh,
         chain_quotes=chain,
         indicators=(("clock_open", Decimal("1")),),
         correlation_id="cycle-thesis-001",
+        bid=bid,
+        ask=ask,
+        last=last,
+        quote_timestamp=ts,
+        bar_closes=closes[:bars],
     )
 
 
 def _valid_payload(features, stance: str = "BULLISH") -> dict:
+    citations = [item for item in features.evidence_refs if item.startswith(("bar_return=", "bar_trend=", "underlying_"))]
+    if not citations:
+        citations = list(features.evidence_refs[:3])
     return {
         "stance": stance,
         "confidence": "0.82",
-        "evidence": ["quote_fresh", "bars_count", "trend_bucket"],
+        "evidence": citations,
         "assumptions": ["session trend remains intact"],
-        "invalidation_conditions": ["quote_fresh becomes false", "trend_bucket becomes history_thin"],
+        "invalidation_conditions": ["quote_timestamp missing or stale", "bar_trend flattens"],
         "observation_timestamp": features.observation_timestamp.isoformat(),
         "reason_code": "TREND_ALIGNED",
     }
@@ -98,6 +141,10 @@ def test_feature_summary_has_no_occ_qty_or_price_selection() -> None:
     assert "SPY260918" not in prompt
     assert features.chain_count == 4
     assert features.evidence_refs
+    assert features.implied_stance == ThesisStance.BULLISH
+    assert any(item.startswith("underlying_last=") for item in features.evidence_refs)
+    assert any(item.startswith("bar_return=") for item in features.evidence_refs)
+    assert features.bound_credit_type == "bull_put"
 
 
 def test_bullish_thesis_episode_maps_evidence_and_invalidation(tmp_path: Path) -> None:
@@ -120,6 +167,9 @@ def test_bullish_thesis_episode_maps_evidence_and_invalidation(tmp_path: Path) -
     assert payload["stance"] == "BULLISH"
     assert payload["invalidation_conditions"]
     assert payload["evidence"]
+    assert payload["bound_credit_type"] == "bull_put"
+    assert thesis.bound_credit_type == STANCE_CREDIT_TYPE[ThesisStance.BULLISH]
+    assert any("=" in item for item in thesis.evidence)
 
 
 def test_no_trade_insufficient_evidence_episode(tmp_path: Path) -> None:
@@ -211,3 +261,86 @@ def test_live_observe_quote_without_timestamp_is_no_trade() -> None:
     assert result.outcome.value == "NO_TRADE"
     assert result.evidence is None
     assert "timestamp" in result.reason
+
+
+def test_empty_or_missing_features_is_no_trade() -> None:
+    empty = _evidence(bars=0, quotes=0, bid=None, ask=None, last=None, quote_timestamp=None, quote_age=Decimal("0"))
+    thesis = ThesisAgent().evaluate(empty)
+    assert thesis.stance == ThesisStance.NO_TRADE
+    assert thesis.accepted is False
+    assert thesis.reason_code == ThesisReasonCode.STALE_DATA.value
+    assert "freshness 0" in thesis.detail or "timestamp" in thesis.detail
+    thin = _evidence(bars=2, quotes=1)
+    thin_thesis = ThesisAgent().evaluate(thin)
+    assert thin_thesis.stance == ThesisStance.NO_TRADE
+    assert thin_thesis.reason_code == ThesisReasonCode.INSUFFICIENT_EVIDENCE.value
+    flat = _evidence(direction="flat")
+    flat_thesis = ThesisAgent().evaluate(flat)
+    assert flat_thesis.stance == ThesisStance.NO_TRADE
+    assert flat_thesis.reason_code == ThesisReasonCode.INSUFFICIENT_EVIDENCE.value
+
+
+def test_bullish_fixture_matches_stance_and_citations() -> None:
+    evidence = _evidence(direction="bullish")
+    thesis = ThesisAgent().evaluate(evidence)
+    assert thesis.stance == ThesisStance.BULLISH
+    assert thesis.accepted is True
+    assert thesis.bound_credit_type == "bull_put"
+    names = {item.split("=", 1)[0] for item in thesis.evidence}
+    assert {"underlying_last", "underlying_bid", "underlying_ask", "quote_timestamp", "bar_return", "bar_trend"} <= names
+    assert any(item.startswith("bar_trend=up") for item in thesis.evidence)
+    assert any("=" in item for item in thesis.evidence)
+
+
+def test_bearish_fixture_matches_stance_and_citations() -> None:
+    evidence = _evidence(direction="bearish")
+    thesis = ThesisAgent().evaluate(evidence)
+    assert thesis.stance == ThesisStance.BEARISH
+    assert thesis.accepted is True
+    assert thesis.bound_credit_type == "bear_call"
+    assert any(item.startswith("bar_trend=down") for item in thesis.evidence)
+    assert any(item.startswith("bar_return=") for item in thesis.evidence)
+    assert any(item.startswith("underlying_bid=") for item in thesis.evidence)
+
+
+def test_cannot_emit_bullish_or_bearish_without_citations() -> None:
+    features = summarize_features(_evidence(direction="bullish"))
+    empty = _valid_payload(features, "BULLISH")
+    empty["evidence"] = []
+    record, reason = validate_thesis_output(empty, features)
+    assert record is None
+    assert reason == ThesisReasonCode.EMPTY_DIRECTION.value
+    with pytest.raises(ValueError, match="cite real snapshot features"):
+        from opticycle.protocol import ThesisRecord
+
+        ThesisRecord(
+            stance=ThesisStance.BULLISH,
+            confidence=Decimal("0.9"),
+            evidence=(),
+            assumptions=(),
+            invalidation_conditions=("x",),
+            observation_timestamp=features.observation_timestamp,
+            reason_code="TREND_ALIGNED",
+            feature_correlation_id="x",
+            model_called=False,
+        )
+    llm = ScriptedLlm([empty, empty, empty])
+    thesis = ThesisAgent(llm).evaluate(_evidence(direction="bullish"))
+    assert thesis.stance == ThesisStance.NO_TRADE
+    assert thesis.accepted is False
+
+
+def test_missing_quote_timestamp_is_fail_closed_not_freshness_zero() -> None:
+    evidence = _evidence(
+        direction="bullish",
+        quote_timestamp=None,
+        quote_age=Decimal("0"),
+        fresh=True,
+    )
+    thesis = ThesisAgent().evaluate(evidence)
+    assert thesis.stance == ThesisStance.NO_TRADE
+    assert thesis.reason_code == ThesisReasonCode.STALE_DATA.value
+    features = summarize_features(evidence)
+    assert features.quote_timestamp_present is False
+    assert features.is_fresh is False
+    assert features.implied_stance == ThesisStance.NO_TRADE

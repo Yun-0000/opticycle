@@ -370,6 +370,9 @@ def _chain_from_payload(payload: Any, underlying: str) -> tuple[pd.DataFrame, tu
         bid = _as_decimal(getattr(latest, "bid_price", None) or getattr(snap, "bid_price", None)) or Decimal("0")
         ask = _as_decimal(getattr(latest, "ask_price", None) or getattr(snap, "ask_price", None)) or Decimal("0")
         last = _as_decimal(getattr(trade, "price", None) or getattr(snap, "last_price", None)) or Decimal("0")
+        quote_ts = getattr(latest, "timestamp", None) or getattr(snap, "timestamp", None)
+        if not isinstance(quote_ts, datetime):
+            quote_ts = None
         delta = _as_decimal(getattr(greeks, "delta", None) or getattr(snap, "delta", None)) or Decimal("0")
         gamma = _as_decimal(getattr(greeks, "gamma", None)) or Decimal("0")
         theta = _as_decimal(getattr(greeks, "theta", None)) or Decimal("0")
@@ -410,6 +413,7 @@ def _chain_from_payload(payload: Any, underlying: str) -> tuple[pd.DataFrame, tu
                     gamma=gamma,
                     theta=theta,
                     vega=vega,
+                    quote_timestamp=quote_ts,
                 )
             )
         except ValueError:
@@ -620,6 +624,13 @@ def observe_live(
         portfolio.trades_today = max(portfolio.trades_today, len(open_list))
 
     clock_open = bool(getattr(clock, "is_open", False))
+    bar_closes: list[Decimal] = []
+    if not bars.empty and "close" in bars.columns:
+        for value in bars["close"].tolist():
+            parsed = _as_decimal(value)
+            if parsed is not None and parsed > 0:
+                bar_closes.append(parsed)
+    last_price = trade_price if trade_price and trade_price > 0 else spot
     evidence = EvidenceSnapshot(
         underlying=underlying,
         spot_price=spot,
@@ -632,6 +643,11 @@ def observe_live(
         datums=tuple(datums),
         correlation_id=correlation_id,
         account_id=account_id,
+        bid=bid if bid and bid > 0 else None,
+        ask=ask if ask and ask > 0 else None,
+        last=last_price if last_price and last_price > 0 else None,
+        quote_timestamp=quote_ts,
+        bar_closes=tuple(bar_closes),
     )
     return ObservationResult(
         outcome=ObservationOutcome.OK,

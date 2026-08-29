@@ -62,6 +62,7 @@ class ThesisReasonCode(str, Enum):
     EVIDENCE_CONFLICT = "EVIDENCE_CONFLICT"
     INVALID_OUTPUT = "INVALID_OUTPUT"
     LLM_DISABLED = "LLM_DISABLED"
+    EMPTY_DIRECTION = "EMPTY_DIRECTION"
 
 
 class OrderSide(str, Enum):
@@ -153,12 +154,15 @@ class OptionContractQuote:
     vega: Decimal = Decimal("0")
     open_interest: int = 0
     volume: int = 0
+    quote_timestamp: datetime | None = None
 
     def __post_init__(self) -> None:
         if not OCC_SYMBOL_RE.fullmatch(self.symbol):
             raise ValueError(f"Invalid OCC option symbol: {self.symbol!r}")
         if self.strike_price <= Decimal("0"):
             raise ValueError("strike_price must be positive")
+        if self.quote_timestamp is not None:
+            object.__setattr__(self, "quote_timestamp", ensure_utc(self.quote_timestamp))
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,11 +179,18 @@ class EvidenceSnapshot:
     datums: tuple[ObservedDatum, ...] = ()
     correlation_id: str = ""
     account_id: str | None = None
+    bid: Decimal | None = None
+    ask: Decimal | None = None
+    last: Decimal | None = None
+    quote_timestamp: datetime | None = None
+    bar_closes: tuple[Decimal, ...] = ()
 
     def __post_init__(self) -> None:
         if self.spot_price <= Decimal("0"):
             raise ValueError("spot_price must be positive")
         object.__setattr__(self, "timestamp", ensure_utc(self.timestamp))
+        if self.quote_timestamp is not None:
+            object.__setattr__(self, "quote_timestamp", ensure_utc(self.quote_timestamp))
 
 
 @dataclass(frozen=True, slots=True)
@@ -229,6 +240,11 @@ class FeatureSummary:
     trend_bucket: str
     clock_open: bool | None
     evidence_refs: tuple[str, ...]
+    implied_stance: "ThesisStance" = ThesisStance.NO_TRADE
+    missing_features: tuple[str, ...] = ()
+    quote_timestamp_present: bool = False
+    bar_return: Decimal | None = None
+    bound_credit_type: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "observation_timestamp", ensure_utc(self.observation_timestamp))
@@ -250,11 +266,16 @@ class ThesisRecord:
     regenerations: int = 0
     accepted: bool = True
     detail: str = ""
+    bound_credit_type: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "observation_timestamp", ensure_utc(self.observation_timestamp))
         if self.stance not in ThesisStance:
             raise ValueError("stance must be BULLISH, BEARISH, or NO_TRADE")
+        if self.stance in {ThesisStance.BULLISH, ThesisStance.BEARISH} and not self.evidence:
+            raise ValueError("BULLISH/BEARISH thesis must cite real snapshot features")
+        if self.bound_credit_type in {"bull_call", "bear_put"}:
+            raise ValueError("debit verticals are disabled")
 
 
 @dataclass(frozen=True, slots=True)
@@ -406,16 +427,26 @@ def evidence_canonical_dict(evidence: EvidenceSnapshot) -> dict[str, Any]:
                 "theta": format_decimal(quote.theta, 6),
                 "underlying": quote.underlying,
                 "vega": format_decimal(quote.vega, 6),
+                "quote_timestamp": (
+                    ensure_utc(quote.quote_timestamp).isoformat() if quote.quote_timestamp is not None else ""
+                ),
             }
         )
     return {
         "account_id": evidence.account_id or "",
+        "ask": format_decimal(evidence.ask, 4) if evidence.ask is not None else "",
+        "bar_closes": [format_decimal(close, 4) for close in evidence.bar_closes],
         "bars_count": evidence.bars_count,
+        "bid": format_decimal(evidence.bid, 4) if evidence.bid is not None else "",
         "chain_quotes": quotes,
         "correlation_id": evidence.correlation_id,
         "indicators": [[name, format_decimal(value, 6)] for name, value in evidence.indicators],
         "is_fresh": evidence.is_fresh,
+        "last": format_decimal(evidence.last, 4) if evidence.last is not None else "",
         "quote_age_seconds": format_decimal(evidence.quote_age_seconds, 3),
+        "quote_timestamp": (
+            ensure_utc(evidence.quote_timestamp).isoformat() if evidence.quote_timestamp is not None else ""
+        ),
         "spot_price": format_decimal(evidence.spot_price, 4),
         "timestamp": ensure_utc(evidence.timestamp).isoformat(),
         "underlying": evidence.underlying.strip().upper(),

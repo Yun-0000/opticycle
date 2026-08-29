@@ -29,12 +29,20 @@ from opticycle.protocol import (
     ThesisRecord,
     ThesisStance,
     ensure_utc,
+    format_decimal,
 )
+from opticycle.risk import MAX_QUOTE_AGE_SECONDS
 
 MIN_CONFIDENCE = Decimal("0.60")
 MIN_BARS = 20
 MIN_CHAIN = 2
+MIN_ABS_BAR_RETURN = Decimal("0.002")
 MAX_REGENERATIONS = 2
+STANCE_CREDIT_TYPE = {
+    ThesisStance.BULLISH: "bull_put",
+    ThesisStance.BEARISH: "bear_call",
+}
+FORBIDDEN_DEBIT_TYPES = frozenset({"bull_call", "bear_put"})
 FORBIDDEN_OUTPUT_KEYS = frozenset(
     {
         "symbol",
@@ -119,35 +127,113 @@ class OpenAiThesisClient:
         return loaded
 
 
+def _cite(name: str, value: str) -> str:
+    return f"{name}={value}"
+
+
+def _citation_name(item: str) -> str:
+    return item.split("=", 1)[0]
+
+
 def summarize_features(evidence: EvidenceSnapshot) -> FeatureSummary:
+    """Read real snapshot fields only. Never invent IV, Greeks, or a quote timestamp."""
+
     clock_open: bool | None = None
-    trend_bucket = "unknown"
     for name, value in evidence.indicators:
         if name == "clock_open":
             clock_open = value > 0
-        if name == "trend_bucket":
-            trend_bucket = str(value)
-    if evidence.bars_count >= MIN_BARS:
-        if trend_bucket == "unknown":
-            trend_bucket = "history_present"
+    cited: list[str] = []
+    missing: list[str] = []
+
+    last = evidence.last if evidence.last is not None and evidence.last > 0 else None
+    bid = evidence.bid if evidence.bid is not None and evidence.bid > 0 else None
+    ask = evidence.ask if evidence.ask is not None and evidence.ask > 0 else None
+    if last is None:
+        missing.append("underlying_last")
     else:
-        trend_bucket = "history_thin"
-    bucket_floor = (int(evidence.spot_price) // 5) * 5
-    refs = ["quote_fresh", "bars_count", "chain_count", "spot_bucket", "trend_bucket"]
+        cited.append(_cite("underlying_last", format_decimal(last, 4)))
+    if bid is None:
+        missing.append("underlying_bid")
+    else:
+        cited.append(_cite("underlying_bid", format_decimal(bid, 4)))
+    if ask is None:
+        missing.append("underlying_ask")
+    else:
+        cited.append(_cite("underlying_ask", format_decimal(ask, 4)))
+
+    quote_ts = evidence.quote_timestamp
+    if quote_ts is None:
+        missing.append("quote_timestamp")
+    else:
+        cited.append(_cite("quote_timestamp", ensure_utc(quote_ts).isoformat()))
+        cited.append(_cite("quote_age_seconds", format_decimal(evidence.quote_age_seconds, 3)))
+
+    closes = tuple(close for close in evidence.bar_closes if close > 0)
+    bar_return: Decimal | None = None
+    trend_bucket = "unknown"
+    if len(closes) < MIN_BARS:
+        missing.append("bar_closes")
+    elif closes[0] <= 0:
+        missing.append("bar_closes")
+    else:
+        bar_return = (closes[-1] - closes[0]) / closes[0]
+        cited.append(_cite("bar_return", format_decimal(bar_return, 6)))
+        cited.append(_cite("bars_count", str(len(closes))))
+        if bar_return > MIN_ABS_BAR_RETURN:
+            trend_bucket = "up"
+        elif bar_return < -MIN_ABS_BAR_RETURN:
+            trend_bucket = "down"
+        else:
+            trend_bucket = "flat"
+        cited.append(_cite("bar_trend", trend_bucket))
+
+    chain_count = len(evidence.chain_quotes)
+    cited.append(_cite("chain_count", str(chain_count)))
+    if chain_count < MIN_CHAIN:
+        missing.append("option_chain")
+
+    timed_chain = [quote for quote in evidence.chain_quotes if quote.quote_timestamp is not None]
+    timed_bids = [quote.bid for quote in timed_chain if quote.bid > 0]
+    if timed_bids:
+        cited.append(_cite("chain_credit_available", format_decimal(max(timed_bids), 4)))
+
     if clock_open is not None:
-        refs.append("clock_open")
+        cited.append(_cite("clock_open", "true" if clock_open else "false"))
+
+    stale = (not evidence.is_fresh) or evidence.quote_age_seconds < 0
+    if quote_ts is not None and evidence.quote_age_seconds > MAX_QUOTE_AGE_SECONDS:
+        stale = True
+    if quote_ts is None:
+        stale = True
+
+    implied = ThesisStance.NO_TRADE
+    bound = ""
+    if not missing and not stale and trend_bucket == "up":
+        implied = ThesisStance.BULLISH
+        bound = STANCE_CREDIT_TYPE[implied]
+    elif not missing and not stale and trend_bucket == "down":
+        implied = ThesisStance.BEARISH
+        bound = STANCE_CREDIT_TYPE[implied]
+
+    spot_for_bucket = last or evidence.spot_price
+    bucket_floor = (int(spot_for_bucket) // 5) * 5
     return FeatureSummary(
         underlying=evidence.underlying,
         observation_timestamp=evidence.timestamp,
         correlation_id=evidence.correlation_id,
         quote_age_seconds=evidence.quote_age_seconds,
-        is_fresh=evidence.is_fresh,
-        bars_count=evidence.bars_count,
-        chain_count=len(evidence.chain_quotes),
+        is_fresh=bool(evidence.is_fresh) and quote_ts is not None and not stale,
+        bars_count=len(closes) if closes else evidence.bars_count,
+        chain_count=chain_count,
         spot_bucket=f"spot_bucket_{bucket_floor}",
         trend_bucket=trend_bucket,
         clock_open=clock_open,
-        evidence_refs=tuple(refs),
+        evidence_refs=tuple(cited),
+        implied_stance=implied,
+        missing_features=tuple(missing),
+        quote_timestamp_present=quote_ts is not None,
+        bar_return=bar_return,
+        bound_credit_type=bound,
     )
 
 
@@ -161,9 +247,13 @@ def features_to_prompt(features: FeatureSummary) -> str:
         "bars_count": features.bars_count,
         "chain_count": features.chain_count,
         "spot_bucket": features.spot_bucket,
-        "trend_bucket": features.trend_bucket,
+        "bar_trend": features.trend_bucket,
+        "bar_return": str(features.bar_return) if features.bar_return is not None else None,
         "clock_open": features.clock_open,
-        "evidence_refs": list(features.evidence_refs),
+        "implied_stance": features.implied_stance.value,
+        "bound_credit_type": features.bound_credit_type,
+        "cited_features": list(features.evidence_refs),
+        "missing_features": list(features.missing_features),
         "required_output_fields": [
             "stance",
             "confidence",
@@ -174,6 +264,8 @@ def features_to_prompt(features: FeatureSummary) -> str:
             "reason_code",
         ],
         "allowed_stances": ["BULLISH", "BEARISH", "NO_TRADE"],
+        "credit_binding": "BULLISH=bull_put credit; BEARISH=bear_call credit; debit disabled",
+        "citation_rule": "evidence must be feature name=value citations from cited_features",
     }
     text = json.dumps(payload, sort_keys=True)
     if OCC_SYMBOL_RE.search(text):
@@ -219,12 +311,17 @@ def validate_thesis_output(
         "observation_timestamp",
         "reason_code",
     )
-    if any(field not in raw for field in required):
+    if any(field not in raw for field in required if field != "stance"):
         return None, ThesisReasonCode.SCHEMA_ERROR.value
+    if "stance" not in raw or not str(raw.get("stance") or "").strip():
+        return None, ThesisReasonCode.EMPTY_DIRECTION.value
     try:
-        stance = ThesisStance(str(raw["stance"]).strip().upper())
+        raw_stance = str(raw.get("stance") or "").strip().upper()
+        if not raw_stance:
+            return None, ThesisReasonCode.EMPTY_DIRECTION.value
+        stance = ThesisStance(raw_stance)
     except ValueError:
-        return None, ThesisReasonCode.SCHEMA_ERROR.value
+        return None, ThesisReasonCode.EMPTY_DIRECTION.value
     try:
         confidence = Decimal(str(raw["confidence"]))
     except (InvalidOperation, ValueError):
@@ -234,10 +331,23 @@ def validate_thesis_output(
     if confidence < MIN_CONFIDENCE and stance != ThesisStance.NO_TRADE:
         return None, ThesisReasonCode.LOW_CONFIDENCE.value
     evidence_refs = _as_tuple(raw["evidence"])
-    if not evidence_refs:
-        return None, ThesisReasonCode.SCHEMA_ERROR.value
-    if any(item not in features.evidence_refs for item in evidence_refs):
+    if stance in {ThesisStance.BULLISH, ThesisStance.BEARISH} and not evidence_refs:
+        return None, ThesisReasonCode.EMPTY_DIRECTION.value
+    allowed = set(features.evidence_refs)
+    if stance in {ThesisStance.BULLISH, ThesisStance.BEARISH}:
+        if any(item not in allowed for item in evidence_refs):
+            return None, ThesisReasonCode.EVIDENCE_CONFLICT.value
+        cited_names = {_citation_name(item) for item in evidence_refs}
+        if "bar_return" not in cited_names or "bar_trend" not in cited_names:
+            return None, ThesisReasonCode.EVIDENCE_CONFLICT.value
+        if features.implied_stance != stance:
+            return None, ThesisReasonCode.EVIDENCE_CONFLICT.value
+        if features.bound_credit_type in FORBIDDEN_DEBIT_TYPES:
+            return None, ThesisReasonCode.INVALID_OUTPUT.value
+    elif evidence_refs and any(item not in allowed for item in evidence_refs):
         return None, ThesisReasonCode.EVIDENCE_CONFLICT.value
+    if not evidence_refs and stance == ThesisStance.NO_TRADE:
+        evidence_refs = features.evidence_refs
     assumptions = _as_tuple(raw["assumptions"])
     invalidation = _as_tuple(raw["invalidation_conditions"])
     if stance != ThesisStance.NO_TRADE and not invalidation:
@@ -251,8 +361,11 @@ def validate_thesis_output(
         return None, ThesisReasonCode.SCHEMA_ERROR.value
     if ensure_utc(ts) != ensure_utc(features.observation_timestamp):
         return None, ThesisReasonCode.EVIDENCE_CONFLICT.value
-    if not features.is_fresh and stance != ThesisStance.NO_TRADE:
+    if (not features.is_fresh or not features.quote_timestamp_present) and stance != ThesisStance.NO_TRADE:
         return None, ThesisReasonCode.STALE_DATA.value
+    bound = features.bound_credit_type if stance != ThesisStance.NO_TRADE else ""
+    if bound in FORBIDDEN_DEBIT_TYPES:
+        return None, ThesisReasonCode.INVALID_OUTPUT.value
     return (
         ThesisRecord(
             stance=stance,
@@ -265,6 +378,7 @@ def validate_thesis_output(
             feature_correlation_id=features.correlation_id,
             model_called=True,
             accepted=True,
+            bound_credit_type=bound,
         ),
         reason_code,
     )
@@ -293,6 +407,28 @@ def _closed_thesis(
         regenerations=regenerations,
         accepted=False,
         detail=detail,
+        bound_credit_type="",
+    )
+
+
+def _record_from_features(features: FeatureSummary) -> ThesisRecord:
+    stance = features.implied_stance
+    bound = features.bound_credit_type if stance != ThesisStance.NO_TRADE else ""
+    return ThesisRecord(
+        stance=stance,
+        confidence=Decimal("0.80"),
+        evidence=features.evidence_refs,
+        assumptions=("snapshot bar return and quote features only; no invented IV/greeks",),
+        invalidation_conditions=(
+            "quote_timestamp missing or stale",
+            "bar_trend flattens below MIN_ABS_BAR_RETURN",
+        ),
+        observation_timestamp=features.observation_timestamp,
+        reason_code=ThesisReasonCode.TREND_ALIGNED.value,
+        feature_correlation_id=features.correlation_id,
+        model_called=False,
+        accepted=True,
+        bound_credit_type=bound,
     )
 
 
@@ -302,22 +438,25 @@ class ThesisAgent:
 
     def evaluate(self, evidence: EvidenceSnapshot) -> ThesisRecord:
         features = summarize_features(evidence)
-        if not evidence.is_fresh or evidence.quote_age_seconds < 0:
+        if not features.quote_timestamp_present:
+            return _closed_thesis(
+                features,
+                reason_code=ThesisReasonCode.STALE_DATA,
+                model_called=False,
+                detail="quote timestamp missing; fail-closed (not freshness 0)",
+            )
+        if not features.is_fresh or evidence.quote_age_seconds < 0:
             return _closed_thesis(features, reason_code=ThesisReasonCode.STALE_DATA, model_called=False)
-        if evidence.bars_count < MIN_BARS or len(evidence.chain_quotes) < MIN_CHAIN:
+        if features.missing_features or features.implied_stance == ThesisStance.NO_TRADE:
             return _closed_thesis(
                 features,
                 reason_code=ThesisReasonCode.INSUFFICIENT_EVIDENCE,
                 model_called=False,
-                detail="bars or chain too thin for a directional thesis",
+                detail="insufficient or non-directional snapshot features",
             )
+        directional = _record_from_features(features)
         if self.client is None:
-            return _closed_thesis(
-                features,
-                reason_code=ThesisReasonCode.LLM_DISABLED,
-                model_called=False,
-                detail="live path requires a real model call",
-            )
+            return directional
         prompt = features_to_prompt(features)
         last_reason = ThesisReasonCode.SCHEMA_ERROR.value
         regenerations = 0
@@ -402,6 +541,7 @@ def persist_thesis_episode(
             "regenerations": thesis.regenerations,
             "accepted": thesis.accepted,
             "action": action.value,
+            "bound_credit_type": thesis.bound_credit_type,
         },
     )
     return episode
