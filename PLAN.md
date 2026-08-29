@@ -77,7 +77,7 @@ The Opticycle implementation is organized across 12 champion quality gates:
 
 - **Gate 1 (Current):** Source-of-Truth Contract Alignment — Rewrite `PLAN.md` to define the unique Opticycle contract (SPY defined-risk vertical only, MCP sole execution channel, proof-carrying loop, fail-closed HALT, no CLI fallback).
 - **Gate 2:** Architecture Cleanliness & Deprecation — Eliminate legacy fallback routes; enforce MCP as the single live execution path.
-- **Gate 3:** SPY Market Observation Engine — Ingest live/fixture SPY bars and option chains with quote freshness checks.
+- **Gate 3:** SPY Market Observation Engine — Ingest real SPY bars and option chains via Alpaca market data API with quote freshness checks; live path cannot use fixtures as real market data.
 - **Gate 4:** Vertical Spread Selection Engine — Construct pure defined-risk SPY vertical spread candidates with strike width and DTE validation.
 - **Gate 5:** Deterministic Risk Gate & Proof Certificate — Verify account limits, max loss, portfolio delta/vega, and issue payload-bound authorization certificates.
 - **Gate 6:** Alpaca MCP Multi-Leg Adapter — Robust client communication with `alpaca-mcp-server==2.3.0` for multi-leg option orders.
@@ -120,7 +120,7 @@ The Opticycle implementation is organized across 12 champion quality gates:
 1. Opticycle executes unattended SPY vertical spread cycles exclusively over Alpaca MCP.
 2. Every order payload is guarded by deterministic pre-trade risk gates with full broker reconciliation.
 3. Strict fail-closed policy: ambiguous broker responses trigger immediate safe HALT without unsafe channel fallbacks.
-4. Clean test suite and verification script passing under CI dry-run conditions.
+4. Clean test suite and verification script passing under CI dry-run conditions; CI dry-run cannot count as fill/completion evidence.
 
 ```hackathon-artifact-requirements
 [
@@ -134,7 +134,7 @@ The Opticycle implementation is organized across 12 champion quality gates:
     "id": "submission-writeup",
     "kind": "document",
     "source": "event_rules",
-    "description": "One-page write-up covering AI decision logic, risk gates, and Alpaca infrastructure (MCP/CLI, paper account workflow)."
+    "description": "One-page write-up covering AI decision logic, risk gates, and Alpaca MCP infrastructure (paper account workflow)."
   },
   {
     "id": "alpaca-paper-account-id",
@@ -146,25 +146,25 @@ The Opticycle implementation is organized across 12 champion quality gates:
     "id": "alpaca-mcp-cli-integration",
     "kind": "integration",
     "source": "event_rules",
-    "description": "Working Alpaca MCP Server or official Alpaca CLI execution path that places real paper option orders, verified by scripts/verify-paper-mcp-order.py."
+    "description": "Working official Alpaca MCP Server execution path (alpaca-mcp-server==2.3.0) that places real multi-leg paper option orders, verified by scripts/verify-paper-mcp-order.py. CLI is not an execution channel."
   },
   {
     "id": "options-trading-strategy",
     "kind": "integration",
     "source": "event_rules",
-    "description": "Autonomous agent strategy that includes options trades (wheel and/or vertical spreads) on Alpaca paper, not stock-only execution."
+    "description": "Autonomous agent strategy that executes defined-risk SPY vertical spreads on Alpaca paper, not stock-only execution."
   },
   {
     "id": "remotion-demo-video",
     "kind": "video",
     "source": "approved_plan",
-    "description": "Formal Remotion-produced demo video of the autonomous options agent (decision, risk gate, MCP/CLI paper order). Source in remotion/, rendered MP4 at artifacts/demo.mp4, plus shot list. Screen recordings or empty scripts do not satisfy this requirement."
+    "description": "Formal Remotion-produced demo video of the autonomous options agent (decision, risk gate, MCP paper order). Source in remotion/, rendered MP4 at artifacts/demo.mp4, plus shot list. Screen recordings or empty scripts do not satisfy this requirement."
   },
   {
     "id": "third-party-notices",
     "kind": "document",
     "source": "approved_plan",
-    "description": "THIRD_PARTY_NOTICES.md and README attribution for the pinned MIT snapshot and Alpaca SDK/MCP/CLI dependencies."
+    "description": "THIRD_PARTY_NOTICES.md and README attribution for the pinned MIT snapshot and Alpaca SDK/MCP dependencies (CLI is not an execution dependency)."
   }
 ]
 ```
