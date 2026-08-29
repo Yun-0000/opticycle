@@ -47,7 +47,7 @@
       "description": "THIRD_PARTY_NOTICES.md and README foundation attribution for Gauss World Trader and Alpaca SDK/MCP/CLI dependencies."
     }
   ],
-  "buildId": null,
+  "buildId": "7bb72e1c3e5b930c5dacc40fd15d313d870e4c74",
   "planApproval": {
     "command": "APPROVE PLAN alpaca-trading-agents-2026 4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
     "eventId": "alpaca-trading-agents-2026",
@@ -57,9 +57,9 @@
   "builderRun": {
     "idempotencyKey": "builder-v3:alpaca-trading-agents-2026:4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
     "attempt": 1,
-    "status": "running",
+    "status": "succeeded",
     "startedAt": "2026-08-29T00:53:23Z",
-    "finishedAt": null
+    "finishedAt": "2026-08-29T01:13:27Z"
   },
   "qualityGates": {
     "mvp": {
@@ -75,5 +75,5 @@
       "review": null
     }
   },
-  "updatedAt": "2026-08-29T00:53:23Z"
+  "updatedAt": "2026-08-29T01:13:27Z"
 }
