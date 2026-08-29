@@ -47,7 +47,7 @@
       "description": "THIRD_PARTY_NOTICES.md and README attribution for the pinned MIT snapshot and Alpaca SDK/MCP/CLI dependencies."
     }
   ],
-  "buildId": null,
+  "buildId": "95c5857fbcd4fa20b24c6bd9b78dc210b46ea52a",
   "planApproval": {
     "command": "APPROVE PLAN alpaca-trading-agents-2026 23168c99a2a14f7bc2ca5e0e097ad3235d85149cceaa0d7dabe957e964867dbd",
     "eventId": "alpaca-trading-agents-2026",
@@ -75,5 +75,5 @@
       "review": null
     }
   },
-  "updatedAt": "2026-08-29T01:32:17Z"
+  "updatedAt": "2026-08-29T01:46:41Z"
 }
