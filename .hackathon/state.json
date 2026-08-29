@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 5,
+  "eventId": "alpaca-trading-agents-2026",
+  "state": "PLAN_PENDING_APPROVAL",
+  "planSha256": "9bca6e0ba17bbced6f892d85caa0d4ff74b3b706181191c79cb4e88ced1da860",
+  "artifactRequirements": [
+    {
+      "id": "submission-repository",
+      "kind": "repository",
+      "source": "event_rules",
+      "description": "MIT-licensed project repository containing the autonomous options trading agent and submission documentation."
+    },
+    {
+      "id": "submission-writeup",
+      "kind": "document",
+      "source": "event_rules",
+      "description": "One-page write-up covering AI decision logic, risk gates, and Alpaca infrastructure (MCP/CLI, paper account workflow)."
+    },
+    {
+      "id": "alpaca-paper-account-id",
+      "kind": "document",
+      "source": "event_rules",
+      "description": "Fresh Alpaca paper trading account ID for hackathon submission, recorded in docs/ALPACA_ACCOUNT.md for the user to confirm before platform submit."
+    },
+    {
+      "id": "alpaca-mcp-cli-integration",
+      "kind": "integration",
+      "source": "event_rules",
+      "description": "Working Alpaca MCP Server or official Alpaca CLI execution path that places real paper option orders, verified by scripts/verify-paper-mcp-order.py."
+    },
+    {
+      "id": "options-trading-strategy",
+      "kind": "integration",
+      "source": "event_rules",
+      "description": "Autonomous agent strategy that includes options trades (wheel and/or vertical spreads) on Alpaca paper, not stock-only execution."
+    },
+    {
+      "id": "autonomous-agent-demo",
+      "kind": "demo",
+      "source": "approved_plan",
+      "description": "End-to-end autonomous agent cycle documented in docs/DEMO_SCRIPT.md with structured logs showing agent decision, risk gate pass, and MCP order routing."
+    },
+    {
+      "id": "third-party-notices",
+      "kind": "document",
+      "source": "approved_plan",
+      "description": "THIRD_PARTY_NOTICES.md and README foundation attribution for Gauss World Trader and Alpaca SDK/MCP/CLI dependencies."
+    }
+  ],
+  "buildId": null,
+  "planApproval": null,
+  "builderRun": null,
+  "qualityGates": {
+    "mvp": {
+      "status": "pending",
+      "checkedAt": null,
+      "evidence": []
+    },
+    "submissionReady": {
+      "status": "pending",
+      "checkedAt": null,
+      "evidence": [],
+      "reviewRounds": 0,
+      "review": null
+    }
+  },
+  "updatedAt": "2026-08-29T00:45:05Z"
+}
