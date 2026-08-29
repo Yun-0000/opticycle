@@ -23,6 +23,8 @@ Live paper orders use local environment variables only (`ALPACA_API_KEY`, `ALPAC
 4. Submit via MCP tool `place_option_order`, or `alpaca order submit` if `--backend cli`.
 5. Append decision, gate, and order records to `data/journal.jsonl`.
 
+Official demo video (Remotion, not a screen recording): `artifacts/demo.mp4`. Shot list: `docs/DEMO_SHOTLIST.md`.
+
 Paper account ID is recorded in `docs/ALPACA_ACCOUNT.md` (ID only).
 
 ## License
