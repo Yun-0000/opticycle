@@ -5,8 +5,8 @@ from it and contains no secrets, keys, or account credentials. Replay,
 live_paper, and fault_injection episodes are labeled and distinguishable.
 
 Live paper fills, broker receipts, and P&L snapshots are schema-ready but not
-claimed. Do not invent a live MATCHED episode until Yun confirms the exact
-paper order.
+claimed. Yun authorized one Alpaca paper MLEG. Cloud agents must not submit.
+Do not invent a live MATCHED episode; ingest a sanitized broker JSON later.
 """
 
 from __future__ import annotations
@@ -46,9 +46,10 @@ COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 LIVE_PAPER_INCOMPLETE = {
     "code": "LIVE_PAPER_INCOMPLETE",
     "detail": (
-        "TODO: blocked until Yun confirms the exact paper order. "
-        "No live MLEG submit, live broker receipt, live fill, or live P&L snapshot "
-        "is claimed in this gate."
+        "TODO: Yun authorized one Alpaca paper MLEG. Cloud VM has no keys and must not submit. "
+        "Live receipt/fill/P&L stay incomplete until sanitized broker JSON is ingested "
+        "(order_id, legs, limit, status, filled_avg_price, client_order_id). "
+        "Do not invent MATCHED."
     ),
     "live_mleg_submit": False,
     "live_broker_receipt": False,
@@ -210,14 +211,26 @@ def complete_episode(fields: Mapping[str, Any] | None = None) -> dict[str, Any]:
     return episode
 
 
-def _apply_live_paper_block(episode: dict[str, Any], channel: str) -> dict[str, Any]:
-    """Live paper never claims a fill, receipt, or P&L snapshot until a real broker fill exists."""
+def _apply_live_paper_block(
+    episode: dict[str, Any],
+    channel: str,
+    extra: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Live paper never claims MATCHED/P&L until a real broker fill exists.
+
+    Sanitized-JSON ingest may keep broker_receipt only. It still cannot stamp MATCHED.
+    """
     if channel != "live_paper":
         return episode
+    extra = extra or {}
+    ingest = bool(extra.get("ingest_sanitized_broker_json"))
     blocked = dict(episode)
+    keep = {"broker_receipt"} if ingest else set()
     for field in ("mcp_attempt", "broker_receipt", "reconciliation", "realized_pnl", "unrealized_pnl"):
+        if field in keep:
+            continue
         blocked[field] = live_incomplete_slot(field)
-    recon = episode.get("reconciliation") or {}
+    recon = blocked.get("reconciliation") or {}
     value = recon.get("value") if isinstance(recon, Mapping) else recon
     status = ""
     if isinstance(value, Mapping):
@@ -289,7 +302,7 @@ class EvidenceLedger:
         sha = commit_sha or current_commit_sha()
         if not COMMIT_SHA_RE.fullmatch(sha):
             raise LedgerError("code/build ID must be an exact commit SHA")
-        episode = _apply_live_paper_block(complete_episode(fields), channel)
+        episode = _apply_live_paper_block(complete_episode(fields), channel, extra)
         if not episode["code_build_id"]["present"]:
             episode["code_build_id"] = slot(sha, present=True, reason="exact git commit")
         elif episode["code_build_id"]["value"] != sha:

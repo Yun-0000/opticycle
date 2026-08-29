@@ -116,7 +116,7 @@ def test_no_trade_public_jsonl_is_not_fill_evidence() -> None:
 def test_live_mleg_fill_claims_are_incomplete() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     for name in ("live_mleg_submit", "live_broker_receipt", "live_fill", "live_pnl_snapshot"):
-        assert "Yun confirms" in manifest["incomplete_live"][name]
+        assert "Yun authorized" in manifest["incomplete_live"][name]
     html = PAGE_PATH.read_text(encoding="utf-8")
     assert "Live MLEG / fill" in html
     assert "incomplete" in html.lower()
@@ -161,6 +161,7 @@ def test_ci_runs_tests_and_public_evidence_checks() -> None:
     assert "scripts/scan-public-evidence.py" in workflow
     assert "scripts/replay-public-evidence.py" in workflow
     assert "scripts/record-live-fill-episode.py" in workflow
+    assert "scripts/ingest-paper-fill.py" in workflow
     assert "pull_request" in workflow
 
 

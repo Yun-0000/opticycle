@@ -251,7 +251,7 @@ def _finalize_reconciliation(
         reason=(
             "" if complete else ("; ".join(report.discrepancies) or report.status.value or final.halt_reason or "")
         )
-        or "live paper fill is not claimed until Yun confirms the exact paper order",
+        or "sanitized broker JSON not ingested; MATCHED not claimed",
         cycle_id=final.cycle_id,
         client_order_id=final.client_order_id,
         extra={
@@ -709,8 +709,8 @@ def run_once(
             list(getattr(portfolio, "positions", None) or []),
             reason="positions at observation; not a live P&L snapshot",
         )
-        builder.missing("realized_pnl", "TODO: blocked until Yun confirms the exact paper order")
-        builder.missing("unrealized_pnl", "TODO: blocked until Yun confirms the exact paper order")
+        builder.missing("realized_pnl", "TODO: waiting for sanitized broker JSON; cloud VM must not submit")
+        builder.missing("unrealized_pnl", "TODO: waiting for sanitized broker JSON; cloud VM must not submit")
         try:
             thesis_client = require_live_llm(llm_client)
         except ThesisDisabled as exc:

@@ -181,7 +181,7 @@ def test_episode_completeness_and_live_paper_does_not_claim_fill(tmp_path: Path)
     for blocked in ("mcp_attempt", "broker_receipt", "reconciliation", "realized_pnl", "unrealized_pnl"):
         assert episode[blocked]["present"] is False
         assert episode[blocked]["value"] is None
-        assert "Yun confirms" in (episode[blocked]["reason"] or "")
+        assert "Yun authorized" in (episode[blocked]["reason"] or "")
     assert row["live_paper_incomplete"] == LIVE_PAPER_INCOMPLETE
     assert row["live_paper_incomplete"]["live_mleg_submit"] is False
     assert row["episode"]["reconciliation"]["value"] is None

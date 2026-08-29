@@ -22,6 +22,7 @@ LIVE_MODULES = [
     ROOT / "src" / "opticycle" / "ledger.py",
     ROOT / "src" / "opticycle" / "pnl.py",
     ROOT / "src" / "opticycle" / "live_quotes.py",
+    ROOT / "src" / "opticycle" / "paper_fill_ingest.py",
     ROOT / "src" / "trade" / "routing.py",
     ROOT / "src" / "trade" / "__init__.py",
     ROOT / "src" / "trade" / "mcp" / "alpaca_mcp_executor.py",

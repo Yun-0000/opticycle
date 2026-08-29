@@ -30,6 +30,7 @@ NO_TRADE_JSONL = EVIDENCE_DIR / "no_trade.public.jsonl"
 MANIFEST_PATH = EVIDENCE_DIR / "manifest.json"
 PAGE_PATH = EVIDENCE_DIR / "index.html"
 GATE11_STATUS_PATH = EVIDENCE_DIR / "gate11_status.json"
+PAPER_FILL_INGEST_PATH = EVIDENCE_DIR / "paper_fill_ingest.json"
 
 NO_TRADE_CAVEAT = (
     "live-path + injected missing quote; NOT an Alpaca true quote-miss; "
@@ -95,6 +96,8 @@ def load_gate11_status() -> dict[str, Any]:
         "demo_mp4": "NOT submission footage",
         "live_quote_gap": "live Alpaca quotes were not available without keys",
         "pnl_reconcile": "fixture-tested; not stamped as live",
+        "yun_authorized_one_paper_mleg": True,
+        "sanitized_json_provided": False,
     }
     if not GATE11_STATUS_PATH.is_file():
         return default
@@ -352,6 +355,11 @@ def render_evidence_page(
     quote_gap = html.escape(str(gate11.get("live_quote_gap") or ""))
     demo_label = html.escape(str(gate11.get("demo_mp4") or "NOT submission footage"))
     genuine = "yes" if gate11.get("genuine_no_trade_recorded") else "no — gap recorded honestly"
+    ingest_note = (
+        "Yun authorized one paper MLEG. Cloud VM cannot submit. "
+        "Waiting for sanitized broker JSON (order_id, legs, limit, status, filled_avg_price, client_order_id). "
+        "MATCHED is not claimed."
+    )
     embedded = html.escape(canonical_dumps({"records": records, "manifest": manifest, "gate11": gate11}))
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -378,6 +386,7 @@ def render_evidence_page(
     <p><strong>Live MLEG / fill / broker receipt / P&amp;L are incomplete.</strong> Do not treat any card as a live MATCHED fill. Yun has not confirmed the exact paper order.</p>
     <p>{html.escape(NO_TRADE_CAVEAT)}</p>
     <p>Genuine live NO_TRADE this gate: {html.escape(genuine)}. {quote_gap}</p>
+    <p>{html.escape(ingest_note)}</p>
     <p><strong>artifacts/demo.mp4</strong>: {demo_label}. Remotion rewrite is Gate 12.</p>
     <ul>{incomplete}</ul>
   </div>

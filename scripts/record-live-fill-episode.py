@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Would record a live MLEG + receipt + fill after Yun confirms.
+"""Preview the live-fill ledger path. Cloud VM must not submit.
 
-Dry-run only. Cannot submit. Does not invent a live fill.
+Yun authorized one paper MLEG. Ingest sanitized broker JSON via
+scripts/ingest-paper-fill.py --from-json. Do not invent MATCHED.
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ from opticycle.pnl import (  # noqa: E402
     would_record_live_fill_episode,
 )
 
-SUBMIT_BLOCKED = "blocked until Yun confirms the exact paper order; this gate cannot submit"
+SUBMIT_BLOCKED = "Yun authorized one paper MLEG; cloud VM has no keys and must not place it"
 
 
 def _fixture_snapshot():
@@ -41,7 +42,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--submit",
         action="store_true",
-        help="Refused this gate. Requires a later explicit instruction after Yun confirms.",
+        help="Refused: this environment cannot place the paper MLEG",
     )
     args = parser.parse_args(argv)
     if args.submit:

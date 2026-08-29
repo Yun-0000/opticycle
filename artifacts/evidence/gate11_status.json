@@ -6,6 +6,9 @@
   "live_fill_claimed": false,
   "live_quote_gap": "missing local Alpaca credentials; quotes cannot be observed keylessly; no genuine NO_TRADE recorded",
   "live_quotes_available": false,
+  "matched_claimed": false,
   "pnl_reconcile": "fixture-tested; not stamped as live",
-  "schema": "opticycle.gate11-status.v1"
+  "sanitized_json_provided": false,
+  "schema": "opticycle.gate11-status.v1",
+  "yun_authorized_one_paper_mleg": true
 }

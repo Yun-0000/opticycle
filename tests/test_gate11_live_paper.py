@@ -13,7 +13,15 @@ from types import SimpleNamespace
 import pytest
 
 from opticycle.evidence_public import GATE11_STATUS_PATH, MANIFEST_PATH, NO_TRADE_JSONL, PAGE_PATH, load_public_records
+from opticycle.ledger import EvidenceLedger, current_commit_sha
 from opticycle.live_quotes import probe_live_quotes
+from opticycle.paper_fill_ingest import (
+    FillIngestError,
+    REQUIRED_FILL_FIELDS,
+    ingest_sanitized_fill,
+    validate_sanitized_fill,
+    waiting_status,
+)
 from opticycle.pnl import (
     PnlError,
     SOURCE_FIXTURE,
@@ -159,6 +167,9 @@ def test_injected_no_trade_not_promoted_and_fill_incomplete() -> None:
     assert status["genuine_no_trade_recorded"] is False
     assert status["injected_no_trade_promoted"] is False
     assert status["live_quotes_available"] is False
+    assert status["yun_authorized_one_paper_mleg"] is True
+    assert status["sanitized_json_provided"] is False
+    assert status["matched_claimed"] is False
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     assert manifest["live_fill_claimed"] is False
     assert manifest.get("injected_no_trade_promoted") is False
@@ -192,3 +203,85 @@ def test_snapshot_from_namespace_objects() -> None:
     assert report.matched is True
     assert report.live_claimed is False
     assert report.realized_present is False
+
+
+def _sample_fill_json() -> dict:
+    return {
+        "order_id": "test-ord-not-live",
+        "client_order_id": "oc-test-not-live",
+        "limit": "1.20",
+        "status": "filled",
+        "filled_avg_price": "1.21",
+        "legs": [
+            {"symbol": "SPY260918P00550000", "side": "sell", "ratio_qty": "1"},
+            {"symbol": "SPY260918P00540000", "side": "buy", "ratio_qty": "1"},
+        ],
+    }
+
+
+def test_waiting_hook_does_not_invent_matched() -> None:
+    status = waiting_status()
+    assert status["yun_authorized_one_paper_mleg"] is True
+    assert status["cloud_submit"] is False
+    assert status["sanitized_json_provided"] is False
+    assert status["live_fill_claimed"] is False
+    assert status["matched_claimed"] is False
+    assert list(status["waiting_for"]) == list(REQUIRED_FILL_FIELDS)
+    waiting = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "ingest-paper-fill.py")],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert waiting.returncode == 0
+    payload = json.loads(waiting.stdout)
+    assert payload["live_fill_claimed"] is False
+    assert payload["matched_claimed"] is False
+
+
+def test_incomplete_fill_json_is_rejected() -> None:
+    with pytest.raises(FillIngestError, match="missing fields"):
+        validate_sanitized_fill({"order_id": "test-ord-not-live"})
+    with pytest.raises(FillIngestError, match="account id"):
+        validate_sanitized_fill({**_sample_fill_json(), "note": "PA3V84C40PJQ"})
+
+
+def test_ingested_sanitized_json_records_receipt_but_not_matched(tmp_path: Path) -> None:
+    ledger = EvidenceLedger(tmp_path / "ledger.raw.jsonl")
+    row = ingest_sanitized_fill(
+        ledger=ledger,
+        payload=_sample_fill_json(),
+        commit_sha=current_commit_sha(),
+    )
+    assert row["channel"] == "live_paper"
+    assert row["extra"]["live_fill_claimed"] is False
+    assert row["extra"]["matched_claimed"] is False
+    assert row["episode"]["broker_receipt"]["present"] is True
+    receipt = row["episode"]["broker_receipt"]["value"]
+    assert receipt["order_id"] == "test-ord-not-live"
+    assert receipt["client_order_id"] == "oc-test-not-live"
+    assert receipt["status"] == "filled"
+    assert len(receipt["legs"]) == 2
+    assert row["episode"]["reconciliation"]["present"] is False
+    assert row["episode"]["realized_pnl"]["present"] is False
+    assert row["episode"]["unrealized_pnl"]["present"] is False
+    blob = json.dumps(row).lower()
+    assert '"status":"matched"' not in blob
+    assert row["outcome"] != "PROFIT"
+
+
+def test_ingest_script_submit_is_refused() -> None:
+    denied = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "ingest-paper-fill.py"), "--submit"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert denied.returncode == 2
+    missing = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "ingest-paper-fill.py"), "--from-json", "/no/such/fill.json"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert missing.returncode == 3

@@ -64,15 +64,18 @@
   "demo_mp4": "NOT submission footage",
   "genuine_no_trade_recorded": false,
   "incomplete_live": {
-    "live_broker_receipt": "TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&L snapshot is claimed in this gate.",
-    "live_fill": "TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&L snapshot is claimed in this gate.",
-    "live_mleg_submit": "TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&L snapshot is claimed in this gate.",
-    "live_pnl_snapshot": "TODO: blocked until Yun confirms the exact paper order. No live MLEG submit, live broker receipt, live fill, or live P&L snapshot is claimed in this gate."
+    "live_broker_receipt": "TODO: Yun authorized one Alpaca paper MLEG. Cloud VM has no keys and must not submit. Live receipt/fill/P&L stay incomplete until sanitized broker JSON is ingested (order_id, legs, limit, status, filled_avg_price, client_order_id). Do not invent MATCHED.",
+    "live_fill": "TODO: Yun authorized one Alpaca paper MLEG. Cloud VM has no keys and must not submit. Live receipt/fill/P&L stay incomplete until sanitized broker JSON is ingested (order_id, legs, limit, status, filled_avg_price, client_order_id). Do not invent MATCHED.",
+    "live_mleg_submit": "TODO: Yun authorized one Alpaca paper MLEG. Cloud VM has no keys and must not submit. Live receipt/fill/P&L stay incomplete until sanitized broker JSON is ingested (order_id, legs, limit, status, filled_avg_price, client_order_id). Do not invent MATCHED.",
+    "live_pnl_snapshot": "TODO: Yun authorized one Alpaca paper MLEG. Cloud VM has no keys and must not submit. Live receipt/fill/P&L stay incomplete until sanitized broker JSON is ingested (order_id, legs, limit, status, filled_avg_price, client_order_id). Do not invent MATCHED."
   },
   "injected_no_trade_promoted": false,
   "live_fill_claimed": false,
   "live_quotes_available": false,
+  "matched_claimed": false,
   "no_trade_injected_quote_caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
+  "sanitized_json_provided": false,
   "schema": "opticycle.claim-evidence.v1",
-  "source": "sanitized_public_ledger"
+  "source": "sanitized_public_ledger",
+  "yun_authorized_one_paper_mleg": true
 }

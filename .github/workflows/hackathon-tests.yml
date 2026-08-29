@@ -36,3 +36,5 @@ jobs:
         run: python3 scripts/record-live-fill-episode.py --dry-run
       - name: Genuine NO_TRADE probe without keys
         run: python3 scripts/record-genuine-no-trade.py
+      - name: Paper-fill ingest hook waits without JSON
+        run: python3 scripts/ingest-paper-fill.py

@@ -230,7 +230,7 @@ def refuse_live_stamp(snapshot: BrokerSnapshot, *, real_fill: bool = False) -> N
         raise PnlError("fixture numbers must not be stamped as live")
     if not real_fill:
         raise PnlError("live P&L is incomplete until a real broker fill exists")
-    raise PnlError("live P&L remains incomplete until Yun confirms the exact paper order")
+    raise PnlError("live P&L remains incomplete until sanitized broker JSON is ingested")
 
 
 def would_record_live_fill_episode(
@@ -248,13 +248,13 @@ def would_record_live_fill_episode(
         "submitted": False,
         "live_fill_claimed": False,
         "live_mleg_submit": False,
-        "blocked": "blocked until Yun confirms the exact paper order; this gate cannot submit",
+        "blocked": "Yun authorized one paper MLEG; cloud VM cannot submit; waiting for sanitized broker JSON",
         "snapshot_source": snapshot.source,
         "pnl": report.as_dict(),
         "mcp_attempt": dict(mcp_attempt or {}),
         "broker_receipt": dict(broker_receipt or {}),
         "reconciliation": dict(reconciliation or {}),
-        "fields_after_yun_confirms": (
+        "fields_after_sanitized_json": (
             "mcp_attempt",
             "broker_receipt",
             "reconciliation",

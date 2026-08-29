@@ -34,6 +34,9 @@ def main() -> int:
     manifest["injected_no_trade_promoted"] = False
     manifest["demo_mp4"] = status.get("demo_mp4") or "NOT submission footage"
     manifest["live_fill_claimed"] = False
+    manifest["matched_claimed"] = False
+    manifest["yun_authorized_one_paper_mleg"] = True
+    manifest["sanitized_json_provided"] = bool(status.get("sanitized_json_provided"))
     MANIFEST_PATH.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     PAGE_PATH.write_text(render_evidence_page(records, manifest, status=status), encoding="utf-8")
     print(f"page={PAGE_PATH} claims={len(manifest['claims'])} live_fill={manifest['live_fill_claimed']}")

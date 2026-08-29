@@ -16,6 +16,7 @@ from opticycle.evidence_public import (  # noqa: E402
     MANIFEST_PATH,
     NO_TRADE_JSONL,
     PAGE_PATH,
+    PAPER_FILL_INGEST_PATH,
     PUBLIC_JSONL,
     load_jsonl,
     scan_public_blob,
@@ -25,7 +26,7 @@ from opticycle.evidence_public import (  # noqa: E402
 
 def main() -> int:
     hits: list[str] = []
-    for path in (NO_TRADE_JSONL, PUBLIC_JSONL, MANIFEST_PATH, PAGE_PATH, GATE11_STATUS_PATH):
+    for path in (NO_TRADE_JSONL, PUBLIC_JSONL, MANIFEST_PATH, PAGE_PATH, GATE11_STATUS_PATH, PAPER_FILL_INGEST_PATH):
         if not path.is_file():
             print(f"missing {path}", file=sys.stderr)
             return 1
