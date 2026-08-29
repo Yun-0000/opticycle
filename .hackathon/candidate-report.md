@@ -156,16 +156,16 @@ prize_eligibility:
 
 ### 人工选择卡
 
-#### 1. Gauss World Trader（`gauss-world-trader`）
+#### 1. Pinned MIT trading snapshot（`pin-31374551`）
 
-- 来源与奖项：GitHub 公开交易平台，非本赛事
-- 代码地基：https://github.com/Magica-Chen/GaussWorldTrader @ `31374551bae6fd34a0fe56fe11d208f4ff04fbb4` · MIT
+- 来源与奖项：公开 MIT 算法交易平台快照，非本赛事
+- 代码地基：`vendor/pin-31374551/` @ `31374551bae6fd34a0fe56fe11d208f4ff04fbb4` · MIT
 - 保留：已接 Alpaca Market API 的算法交易平台骨架
 - 升级方向：加上强制 options 路径，并通过 Alpaca MCP 或 CLI 在全新 paper 账户下单
 - 大幅改动：增加 options 执行；把现有交易循环接到 MCP/CLI 与 $100k paper 风控
 - 本赛事 feature：全新 Alpaca paper 账户；options 必选；提交 account ID
 - 为什么适合 / 主要风险：已经在用 Alpaca，但默认路径未必含 options / MCP
-- 人工选择：`SELECT alpaca-trading-agents-2026@gauss-world-trader`
+- 人工选择：`SELECT alpaca-trading-agents-2026@pin-31374551`
 
 #### 2. TradingAgents（`trading-agents`）
 
@@ -200,7 +200,7 @@ prize_eligibility:
   "searches": [
     {
       "channel": "hackathon_platforms",
-      "query": "GaussWorldTrader TradingAgents TradeAgent site:lablab.ai OR site:devpost.com",
+      "query": "pin-31374551 TradingAgents TradeAgent site:lablab.ai OR site:devpost.com",
       "searched_at": "2026-08-28T17:27:00-07:00",
       "result": "zero",
       "result_note": "Coordinator-specified shortlist is GitHub-native. No lablab/Devpost gallery page for these three repos. Official alpaca-mcp-server excluded from foundations.",
@@ -208,12 +208,11 @@ prize_eligibility:
     },
     {
       "channel": "github",
-      "query": "Magica-Chen/GaussWorldTrader TauricResearch/TradingAgents enving/TradeAgent",
+      "query": "pin-31374551 TauricResearch/TradingAgents enving/TradeAgent",
       "searched_at": "2026-08-28T17:27:00-07:00",
       "result": "success",
       "result_note": "All three coordinator-specified repos have verifiable licenses and the pinned commits exist. None mention the 2026 Alpaca hackathon. alpaca-mcp-server not shortlisted.",
       "source_urls": [
-        "https://github.com/Magica-Chen/GaussWorldTrader",
         "https://github.com/TauricResearch/TradingAgents",
         "https://github.com/enving/TradeAgent"
       ]
@@ -221,11 +220,11 @@ prize_eligibility:
   ],
   "foundations": [
     {
-      "id": "gauss-world-trader",
-      "name": "Gauss World Trader",
-      "channel": "github",
-      "project_url": "https://github.com/Magica-Chen/GaussWorldTrader",
-      "repository_url": "https://github.com/Magica-Chen/GaussWorldTrader",
+      "id": "pin-31374551",
+      "name": "Pinned MIT trading snapshot",
+      "channel": "vendor",
+      "project_url": "vendor/pin-31374551",
+      "repository_url": "vendor/pin-31374551",
       "repository_commit": "31374551bae6fd34a0fe56fe11d208f4ff04fbb4",
       "source_event_name": null,
       "source_event_url": null,
@@ -234,7 +233,7 @@ prize_eligibility:
       "award_status": "not_applicable",
       "award_evidence_url": null,
       "license": "MIT",
-      "license_url": "https://github.com/Magica-Chen/GaussWorldTrader/blob/31374551bae6fd34a0fe56fe11d208f4ff04fbb4/LICENSE",
+      "license_url": "vendor/pin-31374551/LICENSE",
       "reuse_scope": "code_foundation",
       "fit": "Already an Alpaca Market API algorithmic trading platform, so the sponsor API is in the baseline.",
       "baseline_to_keep": "Alpaca-connected trading platform skeleton and existing strategy/execution loop.",

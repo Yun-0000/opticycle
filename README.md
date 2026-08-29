@@ -13,12 +13,12 @@ PYTHONPATH=vendor/pin-31374551:src python3 scripts/verify-paper-mcp-order.py --d
 PYTHONPATH=vendor/pin-31374551:src python3 -m pytest tests/ -q
 ```
 
-Live paper orders use local environment variables only (`ALPACA_API_KEY`, `ALPACA_SECRET_KEY`). Never commit secrets. Paper mode stays on (`ALPACA_PAPER_TRADE=true`, `ALPACA_LIVE_TRADE` must not be `true`).
+Live paper orders use local environment variables only (`ALPACA_API_KEY`, `ALPACA_SECRET_KEY`). Never commit secrets. Paper mode stays on (`ALPACA_PAPER_TRADE=true`, `ALPACA_LIVE_TRADE` must not be `true`). `scripts/verify-paper-mcp-order.py` is `--dry-run` in CI; omit `--dry-run` only when those env vars are set locally.
 
 ## Product behavior
 
 1. Load the hackathon profile (`starting_capital=100000`, `require_options=true`, `execution_backend=mcp`).
-2. Build an options structure (`wheel` or `vertical_spread`) on the watchlist underlying (default SPY).
+2. Build an options structure (`wheel` or `vertical_spread`) from `vendor/pin-31374551/src/strategy/option/` on the watchlist underlying (default SPY).
 3. Evaluate risk gates, including vollib Black-Scholes greeks.
 4. Submit via MCP tool `place_option_order`, or `alpaca order submit` if `--backend cli`.
 5. Append decision, gate, and order records to `data/journal.jsonl`.

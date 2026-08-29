@@ -37,10 +37,13 @@ def run_once(
     assert_paper_env(settings)
     if settings.strategy not in ALLOWED_STRATEGIES:
         raise ValueError("stock-only strategies are disabled")
-    _require_option_strategy_modules()
     log = journal or TradeJournal()
     portfolio = dry_run_portfolio(settings)
-    plan = build_cycle_plan(settings, underlying_price=underlying_price)
+    plan = build_cycle_plan(
+        settings,
+        underlying_price=underlying_price,
+        dry_run=dry_run,
+    )
     log.record(
         "decision",
         {
@@ -114,23 +117,3 @@ def run_loop(settings: HackathonSettings, *, dry_run: bool, once: bool) -> int:
         time.sleep(interval)
         cycle = run_once(settings, dry_run=dry_run)
         print(cycle)
-
-
-def _require_option_strategy_modules() -> None:
-    """Confirm the pinned option strategies are present without importing stock paths."""
-    from pathlib import Path
-
-    option_dir = (
-        Path(__file__).resolve().parents[2]
-        / "vendor"
-        / "pin-31374551"
-        / "src"
-        / "strategy"
-        / "option"
-    )
-    wheel = (option_dir / "wheel.py").read_text(encoding="utf-8")
-    spread = (option_dir / "vertical_spread.py").read_text(encoding="utf-8")
-    if 'name="wheel"' not in wheel:
-        raise RuntimeError("wheel option strategy is missing from the pin snapshot")
-    if 'name="vertical_spread"' not in spread:
-        raise RuntimeError("vertical_spread option strategy is missing from the pin snapshot")

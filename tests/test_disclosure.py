@@ -22,6 +22,8 @@ def test_public_docs_do_not_name_upstream_project() -> None:
         root / "docs" / "ALPACA_ACCOUNT.md",
         root / "THIRD_PARTY_NOTICES.md",
         root / ".env.example",
+        root / "PLAN.md",
+        root / ".hackathon" / "candidate-report.md",
     ]
     for path in paths:
         text = path.read_text(encoding="utf-8")

@@ -25,15 +25,18 @@ def test_require_options_cannot_be_disabled() -> None:
 def test_wheel_plan_is_occ_put() -> None:
     plan = build_cycle_plan(HackathonSettings(strategy="wheel"), underlying_price=500)
     assert plan.strategy == "wheel"
+    assert plan.metadata.get("strategy_class") == "WheelStrategy"
+    assert plan.metadata.get("pin") == "31374551"
     plan.request.assert_options_instrument()
     assert plan.request.symbol is not None
-    assert plan.request.symbol.endswith("P") or "P" in plan.request.symbol
+    assert "P" in plan.request.symbol
     assert plan.request.position_intent == "sell_to_open"
 
 
 def test_vertical_spread_plan_is_multileg() -> None:
     plan = build_cycle_plan(HackathonSettings(strategy="vertical_spread"), underlying_price=500)
     assert plan.strategy == "vertical_spread"
+    assert plan.metadata.get("strategy_class") == "VerticalSpreadStrategy"
     plan.request.assert_options_instrument()
     assert plan.request.is_multileg
     assert len(plan.request.legs or []) == 2

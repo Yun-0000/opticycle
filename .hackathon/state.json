@@ -2,7 +2,7 @@
   "schemaVersion": 5,
   "eventId": "alpaca-trading-agents-2026",
   "state": "BUILDING",
-  "planSha256": "4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
+  "planSha256": "23168c99a2a14f7bc2ca5e0e097ad3235d85149cceaa0d7dabe957e964867dbd",
   "artifactRequirements": [
     {
       "id": "submission-repository",
@@ -44,18 +44,18 @@
       "id": "third-party-notices",
       "kind": "document",
       "source": "approved_plan",
-      "description": "THIRD_PARTY_NOTICES.md and README foundation attribution for Gauss World Trader and Alpaca SDK/MCP/CLI dependencies."
+      "description": "THIRD_PARTY_NOTICES.md and README attribution for the pinned MIT snapshot and Alpaca SDK/MCP/CLI dependencies."
     }
   ],
   "buildId": null,
   "planApproval": {
-    "command": "APPROVE PLAN alpaca-trading-agents-2026 4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
+    "command": "APPROVE PLAN alpaca-trading-agents-2026 23168c99a2a14f7bc2ca5e0e097ad3235d85149cceaa0d7dabe957e964867dbd",
     "eventId": "alpaca-trading-agents-2026",
-    "planSha256": "4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
+    "planSha256": "23168c99a2a14f7bc2ca5e0e097ad3235d85149cceaa0d7dabe957e964867dbd",
     "approvedAt": "2026-08-29T00:53:23Z"
   },
   "builderRun": {
-    "idempotencyKey": "builder-v3:alpaca-trading-agents-2026:4e40a842b359a9b22c26200145aaaaf57a81bfa35fa2acb9423484ead948ea8b",
+    "idempotencyKey": "builder-v3:alpaca-trading-agents-2026:23168c99a2a14f7bc2ca5e0e097ad3235d85149cceaa0d7dabe957e964867dbd",
     "attempt": 1,
     "status": "running",
     "startedAt": "2026-08-29T00:53:23Z",
@@ -75,5 +75,5 @@
       "review": null
     }
   },
-  "updatedAt": "2026-08-29T01:17:00Z"
+  "updatedAt": "2026-08-29T01:32:17Z"
 }

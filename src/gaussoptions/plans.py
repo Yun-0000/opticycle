@@ -38,58 +38,13 @@ def build_cycle_plan(
     settings: HackathonSettings,
     *,
     underlying_price: float = 500.0,
+    dry_run: bool = True,
 ) -> CyclePlan:
-    """Return a wheel or vertical-spread option order for the watchlist symbol."""
-    underlying = settings.symbols[0]
-    expiration = demo_expiration()
-    if settings.strategy == "vertical_spread":
-        short_strike = round(underlying_price * 0.97, 0)
-        long_strike = round(underlying_price * 0.95, 0)
-        short_sym = occ_symbol(underlying, expiration, True, short_strike)
-        long_sym = occ_symbol(underlying, expiration, True, long_strike)
-        request = OptionOrderRequest(
-            qty=1,
-            order_type="limit",
-            limit_price=0.85,
-            order_class="mleg",
-            legs=[
-                {
-                    "symbol": short_sym,
-                    "ratio_qty": "1",
-                    "side": "sell",
-                    "position_intent": "sell_to_open",
-                },
-                {
-                    "symbol": long_sym,
-                    "ratio_qty": "1",
-                    "side": "buy",
-                    "position_intent": "buy_to_open",
-                },
-            ],
-            reason="bull put credit spread",
-            metadata={"strategy": "vertical_spread", "underlying": underlying},
-        )
-        return CyclePlan(
-            strategy="vertical_spread",
-            request=request,
-            underlying=underlying,
-            notes="vertical put credit spread",
-        )
-    strike = round(underlying_price * 0.95, 0)
-    symbol = occ_symbol(underlying, expiration, True, strike)
-    request = OptionOrderRequest(
-        qty=1,
-        symbol=symbol,
-        side="sell",
-        order_type="limit",
-        limit_price=1.25,
-        position_intent="sell_to_open",
-        reason="cash-secured put",
-        metadata={"strategy": "wheel", "stage": "cash_secured_put", "underlying": underlying},
-    )
-    return CyclePlan(
-        strategy="wheel",
-        request=request,
-        underlying=underlying,
-        notes="wheel cash-secured put",
+    """Build an option order from the pin wheel / vertical_spread ActionPlan."""
+    from gaussoptions.pin_option import build_pin_cycle_plan
+
+    return build_pin_cycle_plan(
+        settings,
+        underlying_price=underlying_price,
+        dry_run=dry_run,
     )
