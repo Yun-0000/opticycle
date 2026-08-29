@@ -290,7 +290,9 @@ def build_pin_cycle_plan(
     underlying_price: float = 500.0,
     dry_run: bool = True,
 ) -> CyclePlan:
-    """Call the pin wheel or vertical_spread path and map the ActionPlan to an option order."""
+    """Call the pin vertical_spread path and map the ActionPlan to an option order."""
+    if settings.strategy != "vertical_spread":
+        raise ExecutionRejected("only SPY defined-risk vertical is enabled")
     wheel_path = PIN_SRC / "strategy" / "option" / "wheel.py"
     spread_path = PIN_SRC / "strategy" / "option" / "vertical_spread.py"
     if not wheel_path.is_file() or not spread_path.is_file():

@@ -12,11 +12,7 @@ Apache License 2.0. Market data and account verification clients.
 
 ## alpaca-mcp-server 2.3.0
 
-MIT License. Spawned as the primary order path (`uvx alpaca-mcp-server==2.3.0`, tool `place_option_order`).
-
-## Alpaca CLI (tag v0.0.14)
-
-Apache License 2.0. Fallback order path (`alpaca order submit`). Installer pin: `docs/Dockerfile`.
+MIT License. Spawned as the official order path (`uvx alpaca-mcp-server==2.3.0`, tool `place_option_order`).
 
 ## mcp 2.1.1
 

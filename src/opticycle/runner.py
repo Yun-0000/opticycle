@@ -1,4 +1,4 @@
-"""Unattended options-only runner: decision → risk gate → MCP/CLI → journal."""
+"""Unattended options-only runner: decision → risk gate → MCP → journal."""
 
 from __future__ import annotations
 
@@ -12,13 +12,14 @@ from opticycle.plans import build_cycle_plan
 from opticycle.preflight import assert_paper_env, dry_run_portfolio
 from opticycle.risk import RiskGate, contract_greeks, scale_greeks
 from opticycle.settings import ALLOWED_STRATEGIES, HackathonSettings
-from trade.cli.alpaca_cli_executor import AlpacaCliExecutor
 from trade.mcp.alpaca_mcp_executor import AlpacaMcpExecutor
 from trade.routing import dry_run_option_order
 
 
 def configure_backend(settings: HackathonSettings) -> None:
-    os.environ["EXECUTION_BACKEND"] = settings.execution_backend
+    if settings.execution_backend != "mcp":
+        raise ValueError("official MCP is the only live execution channel")
+    os.environ["EXECUTION_BACKEND"] = "mcp"
     os.environ["ALPACA_PAPER_TRADE"] = "true"
     os.environ["ALPACA_LIVE_TRADE"] = "false"
 
@@ -29,14 +30,13 @@ def run_once(
     dry_run: bool = True,
     journal: TradeJournal | None = None,
     mcp_executor: AlpacaMcpExecutor | None = None,
-    cli_executor: AlpacaCliExecutor | None = None,
     underlying_price: float = 500.0,
 ) -> dict[str, Any]:
     settings = settings or HackathonSettings()
     configure_backend(settings)
     assert_paper_env(settings)
     if settings.strategy not in ALLOWED_STRATEGIES:
-        raise ValueError("stock-only strategies are disabled")
+        raise ValueError("only SPY defined-risk vertical is enabled")
     log = journal or TradeJournal()
     portfolio = dry_run_portfolio(settings)
     plan = build_cycle_plan(
@@ -78,10 +78,7 @@ def run_once(
     gate.raise_if_rejected()
 
     if dry_run:
-        result = dry_run_option_order(plan.request, settings.execution_backend)
-    elif settings.execution_backend == "cli":
-        executor = cli_executor or AlpacaCliExecutor(dry_run=False)
-        result = executor.place_option_order(plan.request)
+        result = dry_run_option_order(plan.request, "mcp")
     else:
         executor = mcp_executor or AlpacaMcpExecutor.from_env(dry_run=False)
         result = executor.place_option_order_sync(plan.request)

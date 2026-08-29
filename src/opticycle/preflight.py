@@ -25,7 +25,7 @@ def dry_run_portfolio(settings: HackathonSettings) -> PortfolioSnapshot:
 def assert_paper_env(settings: HackathonSettings) -> None:
     if not settings.paper_only:
         raise ExecutionRejected("live trading is disabled")
-    if settings.execution_backend not in {"mcp", "cli"}:
-        raise ExecutionRejected("orders must go through MCP or CLI")
+    if settings.execution_backend != "mcp":
+        raise ExecutionRejected("orders must go through official MCP")
     if not settings.require_options:
         raise ExecutionRejected("stock-only path is disabled")

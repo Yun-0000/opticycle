@@ -16,8 +16,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run", help="Run the autonomous options cycle")
     run.add_argument("--profile", default="hackathon", choices=["hackathon"])
-    run.add_argument("--backend", choices=["mcp", "cli"], default=None)
-    run.add_argument("--strategy", choices=["wheel", "vertical_spread"], default=None)
+    run.add_argument("--backend", choices=["mcp"], default=None)
+    run.add_argument("--strategy", choices=["vertical_spread"], default=None)
     run.add_argument("--once", action="store_true")
     run.add_argument("--dry-run", action="store_true")
     return parser
@@ -32,10 +32,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("only the hackathon profile is enabled")
     updates: dict[str, str] = {}
     if args.backend:
-        updates["execution_backend"] = args.backend
+        if args.backend != "mcp":
+            parser.error("official MCP is the only live execution channel")
+        updates["execution_backend"] = "mcp"
     if args.strategy:
         if args.strategy in STOCK_STRATEGIES:
             parser.error("stock-only strategies are disabled")
+        if args.strategy != "vertical_spread":
+            parser.error("only SPY defined-risk vertical is enabled")
         updates["strategy"] = args.strategy
     settings = HackathonSettings(**updates)
     os.environ["EXECUTION_BACKEND"] = settings.execution_backend

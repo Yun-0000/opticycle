@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Prove the paper option order path: decision → risk gate → MCP/CLI.
+"""Prove the paper option order path: decision → risk gate → official MCP.
 
 CI / default: --dry-run (no live Alpaca keys, no submit).
 
-Without --dry-run the script places a real paper option order through Alpaca MCP
-(primary) or official Alpaca CLI (fallback). Keys stay in the environment only:
+Without --dry-run the script places a real paper option order through official
+Alpaca MCP (alpaca-mcp-server==2.3.0) only. Keys stay in the environment only:
 
   ALPACA_API_KEY
   ALPACA_SECRET_KEY
   ALPACA_PAPER_TRADE=true
   ALPACA_LIVE_TRADE=false   (must not be true)
-  HACKATHON_EXECUTION_BACKEND=mcp|cli   (optional; --backend wins)
+  HACKATHON_EXECUTION_BACKEND=mcp   (optional; official MCP only)
 
 Never commit API keys.
 """
@@ -53,20 +53,20 @@ def _require_paper_env() -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Verify MCP/CLI paper option order path")
+    parser = argparse.ArgumentParser(description="Verify official MCP paper option order path")
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Do not spawn MCP/CLI or submit; no live keys required",
+        help="Do not spawn MCP or submit; no live keys required",
     )
-    parser.add_argument("--backend", choices=["mcp", "cli"], default="mcp")
-    parser.add_argument("--strategy", choices=["wheel", "vertical_spread"], default="wheel")
+    parser.add_argument("--backend", choices=["mcp"], default="mcp")
+    parser.add_argument("--strategy", choices=["vertical_spread"], default="vertical_spread")
     args = parser.parse_args(argv)
     if not args.dry_run:
         _require_paper_env()
     settings = HackathonSettings(
-        execution_backend=args.backend,
-        strategy=args.strategy,
+        execution_backend="mcp",
+        strategy="vertical_spread",
     )
     result = run_once(settings, dry_run=args.dry_run)
     if not result.get("ok"):
@@ -74,14 +74,10 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     backend = result["order"].get("backend")
     tool = result["order"].get("tool")
-    argv_sent = result["order"].get("argv")
-    if args.backend == "mcp" and args.dry_run and tool != "place_option_order":
+    if args.dry_run and tool != "place_option_order":
         print("expected MCP place_option_order", file=sys.stderr)
         return 1
-    if args.backend == "cli" and args.dry_run and not argv_sent:
-        print("expected CLI argv", file=sys.stderr)
-        return 1
-    if args.backend == "mcp" and not args.dry_run and not (
+    if not args.dry_run and not (
         result["order"].get("ok") or result["order"].get("id") or result["order"].get("order_id")
     ):
         print("expected a paper MCP order id", file=sys.stderr)

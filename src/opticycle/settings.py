@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-ALLOWED_STRATEGIES = ("wheel", "vertical_spread")
+ALLOWED_STRATEGIES = ("vertical_spread",)
 STOCK_STRATEGIES = (
     "momentum",
     "value",
@@ -31,12 +31,12 @@ class HackathonSettings(BaseSettings):
 
     starting_capital: float = Field(default=100_000, gt=0)
     require_options: bool = True
-    execution_backend: Literal["mcp", "cli"] = "mcp"
+    execution_backend: Literal["mcp"] = "mcp"
     mcp_server_spec: str = "alpaca-mcp-server==2.3.0"
     watchlist: str = "SPY"
     interval_minutes: int = Field(default=15, ge=1, le=240)
     agent_mode: Literal["fast", "llm"] = "fast"
-    strategy: Literal["wheel", "vertical_spread"] = "wheel"
+    strategy: Literal["vertical_spread"] = "vertical_spread"
     paper_only: bool = True
     max_position_pct: float = Field(default=0.08, gt=0, le=0.25)
     max_daily_trades: int = Field(default=8, ge=1, le=50)
@@ -47,6 +47,14 @@ class HackathonSettings(BaseSettings):
     paper_account_id: str | None = "PA3V84C40PJQ"
     llm_provider: str = "openai"
 
+    @field_validator("execution_backend")
+    @classmethod
+    def backend_must_be_mcp(cls, value: str) -> str:
+        name = value.strip().lower()
+        if name != "mcp":
+            raise ValueError("official MCP is the only live execution channel")
+        return name
+
     @field_validator("strategy")
     @classmethod
     def strategy_must_be_options(cls, value: str) -> str:
@@ -54,7 +62,7 @@ class HackathonSettings(BaseSettings):
         if name in STOCK_STRATEGIES:
             raise ValueError("stock-only strategies are disabled for this event")
         if name not in ALLOWED_STRATEGIES:
-            raise ValueError(f"strategy must be one of {ALLOWED_STRATEGIES}")
+            raise ValueError("only SPY defined-risk vertical is enabled")
         return name
 
     @field_validator("require_options")

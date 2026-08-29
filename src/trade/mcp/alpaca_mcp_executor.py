@@ -1,6 +1,6 @@
 """Alpaca MCP Server adapter for paper option orders.
 
-Primary execution path: spawn `uvx alpaca-mcp-server==2.3.0` and call
+Official execution path: spawn `uvx alpaca-mcp-server==2.3.0` and call
 `place_option_order`. Tests inject a mock client; CI never needs live keys.
 """
 

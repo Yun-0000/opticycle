@@ -1,4 +1,4 @@
-"""Option order request model shared by MCP and CLI executors."""
+"""Option order request model for official Alpaca MCP."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ class ExecutionRejected(ValueError):
 
 @dataclass(slots=True)
 class OptionOrderRequest:
-    """Paper option order payload for Alpaca MCP or CLI."""
+    """Paper option order payload for official Alpaca MCP."""
 
     qty: int
     symbol: str | None = None
