@@ -468,7 +468,8 @@ def render_evidence_page(
         "Alpaca GET-by-client_order_id ingested both broker order_id values. "
         "Raw MCP place_option_order result hash was not retained at submit time. "
         "Positions still open; mark snapshot recorded; no exit / realized P&L. "
-        "OPENAI_API_KEY is present for the next session; ThesisAgent was not called on the stale after-hours quote."
+        "OPENAI_API_KEY is present; ThesisAgent default model is gpt-5.6-luna. "
+        "ThesisAgent was not called on the stale after-hours quote."
     )
     page_records = _page_records(records)
     embedded = html.escape(canonical_dumps({"records": page_records, "manifest": manifest, "gate11": gate11}))

@@ -17,7 +17,7 @@
   "live_quotes_reachable": true,
   "llm_key_present": true,
   "llm_episode_recorded": false,
-  "llm_episode_gap": "OPENAI_API_KEY present and gpt-4o-mini reachable; ThesisAgent not called because the live SPY quote was stale after the regular session. Next open 2026-09-01 09:30 ET.",
+  "llm_episode_gap": "OPENAI_API_KEY present and gpt-5.6-luna reachable; ThesisAgent not called because the live SPY quote was stale after the regular session. Next open 2026-09-01 09:30 ET.",
   "matched_claimed": false,
   "observation_outcome": "NO_TRADE",
   "observation_reason": "SPY quote is stale",

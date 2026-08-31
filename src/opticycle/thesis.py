@@ -74,10 +74,41 @@ class LlmClient(Protocol):
         """Return a parsed JSON object from a real model call."""
 
 
+DEFAULT_LLM_MODEL = "gpt-5.6-luna"
+
+
+def llm_omits_temperature(model: str) -> bool:
+    """GPT-5.6 (and later GPT-5) chat models only accept the default temperature."""
+    name = (model or "").strip().lower()
+    return name.startswith("gpt-5") or name.startswith("o1") or name.startswith("o3") or name.startswith("o4")
+
+
+def chat_completion_payload(model: str, prompt: str) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "model": model,
+        "response_format": {"type": "json_object"},
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are Opticycle ThesisAgent. Reply with JSON only. "
+                    "Choose stance from pre-validated evidence: BULLISH, BEARISH, or NO_TRADE. "
+                    "implied_stance is evidence, not the required answer; disagreement is allowed. "
+                    "Do not choose OCC symbols, quantity, or prices."
+                ),
+            },
+            {"role": "user", "content": prompt},
+        ],
+    }
+    if not llm_omits_temperature(model):
+        payload["temperature"] = 0
+    return payload
+
+
 class OpenAiThesisClient:
     """Official OpenAI Chat Completions client. Never fabricates a thesis."""
 
-    def __init__(self, api_key: str, model: str = "gpt-4o-mini") -> None:
+    def __init__(self, api_key: str, model: str = DEFAULT_LLM_MODEL) -> None:
         if not api_key.strip():
             raise ThesisDisabled("OPENAI_API_KEY is required for a real model call")
         self.api_key = api_key
@@ -88,27 +119,11 @@ class OpenAiThesisClient:
         key = (os.environ.get("OPENAI_API_KEY") or os.environ.get("HACKATHON_LLM_API_KEY") or "").strip()
         if not key:
             raise ThesisDisabled("LLM disabled: missing OPENAI_API_KEY")
-        model = (os.environ.get("HACKATHON_LLM_MODEL") or "gpt-4o-mini").strip()
+        model = (os.environ.get("HACKATHON_LLM_MODEL") or DEFAULT_LLM_MODEL).strip()
         return cls(api_key=key, model=model)
 
     def complete(self, prompt: str) -> dict[str, Any]:
-        payload = {
-            "model": self.model,
-            "temperature": 0,
-            "response_format": {"type": "json_object"},
-            "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are Opticycle ThesisAgent. Reply with JSON only. "
-                        "Choose stance from pre-validated evidence: BULLISH, BEARISH, or NO_TRADE. "
-                        "implied_stance is evidence, not the required answer; disagreement is allowed. "
-                        "Do not choose OCC symbols, quantity, or prices."
-                    ),
-                },
-                {"role": "user", "content": prompt},
-            ],
-        }
+        payload = chat_completion_payload(self.model, prompt)
         request = urllib.request.Request(
             "https://api.openai.com/v1/chat/completions",
             data=json.dumps(payload).encode("utf-8"),
@@ -119,11 +134,13 @@ class OpenAiThesisClient:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=30) as response:
+            with urllib.request.urlopen(request, timeout=60) as response:
                 body = json.loads(response.read().decode("utf-8"))
         except urllib.error.URLError as exc:
             raise ThesisDisabled(f"real model call failed: {type(exc).__name__}") from exc
-        content = body["choices"][0]["message"]["content"]
+        content = body["choices"][0]["message"].get("content") or ""
+        if not str(content).strip():
+            raise ThesisDisabled("real model call returned empty content")
         loaded = json.loads(content)
         if not isinstance(loaded, dict):
             raise ValueError("model output is not a JSON object")
