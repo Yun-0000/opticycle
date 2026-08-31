@@ -41,6 +41,10 @@ NO_TRADE_CAVEAT = (
     "NOT fill evidence; NOT a live MATCHED / MLEG / fill claim"
 )
 
+INJECTED_NO_TRADE_SLOT_ABSENT = (
+    "absent on this injected-quote NO_TRADE episode (not fill evidence)"
+)
+
 DEMO_VIDEO_STATUS = "deleted; Remotion demo is Gate 12"
 
 FORBIDDEN_PUBLIC_TOKENS = (
@@ -284,10 +288,35 @@ def _present_label(record: Mapping[str, Any], field: str) -> str:
     slot = episode.get(field) or {}
     if isinstance(slot, Mapping) and slot.get("present"):
         return "present"
+    if is_injected_no_trade(record):
+        return f"not present — {INJECTED_NO_TRADE_SLOT_ABSENT}"
     reason = ""
     if isinstance(slot, Mapping):
         reason = str(slot.get("reason") or "")
     return f"not present{(' — ' + reason) if reason else ''}"
+
+
+def _page_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Copy records for the judge page. Injected NO_TRADE empty slots are not fill TODOs."""
+    out: list[dict[str, Any]] = []
+    for row in records:
+        if not is_injected_no_trade(row):
+            out.append(row)
+            continue
+        copied = json.loads(json.dumps(row))
+        copied.pop("live_paper_incomplete", None)
+        extra = dict(copied.get("extra") or {})
+        extra.pop("live_paper_incomplete", None)
+        copied["extra"] = extra
+        episode = copied.get("episode") or {}
+        for field, slot in list(episode.items()):
+            if not isinstance(slot, dict) or slot.get("present"):
+                continue
+            slot["reason"] = INJECTED_NO_TRADE_SLOT_ABSENT
+            episode[field] = slot
+        copied["episode"] = episode
+        out.append(copied)
+    return out
 
 
 def _pre(value: Any) -> str:
@@ -377,7 +406,11 @@ def render_evidence_page(
     )
     gate11 = dict(status or load_gate11_status())
     quote_gap = html.escape(str(gate11.get("live_quote_gap") or ""))
-    genuine = "yes" if gate11.get("genuine_no_trade_recorded") else "no — gap recorded honestly"
+    genuine = (
+        "yes"
+        if gate11.get("genuine_no_trade_recorded")
+        else "no — gap recorded honestly (does not mean live fills are missing)"
+    )
     ingest_note = (
         "Two real live_paper MATCHED paper fills are public completion "
         f"({', '.join(sorted(LIVE_MATCHED_CLIENT_IDS))}). "
@@ -385,7 +418,8 @@ def render_evidence_page(
         "No extra fills. Account id omitted. "
         "Monday MCP fill stance_source=bars_heuristic_no_llm_key (no LLM key; not a live ThesisAgent pick)."
     )
-    embedded = html.escape(canonical_dumps({"records": records, "manifest": manifest, "gate11": gate11}))
+    page_records = _page_records(records)
+    embedded = html.escape(canonical_dumps({"records": page_records, "manifest": manifest, "gate11": gate11}))
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
