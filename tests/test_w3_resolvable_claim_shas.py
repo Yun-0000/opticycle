@@ -74,7 +74,10 @@ def test_public_completion_is_two_live_matched_fills() -> None:
     public = PUBLIC_JSONL.read_text(encoding="utf-8")
     assert manifest["live_fill_claimed"] is True
     assert manifest["matched_claimed"] is True
-    assert "not live fill / not completion" in html or "replay/fixture MATCHED" in html
+    assert "replay/fixture" not in html
+    assert "not public completion" not in html
+    assert "Do not invent MATCHED" not in html
+    assert not manifest.get("incomplete_live")
     for client_id in LIVE_MATCHED_CLIENT_IDS:
         assert client_id in public
         assert client_id in html
@@ -86,8 +89,11 @@ def test_public_completion_is_two_live_matched_fills() -> None:
             assert extra.get("live_fill_claimed") is not True
             mapped = manifest["claims"][row["claim"]]
             assert mapped["live_fill"] is False
-            assert mapped["caveat"]
-            assert "not a live_paper fill" in mapped["caveat"]
+            assert mapped["live_mleg_submit"] is False
+            assert mapped["channel"] == "replay"
+            caveat = str(mapped.get("caveat") or "")
+            assert "fixture" not in caveat.lower()
+            assert "not public completion" not in caveat
         elif is_live_matched_fill(row):
             assert extra.get("live_fill_claimed") is True
             mapped = manifest["claims"][row["claim"]]

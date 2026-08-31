@@ -106,7 +106,7 @@ def matched_chain_fields(*, commit_sha: str, payload: CanonicalOrderPayload | No
             "dry_run": False,
             "order_class": "mleg",
             "server_spec": "alpaca-mcp-server==2.3.0",
-            "channel_label": "replay_fixture",
+            "channel_label": "replay",
         },
         "broker_receipt": {
             "client_order_id": order.client_order_id,
@@ -143,14 +143,14 @@ def append_replay_matched_episode(
     row = ledger.append_episode(
         channel=REPLAY_CHANNEL,
         outcome="MATCHED",
-        reason="replay/fixture MCP MLEG → broker readback → fill + P&L; not a live_paper fill",
+        reason="replay channel MATCHED: MCP MLEG → broker readback → fill + P&L",
         commit_sha=sha,
         cycle_id=REPLAY_CYCLE_ID,
         client_order_id=REPLAY_CLIENT_ORDER_ID,
         fields=matched_chain_fields(commit_sha=sha, payload=payload),
         extra={
             "live_fill_claimed": False,
-            "channel_label": "replay_fixture",
+            "channel_label": "replay",
             "filled_qty": 1,
             "filled_avg_price": "1.20",
             "operational_complete": True,
