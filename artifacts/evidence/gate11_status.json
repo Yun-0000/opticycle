@@ -1,18 +1,28 @@
 {
-  "demo_mp4": "deleted; Remotion demo is Gate 12",
-  "genuine_no_trade_recorded": false,
-  "injected_no_trade_caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
-  "injected_no_trade_promoted": false,
-  "live_fill_claimed": true,
-  "live_quote_gap": "missing local Alpaca credentials; quotes cannot be observed keylessly; no genuine NO_TRADE recorded",
-  "live_quotes_available": false,
-  "matched_claimed": false,
-  "pnl_reconcile": "oc-204a8dfccffd40c9 recon equity 100007.95 cash 100210.95; oc-715ad36a630d408e equity omitted (not provided). Neither fill is price-bound MATCHED (debit-signed credit limits).",
-  "sanitized_json_provided": true,
-  "schema": "opticycle.gate11-status.v1",
-  "yun_authorized_one_paper_mleg": true,
   "authorized_live_client_order_ids": [
     "oc-204a8dfccffd40c9",
     "oc-715ad36a630d408e"
-  ]
+  ],
+  "broker_order_ids": {
+    "oc-204a8dfccffd40c9": "abcb5385-0aa3-42cc-9b58-ef4200235c27",
+    "oc-715ad36a630d408e": "2a6d6b7c-caad-4c24-959a-8d93455a36fe"
+  },
+  "demo_mp4": "deleted; Remotion demo is Gate 12",
+  "genuine_no_trade_recorded": true,
+  "injected_no_trade_caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
+  "injected_no_trade_promoted": false,
+  "live_fill_claimed": true,
+  "live_quote_gap": "SPY quote is stale",
+  "live_quotes_available": true,
+  "live_quotes_reachable": true,
+  "llm_key_present": true,
+  "llm_episode_recorded": false,
+  "llm_episode_gap": "OPENAI_API_KEY present and gpt-4o-mini reachable; ThesisAgent not called because the live SPY quote was stale after the regular session. Next open 2026-09-01 09:30 ET.",
+  "matched_claimed": false,
+  "observation_outcome": "NO_TRADE",
+  "observation_reason": "SPY quote is stale",
+  "pnl_reconcile": "Alpaca GET 2026-08-31T21:02:23Z: equity 100010.9 cash 100261.9 long_mv 904 short_mv -1155 unrealized +11 (identity cash+long+short). Both verticals still open; no exit; realized P&L not claimed. Fill-time recon for oc-204a8dfccffd40c9 remains equity 100007.95 cash 100210.95. Neither fill is price-bound MATCHED.",
+  "sanitized_json_provided": true,
+  "schema": "opticycle.gate11-status.v1",
+  "yun_authorized_one_paper_mleg": true
 }

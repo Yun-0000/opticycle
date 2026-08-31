@@ -17,6 +17,7 @@ from opticycle.evidence_public import (
     replay_sanitized_records,
 )
 from opticycle.ledger import COMMIT_SHA_RE, EvidenceLedger, current_commit_sha, parse_claim
+from opticycle.broker_lookup import MONDAY_BROKER_ORDER_ID, WEEKEND_BROKER_ORDER_ID
 from opticycle.live_matched_fills import (
     FILL_COMMIT_SHA,
     LIVE_MATCHED_CLIENT_IDS,
@@ -56,6 +57,11 @@ def test_ledger_records_both_authorized_fills_only(tmp_path: Path) -> None:
         assert row["episode"]["reconciliation"]["value"]["price_bound_matched"] is False
         assert row["episode"]["reconciliation"]["value"]["credit_better_bound"] is False
         assert row["episode"]["reconciliation"]["value"]["limit_sign_error"] is True
+        assert row["episode"]["broker_receipt"]["value"]["broker_order_id"] in {
+            WEEKEND_BROKER_ORDER_ID,
+            MONDAY_BROKER_ORDER_ID,
+        }
+        assert row["extra"]["broker_order_id_present"] is True
         assert row["commit_sha"] == sha
         assert COMMIT_SHA_RE.fullmatch(sha)
 
@@ -126,6 +132,8 @@ def test_committed_public_export_has_both_live_fills() -> None:
         assert mapped["outcome"] == "FILLED"
         assert mapped["commit_sha"] == FILL_COMMIT_SHA
     assert "bars_heuristic_no_llm_key" in html
+    assert WEEKEND_BROKER_ORDER_ID in html
+    assert MONDAY_BROKER_ORDER_ID in html
     assert "PA3V84C40PJQ" not in html
     assert "PA3V84C40PJQ" not in public
     replayed = replay_sanitized_records(records)

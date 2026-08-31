@@ -7,7 +7,9 @@ import json
 from pathlib import Path
 
 from opticycle.evidence_public import (
+    BROKER_LOOKUP_PATH,
     EPISODE_FIELDS,
+    GENUINE_STALE_QUOTE_CAVEAT,
     MANIFEST_PATH,
     NO_TRADE_CAVEAT,
     NO_TRADE_JSONL,
@@ -119,6 +121,7 @@ def test_no_trade_public_jsonl_is_not_fill_evidence() -> None:
     assert "matched" not in blob
     html = PAGE_PATH.read_text(encoding="utf-8")
     assert NO_TRADE_CAVEAT in html
+    assert GENUINE_STALE_QUOTE_CAVEAT in html or "SPY quote is stale" in html
     assert "NOT fill evidence" in html
     assert "blocked until Yun" not in html
     assert "Yun confirms" not in html
@@ -171,6 +174,7 @@ def test_upstream_names_stay_out_of_evidence_page() -> None:
         PUBLIC_JSONL,
         NO_TRADE_JSONL,
         MANIFEST_PATH,
+        BROKER_LOOKUP_PATH,
     ]
     for path in paths:
         text = path.read_text(encoding="utf-8")
@@ -201,5 +205,5 @@ def test_gate9_no_trade_export_is_byte_stable() -> None:
     claims = json.loads((ROOT / "artifacts" / "evidence" / "claims.json").read_text(encoding="utf-8"))
     assert hashlib.sha256(
         (ROOT / "artifacts" / "evidence" / "claims.json").read_bytes()
-    ).hexdigest() == "ac8d3607093ee8c6e437e1a0f09f710eb7e6152bf8504c29dd6147589b98d052"
+    ).hexdigest() == "0a437dc1c294727a19f7c264ed45f8b48e4e4752ff5e921384582a051c5970a1"
     assert "el-6b67a01c2bdd448388e813633f90e890" in json.dumps(claims)

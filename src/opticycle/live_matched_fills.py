@@ -13,6 +13,15 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Mapping
 
+from opticycle.broker_lookup import (
+    BROKER_LOOKUP_AT,
+    BROKER_LOOKUP_SOURCE,
+    MONDAY_BROKER_ORDER_ID,
+    WEEKEND_BROKER_ORDER_ID,
+    broker_readback_hash,
+    sanitized_monday_fill,
+    sanitized_weekend_fill,
+)
 from opticycle.ledger import EvidenceLedger
 from opticycle.protocol import (
     CanonicalOrderPayload,
@@ -41,16 +50,6 @@ FILLED_MONDAY_AT = "2026-08-31T14:05:49Z"
 
 class LiveFillError(AssertionError):
     """A live_paper fill episode is missing required broker facts."""
-
-EXP_WEEKEND = datetime(2026, 10, 9, 20, 0, tzinfo=timezone.utc)
-EXP_MONDAY = datetime(2026, 9, 25, 20, 0, tzinfo=timezone.utc)
-FILLED_WEEKEND_AT = "2026-08-31T13:30:03Z"
-RECON_WEEKEND_AT = "2026-08-31T13:55:00Z"
-FILLED_MONDAY_AT = "2026-08-31T14:05:49Z"
-
-
-class LiveFillError(AssertionError):
-    """A live_paper MATCHED episode is missing required broker facts."""
 
 
 def _leg(
@@ -207,14 +206,14 @@ def _recon_from_production(
         "halt_triggered": True,
         "payload_hash": payload.payload_hash,
         "client_order_id": payload.client_order_id,
-        "broker_order_id_present": False,
+        "broker_order_id_present": True,
         "certificate_max_loss_at_unsigned_limit": str(
             _credit_max_loss(width, intended_credit, payload.qty)
         ),
         "fill_max_loss": str(_credit_max_loss(width, fill_credit, payload.qty)),
         "provenance": (
             "recorded broker fill facts; production signed-limit evaluator; "
-            "no Alpaca order_id ingest; not price-bound MATCHED"
+            "Alpaca GET-by-client_order_id ingest; not price-bound MATCHED"
         ),
     }
     if reconciled_at:
@@ -245,7 +244,10 @@ def weekend_fields(*, commit_sha: str) -> dict[str, Any]:
         "mcp_attempt": _mcp_attempt(payload),
         "broker_receipt": {
             "client_order_id": WEEKEND_CLIENT_ORDER_ID,
-            "broker_order_id": None,
+            "broker_order_id": WEEKEND_BROKER_ORDER_ID,
+            "broker_readback_hash": broker_readback_hash(sanitized_weekend_fill()),
+            "broker_lookup_at": BROKER_LOOKUP_AT,
+            "broker_lookup_source": BROKER_LOOKUP_SOURCE,
             "raw_status": "filled",
             "submitted": True,
             "readback": True,
@@ -315,7 +317,10 @@ def monday_fields(*, commit_sha: str) -> dict[str, Any]:
         ),
         "broker_receipt": {
             "client_order_id": MONDAY_CLIENT_ORDER_ID,
-            "broker_order_id": None,
+            "broker_order_id": MONDAY_BROKER_ORDER_ID,
+            "broker_readback_hash": broker_readback_hash(sanitized_monday_fill()),
+            "broker_lookup_at": BROKER_LOOKUP_AT,
+            "broker_lookup_source": BROKER_LOOKUP_SOURCE,
             "raw_status": "filled",
             "submitted": True,
             "readback": True,
@@ -361,7 +366,7 @@ def _extra(client_order_id: str, extra: Mapping[str, Any] | None = None) -> dict
         "operational_verdict": "filled",
         "account_id_omitted": True,
         "client_order_id": client_order_id,
-        "broker_order_id_present": False,
+        "broker_order_id_present": True,
     }
     if extra:
         body.update(dict(extra))
@@ -497,6 +502,10 @@ def require_live_matched_fill(row: Mapping[str, Any]) -> None:
     else:
         if receipt.get("client_order_id") != client_id:
             missing.append("broker_receipt.client_order_id")
+        if not receipt.get("broker_order_id"):
+            missing.append("broker_receipt.broker_order_id")
+        if extra.get("broker_order_id_present") is not True:
+            missing.append("broker_order_id_present")
         if str(receipt.get("raw_status") or "").lower() != "filled":
             missing.append("broker_receipt.filled")
         legs = receipt.get("legs")

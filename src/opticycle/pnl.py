@@ -196,8 +196,8 @@ def pnl_from_snapshot(snapshot: BrokerSnapshot) -> PnlReconcileReport:
     comparisons.append(_compare("unrealized_pnl", unrealized, unrealized))
 
     if cash is not None and long_mv is not None:
-        net_mv = long_mv - (short_mv or Decimal("0"))
-        reconstructed = cash + net_mv
+        # Alpaca signs short_market_value negative. Identity is cash + long + short.
+        reconstructed = cash + long_mv + (short_mv if short_mv is not None else Decimal("0"))
         item = _compare("equity_identity", equity, reconstructed)
         comparisons.append(item)
         if equity is None or not item.matched:

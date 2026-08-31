@@ -1,0 +1,99 @@
+{
+  "account_id_omitted": true,
+  "fills": [
+    {
+      "broker_readback_hash": "07dce1b7c2aba201e2c5d81fc3af0444a88010663cff22618fc5086ada93e605",
+      "client_order_id": "oc-204a8dfccffd40c9",
+      "filled_avg_price": "-2.11",
+      "legs": [
+        {
+          "ratio_qty": "1",
+          "side": "sell",
+          "symbol": "SPY261009C00793000"
+        },
+        {
+          "ratio_qty": "1",
+          "side": "buy",
+          "symbol": "SPY261009C00809000"
+        }
+      ],
+      "limit": "2.54",
+      "order_id": "abcb5385-0aa3-42cc-9b58-ef4200235c27",
+      "status": "filled"
+    },
+    {
+      "broker_readback_hash": "fc1a13a07e3cc234a990d7098b1fe887d4ac16ee4bfad3ec5fcecccdd332e472",
+      "client_order_id": "oc-715ad36a630d408e",
+      "filled_avg_price": "-0.51",
+      "legs": [
+        {
+          "ratio_qty": "1",
+          "side": "sell",
+          "symbol": "SPY260925C00768000"
+        },
+        {
+          "ratio_qty": "1",
+          "side": "buy",
+          "symbol": "SPY260925C00769000"
+        }
+      ],
+      "limit": "0.70",
+      "order_id": "2a6d6b7c-caad-4c24-959a-8d93455a36fe",
+      "status": "filled"
+    }
+  ],
+  "looked_up_at": "2026-08-31T21:02:23Z",
+  "mark_snapshot": {
+    "cash": "100261.9",
+    "clock_open": false,
+    "equity": "100010.9",
+    "exit_recorded": false,
+    "identity": "cash + long_market_value + short_market_value (Alpaca signed shorts)",
+    "last_equity": "100000",
+    "long_market_value": "904",
+    "looked_up_at": "2026-08-31T21:02:23Z",
+    "next_open": "2026-09-01T09:30:00-04:00",
+    "positions": [
+      {
+        "avg_entry_price": "8.68",
+        "market_value": "-892",
+        "qty": "-1",
+        "side": "short",
+        "symbol": "SPY260925C00768000",
+        "unrealized_pl": "-24"
+      },
+      {
+        "avg_entry_price": "8.17",
+        "market_value": "834",
+        "qty": "1",
+        "side": "long",
+        "symbol": "SPY260925C00769000",
+        "unrealized_pl": "17"
+      },
+      {
+        "avg_entry_price": "2.95",
+        "market_value": "-263",
+        "qty": "-1",
+        "side": "short",
+        "symbol": "SPY261009C00793000",
+        "unrealized_pl": "32"
+      },
+      {
+        "avg_entry_price": "0.84",
+        "market_value": "70",
+        "qty": "1",
+        "side": "long",
+        "symbol": "SPY261009C00809000",
+        "unrealized_pl": "-14"
+      }
+    ],
+    "positions_still_open": true,
+    "realized_pnl_present": false,
+    "short_market_value": "-1155",
+    "unrealized_pnl": "11"
+  },
+  "mcp_result_hash_gap": "raw place_option_order MCP result was not retained at submit time; Alpaca GET-by-client_order_id is the independent broker readback",
+  "mcp_result_hash_present": false,
+  "schema": "opticycle.broker-lookup.v1",
+  "source": "alpaca.trading.get_order_by_client_id"
+}

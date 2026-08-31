@@ -14,7 +14,10 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from opticycle.broker_lookup import public_broker_lookup  # noqa: E402
 from opticycle.evidence_public import (  # noqa: E402
+    BROKER_LOOKUP_PATH,
+    GENUINE_NO_TRADE_JSONL,
     MANIFEST_PATH,
     NO_TRADE_JSONL,
     PAGE_PATH,
@@ -118,9 +121,10 @@ def main() -> int:
         print("missing Gate 9 artifacts/evidence/no_trade.public.jsonl", file=sys.stderr)
         return 1
     extras = _replay_records(sha)
+    genuine = load_jsonl(GENUINE_NO_TRADE_JSONL)
     combined: list[dict] = []
     seen: set[str] = set()
-    for row in no_trade + extras:
+    for row in no_trade + genuine + extras:
         record_id = str(row.get("record_id") or "")
         if record_id in seen:
             continue
@@ -134,6 +138,7 @@ def main() -> int:
     claims_path = PUBLIC_JSONL.parent / "claims.json"
     claims_path.write_text(json.dumps(manifest["claims"], indent=2, sort_keys=True) + "\n", encoding="utf-8")
     PAGE_PATH.write_text(render_evidence_page(combined, manifest), encoding="utf-8")
+    BROKER_LOOKUP_PATH.write_text(json.dumps(public_broker_lookup(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"records={len(combined)} claims={len(manifest['claims'])} sha={sha}")
     print(f"page={PAGE_PATH}")
     return 0

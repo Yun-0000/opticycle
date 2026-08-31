@@ -6,7 +6,7 @@ Opticycle is an autonomous paper options trader. Each cycle observes the market,
 
 Live ThesisAgent is an LLM call. The model chooses `BULLISH`, `BEARISH`, or `NO_TRADE` from pre-validated snapshot evidence in the prompt (quotes, freshness, bar return/trend, chain presence). Determined signals such as implied stance may appear as evidence; they are not the answer. The model may disagree. Missing or stale evidence stays fail-closed. Without an LLM key the live path is fail-closed `NO_TRADE` / `HALT` — not a silent deterministic direction labeled as AI.
 
-The Monday live MCP MLEG (`oc-715ad36a630d408e`) used `stance_source=bars_heuristic_no_llm_key`: there was no LLM key on the box. That is not a live ThesisAgent LLM pick.
+The Monday live MCP MLEG (`oc-715ad36a630d408e`) used `stance_source=bars_heuristic_no_llm_key`: there was no LLM key on the box. That is not a live ThesisAgent LLM pick. An OpenAI key is now present; a live ThesisAgent episode still requires a fresh in-session SPY quote (after-hours 2026-08-31 observation was `NO_TRADE` / `SPY quote is stale`, `model_called=false`).
 
 Stance binds credit type later: BULLISH → bull put credit, BEARISH → bear call credit. Debit verticals are disabled. The model never selects OCC symbols, quantity, or limit price. Credit MLEG `limit_price` is Alpaca-signed (negative).
 
@@ -33,7 +33,7 @@ Two real MCP MLEG paper fills are recorded as `live_paper` `FILLED` (not price-b
 
 | client_order_id | structure | submitted limit | fill | notes |
 | --- | --- | --- | --- | --- |
-| `oc-204a8dfccffd40c9` | BEARISH bear-call SPY 2026-10-09 793C/809C qty 1 | `+2.54` (debit sign; intended credit bound `-2.54`) | 2.11 credit (`filled_avg_price=-2.11`) at 2026-08-31 13:30:03Z | recon equity 100007.95, cash 100210.95; not credit-better |
-| `oc-715ad36a630d408e` | BEARISH bear-call SPY 2026-09-25 768C/769C qty 1 | `+0.70` (debit sign) | 0.51 credit (`filled_avg_price=-0.51`) at 2026-08-31 14:05:49Z | certificate max_loss $30 vs fill max_loss $49; heuristic stance |
+| `oc-204a8dfccffd40c9` | BEARISH bear-call SPY 2026-10-09 793C/809C qty 1 | `+2.54` (debit sign; intended credit bound `-2.54`) | 2.11 credit (`filled_avg_price=-2.11`) at 2026-08-31 13:30:03Z | broker `abcb5385-0aa3-42cc-9b58-ef4200235c27`; fill-time equity 100007.95; not credit-better |
+| `oc-715ad36a630d408e` | BEARISH bear-call SPY 2026-09-25 768C/769C qty 1 | `+0.70` (debit sign) | 0.51 credit (`filled_avg_price=-0.51`) at 2026-08-31 14:05:49Z | broker `2a6d6b7c-caad-4c24-959a-8d93455a36fe`; certificate max_loss $30 vs fill max_loss $49; heuristic stance |
 
 Public evidence: `artifacts/evidence/index.html`. These fills are broker facts, not price-bound MATCHED.

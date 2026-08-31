@@ -31,6 +31,8 @@ ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE_DIR = ROOT / "artifacts" / "evidence"
 PUBLIC_JSONL = EVIDENCE_DIR / "public.jsonl"
 NO_TRADE_JSONL = EVIDENCE_DIR / "no_trade.public.jsonl"
+GENUINE_NO_TRADE_JSONL = EVIDENCE_DIR / "genuine_no_trade.public.jsonl"
+BROKER_LOOKUP_PATH = EVIDENCE_DIR / "broker_lookup.json"
 MANIFEST_PATH = EVIDENCE_DIR / "manifest.json"
 PAGE_PATH = EVIDENCE_DIR / "index.html"
 GATE11_STATUS_PATH = EVIDENCE_DIR / "gate11_status.json"
@@ -45,6 +47,11 @@ INJECTED_NO_TRADE_SLOT_ABSENT = (
     "absent on this injected-quote NO_TRADE episode (not fill evidence)"
 )
 
+GENUINE_STALE_QUOTE_CAVEAT = (
+    "live Alpaca observation; SPY quote stale after the regular session; "
+    "genuine NO_TRADE; ThesisAgent not called (freshness fail-closed); not fill evidence"
+)
+
 DEMO_VIDEO_STATUS = "deleted; Remotion demo is Gate 12"
 
 FORBIDDEN_PUBLIC_TOKENS = (
@@ -52,6 +59,7 @@ FORBIDDEN_PUBLIC_TOKENS = (
     "ALPACA_API_KEY=",
     "ALPACA_SECRET_KEY=",
     "sk-live",
+    "sk-proj",
     "BEGIN PRIVATE",
     "GaussWorldTrader",
     "Gauss World Trader",
@@ -117,7 +125,7 @@ def load_gate11_status() -> dict[str, Any]:
 def load_public_records() -> list[dict[str, Any]]:
     combined: list[dict[str, Any]] = []
     seen: set[str] = set()
-    for path in (NO_TRADE_JSONL, PUBLIC_JSONL):
+    for path in (NO_TRADE_JSONL, GENUINE_NO_TRADE_JSONL, PUBLIC_JSONL):
         for row in load_jsonl(path):
             record_id = str(row.get("record_id") or "")
             if record_id and record_id in seen:
@@ -161,6 +169,19 @@ def is_injected_no_trade(record: Mapping[str, Any]) -> bool:
     return "SPY quote missing" in reason
 
 
+def is_genuine_no_trade(record: Mapping[str, Any]) -> bool:
+    extra = record.get("extra") or {}
+    if extra.get("genuine_no_trade") is True:
+        return True
+    reason = str(record.get("reason") or "")
+    return (
+        record.get("outcome") == "NO_TRADE"
+        and record.get("channel") == "live_paper"
+        and "SPY quote is stale" in reason
+        and extra.get("injected_missing_quote") is not True
+    )
+
+
 REPLAY_MATCHED_CAVEAT = None
 
 LIVE_MATCHED_NOTE = (
@@ -176,6 +197,8 @@ def is_live_matched_fill(record: Mapping[str, Any]) -> bool:
 def claim_caveat(record: Mapping[str, Any]) -> str | None:
     if is_injected_no_trade(record) and record.get("channel") == "live_paper":
         return NO_TRADE_CAVEAT
+    if is_genuine_no_trade(record):
+        return GENUINE_STALE_QUOTE_CAVEAT
     if record.get("channel") == "replay" and str(record.get("outcome") or "") == "MATCHED":
         return REPLAY_MATCHED_CAVEAT
     if is_live_matched_fill(record):
@@ -304,22 +327,39 @@ def _page_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Copy records for the judge page. Injected NO_TRADE empty slots are not fill TODOs."""
     out: list[dict[str, Any]] = []
     for row in records:
-        if not is_injected_no_trade(row):
-            out.append(row)
+        if is_injected_no_trade(row):
+            copied = json.loads(json.dumps(row))
+            copied.pop("live_paper_incomplete", None)
+            extra = dict(copied.get("extra") or {})
+            extra.pop("live_paper_incomplete", None)
+            copied["extra"] = extra
+            episode = copied.get("episode") or {}
+            for field, slot in list(episode.items()):
+                if not isinstance(slot, dict) or slot.get("present"):
+                    continue
+                slot["reason"] = INJECTED_NO_TRADE_SLOT_ABSENT
+                episode[field] = slot
+            copied["episode"] = episode
+            out.append(copied)
             continue
-        copied = json.loads(json.dumps(row))
-        copied.pop("live_paper_incomplete", None)
-        extra = dict(copied.get("extra") or {})
-        extra.pop("live_paper_incomplete", None)
-        copied["extra"] = extra
-        episode = copied.get("episode") or {}
-        for field, slot in list(episode.items()):
-            if not isinstance(slot, dict) or slot.get("present"):
-                continue
-            slot["reason"] = INJECTED_NO_TRADE_SLOT_ABSENT
-            episode[field] = slot
-        copied["episode"] = episode
-        out.append(copied)
+        if is_genuine_no_trade(row):
+            copied = json.loads(json.dumps(row))
+            copied.pop("live_paper_incomplete", None)
+            extra = dict(copied.get("extra") or {})
+            extra.pop("live_paper_incomplete", None)
+            copied["extra"] = extra
+            episode = copied.get("episode") or {}
+            for field, slot in list(episode.items()):
+                if not isinstance(slot, dict) or slot.get("present"):
+                    continue
+                slot["reason"] = (
+                    "absent on this genuine stale-quote NO_TRADE episode (not fill evidence)"
+                )
+                episode[field] = slot
+            copied["episode"] = episode
+            out.append(copied)
+            continue
+        out.append(row)
     return out
 
 
@@ -343,6 +383,8 @@ def render_evidence_page(
             claim_status = "injected-quote NO_TRADE — not fill evidence"
         elif mapped.get("live_fill"):
             claim_status = "live_paper broker fill — not price-bound MATCHED"
+        elif mapped.get("caveat") == GENUINE_STALE_QUOTE_CAVEAT:
+            claim_status = "genuine live NO_TRADE — stale quote; not fill evidence"
         elif mapped.get("channel") == "replay" and mapped.get("outcome") == "MATCHED":
             claim_status = "replay MATCHED"
         claim_rows.append(
@@ -411,7 +453,7 @@ def render_evidence_page(
     gate11 = dict(status or load_gate11_status())
     quote_gap = html.escape(str(gate11.get("live_quote_gap") or ""))
     genuine = (
-        "yes"
+        "yes — live Alpaca stale-quote NO_TRADE (does not mean live fills are missing)"
         if gate11.get("genuine_no_trade_recorded")
         else "no — gap recorded honestly (does not mean live fills are missing)"
     )
@@ -422,8 +464,11 @@ def render_evidence_page(
         "debit-positive, and fill credits were worse than the intended credit "
         "bounds. Replay channel MATCHED is present and is not live_paper. "
         "No extra fills. Account id omitted. "
-        "Monday MCP fill stance_source=bars_heuristic_no_llm_key (no LLM key; not a live ThesisAgent pick). "
-        "Broker order_id / raw MCP result hash were not ingested."
+        "Monday MCP fill stance_source=bars_heuristic_no_llm_key (no LLM key at submit; not a live ThesisAgent pick). "
+        "Alpaca GET-by-client_order_id ingested both broker order_id values. "
+        "Raw MCP place_option_order result hash was not retained at submit time. "
+        "Positions still open; mark snapshot recorded; no exit / realized P&L. "
+        "OPENAI_API_KEY is present for the next session; ThesisAgent was not called on the stale after-hours quote."
     )
     page_records = _page_records(records)
     embedded = html.escape(canonical_dumps({"records": page_records, "manifest": manifest, "gate11": gate11}))
