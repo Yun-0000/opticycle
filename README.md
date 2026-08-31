@@ -45,6 +45,8 @@ Paper account ID is recorded in `docs/ALPACA_ACCOUNT.md` (ID only).
 
 Judge packet (sanitized ledger only): `artifacts/evidence/index.html`. The two live_paper fills are recorded as broker fills, not as price-bound MATCHED. Independent Alpaca GET-by-client_order_id receipts are in `artifacts/evidence/broker_lookup.json`.
 
+Regular-session automation (observe / ThesisAgent / at most one paper MLEG): `docs/OPEN_SESSION_AUTOMATION.md`.
+
 ## Foundation
 
 Pinned MIT foundation: Gauss World Trader, https://github.com/Magica-Chen/GaussWorldTrader @ `31374551bae6fd34a0fe56fe11d208f4ff04fbb4`, snapshot `vendor/pin-31374551/`. See `FOUNDATION.md` and `THIRD_PARTY_NOTICES.md` for reuse scope.

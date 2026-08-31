@@ -191,6 +191,7 @@ def test_ci_runs_tests_and_public_evidence_checks() -> None:
     assert "scripts/replay-public-evidence.py" in workflow
     assert "scripts/record-live-fill-episode.py" in workflow
     assert "scripts/ingest-paper-fill.py" in workflow
+    assert "scripts/run-open-session.py" in workflow
     assert "pull_request" in workflow
 
 

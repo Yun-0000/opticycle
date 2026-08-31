@@ -38,3 +38,5 @@ jobs:
         run: python3 scripts/record-genuine-no-trade.py
       - name: Paper-fill ingest hook waits without JSON
         run: python3 scripts/ingest-paper-fill.py
+      - name: Open-session hook without keys does not submit
+        run: python3 scripts/run-open-session.py
