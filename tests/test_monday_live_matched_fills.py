@@ -27,6 +27,11 @@ from opticycle.live_matched_fills import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+FILL_COMMIT_SHA = "c163d63a8a34f679d5a7ad4bc47535cd6ee7cc66"
+LIVE_RECORD_IDS = {
+    "el-ac177b1c1b344c7587fac4851939f3c2": WEEKEND_CLIENT_ORDER_ID,
+    "el-c40cea16e4f2477d89f451de8e1901b4": MONDAY_CLIENT_ORDER_ID,
+}
 
 
 def test_ledger_records_both_authorized_fills_only(tmp_path: Path) -> None:
@@ -86,6 +91,7 @@ def test_committed_public_export_has_both_live_fills() -> None:
     records = load_public_records()
     live = [row for row in records if is_live_matched_fill(row)]
     assert {row["client_order_id"] for row in live} == set(LIVE_MATCHED_CLIENT_IDS)
+    assert {row["record_id"] for row in live} == set(LIVE_RECORD_IDS)
     assert len(live) == 2
     html = PAGE_PATH.read_text(encoding="utf-8")
     public = PUBLIC_JSONL.read_text(encoding="utf-8")
@@ -97,12 +103,14 @@ def test_committed_public_export_has_both_live_fills() -> None:
         parsed = parse_claim(row["claim"])
         assert parsed["commit_sha"] == row["commit_sha"]
         assert COMMIT_SHA_RE.fullmatch(row["commit_sha"])
+        assert row["commit_sha"] == FILL_COMMIT_SHA
         assert row["client_order_id"] in html
         assert row["commit_sha"] in html
         assert row["client_order_id"] in public
         mapped = manifest["claims"][row["claim"]]
         assert mapped["live_fill"] is True
         assert mapped["channel"] == "live_paper"
+        assert mapped["commit_sha"] == FILL_COMMIT_SHA
     assert "bars_heuristic_no_llm_key" in html
     assert "PA3V84C40PJQ" not in html
     assert "PA3V84C40PJQ" not in public
@@ -115,3 +123,4 @@ def test_committed_public_export_has_both_live_fills() -> None:
     ]
     assert replay_matched
     assert all(not is_authorized_live_matched(row) for row in replay_matched)
+    assert all(row["commit_sha"] != FILL_COMMIT_SHA for row in replay_matched)

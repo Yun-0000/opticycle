@@ -24,20 +24,20 @@
       "outcome": "MATCHED",
       "record_id": "el-a1d5b569eaef48128526b74a27678e7a"
     },
-    "opticycle:v1:MATCHED:el-ac177b1c1b344c7587fac4851939f3c2:7924a0611ee2166b3feb1bad1659708818cf021e": {
+    "opticycle:v1:MATCHED:el-ac177b1c1b344c7587fac4851939f3c2:c163d63a8a34f679d5a7ad4bc47535cd6ee7cc66": {
       "caveat": "live_paper MATCHED fill; not a replay fixture; account id omitted",
       "channel": "live_paper",
-      "commit_sha": "7924a0611ee2166b3feb1bad1659708818cf021e",
+      "commit_sha": "c163d63a8a34f679d5a7ad4bc47535cd6ee7cc66",
       "incomplete": [],
       "live_fill": true,
       "live_mleg_submit": true,
       "outcome": "MATCHED",
       "record_id": "el-ac177b1c1b344c7587fac4851939f3c2"
     },
-    "opticycle:v1:MATCHED:el-c40cea16e4f2477d89f451de8e1901b4:7924a0611ee2166b3feb1bad1659708818cf021e": {
+    "opticycle:v1:MATCHED:el-c40cea16e4f2477d89f451de8e1901b4:c163d63a8a34f679d5a7ad4bc47535cd6ee7cc66": {
       "caveat": "live_paper MATCHED fill; not a replay fixture; account id omitted; stance_source=bars_heuristic_no_llm_key (no LLM key)",
       "channel": "live_paper",
-      "commit_sha": "7924a0611ee2166b3feb1bad1659708818cf021e",
+      "commit_sha": "c163d63a8a34f679d5a7ad4bc47535cd6ee7cc66",
       "incomplete": [],
       "live_fill": true,
       "live_mleg_submit": true,

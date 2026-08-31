@@ -190,5 +190,5 @@ def test_gate9_no_trade_export_is_byte_stable() -> None:
     claims = json.loads((ROOT / "artifacts" / "evidence" / "claims.json").read_text(encoding="utf-8"))
     assert hashlib.sha256(
         (ROOT / "artifacts" / "evidence" / "claims.json").read_bytes()
-    ).hexdigest() == "aae3db0eb71e58331064ad654e523ed1a51de3b56f571d21336bd39901ddda58"
+    ).hexdigest() == "645165b19056f320dcab58ea1232fe1627f4c3fdab958b5a980704fb7db7920f"
     assert "el-6b67a01c2bdd448388e813633f90e890" in json.dumps(claims)
