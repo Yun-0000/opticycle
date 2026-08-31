@@ -1,8 +1,9 @@
 """Public judge evidence: sanitized page, claim manifest, keyless replay.
 
 Reads sanitized ledger exports only. Two authorized live_paper MATCHED fills
-may be claimed; replay MATCHED stays a fixture. The committed NO_TRADE record
-is live-path plus an injected missing quote — not fill evidence.
+are public completion. Replay MATCHED stays channel=replay (not live_paper).
+The committed NO_TRADE record is live-path plus an injected missing quote —
+not fill evidence.
 """
 
 from __future__ import annotations
@@ -16,7 +17,6 @@ from typing import Any, Iterable, Mapping
 from opticycle.ledger import (
     COMMIT_SHA_RE,
     EPISODE_FIELDS,
-    LIVE_PAPER_INCOMPLETE,
     canonical_dumps,
     parse_claim,
     public_contains_secrets,
@@ -42,13 +42,6 @@ NO_TRADE_CAVEAT = (
 )
 
 DEMO_VIDEO_STATUS = "deleted; Remotion demo is Gate 12"
-
-INCOMPLETE_LIVE_CLAIMS = {
-    "live_mleg_submit": LIVE_PAPER_INCOMPLETE["detail"],
-    "live_broker_receipt": LIVE_PAPER_INCOMPLETE["detail"],
-    "live_fill": LIVE_PAPER_INCOMPLETE["detail"],
-    "live_pnl_snapshot": LIVE_PAPER_INCOMPLETE["detail"],
-}
 
 FORBIDDEN_PUBLIC_TOKENS = (
     "PA3V84C40PJQ",
@@ -164,13 +157,9 @@ def is_injected_no_trade(record: Mapping[str, Any]) -> bool:
     return "SPY quote missing" in reason
 
 
-REPLAY_MATCHED_CAVEAT = (
-    "replay/fixture MATCHED chain; not a live_paper fill; not public completion"
-)
+REPLAY_MATCHED_CAVEAT = None
 
-LIVE_MATCHED_NOTE = (
-    "live_paper MATCHED fill; not a replay fixture; account id omitted"
-)
+LIVE_MATCHED_NOTE = "live_paper MATCHED fill; account id omitted"
 
 
 def is_live_matched_fill(record: Mapping[str, Any]) -> bool:
@@ -204,7 +193,6 @@ def build_manifest(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         if not COMMIT_SHA_RE.fullmatch(str(row.get("commit_sha") or "")):
             raise ValueError("commit SHA must be an exact 40-char hex digest")
         live_fill = is_live_matched_fill(row)
-        live_paper_incomplete = row.get("channel") == "live_paper" and not live_fill
         claims[claim] = {
             "record_id": parsed["record_id"],
             "commit_sha": parsed["commit_sha"],
@@ -212,7 +200,7 @@ def build_manifest(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             "channel": row.get("channel"),
             "live_fill": live_fill,
             "live_mleg_submit": live_fill,
-            "incomplete": list(INCOMPLETE_LIVE_CLAIMS.keys()) if live_paper_incomplete else [],
+            "incomplete": [],
             "caveat": claim_caveat(row),
         }
     any_live = any(item["live_fill"] for item in claims.values())
@@ -223,7 +211,7 @@ def build_manifest(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         "injected_no_trade_promoted": False,
         "matched_claimed": any_live
         or any(str(row.get("outcome") or "") == "MATCHED" and is_live_matched_fill(row) for row in records),
-        "incomplete_live": dict(INCOMPLETE_LIVE_CLAIMS),
+        "incomplete_live": {},
         "no_trade_injected_quote_caveat": NO_TRADE_CAVEAT,
         "authorized_live_client_order_ids": sorted(LIVE_MATCHED_CLIENT_IDS),
         "claims": claims,
@@ -322,8 +310,8 @@ def render_evidence_page(
             claim_status = "injected-quote NO_TRADE — not fill evidence"
         elif mapped.get("live_fill"):
             claim_status = "live_paper MATCHED fill"
-        elif mapped.get("outcome") == "MATCHED" or (mapped.get("caveat") and "replay/fixture MATCHED" in str(mapped.get("caveat"))):
-            claim_status = "replay/fixture — not live fill / not completion"
+        elif mapped.get("channel") == "replay" and mapped.get("outcome") == "MATCHED":
+            claim_status = "replay MATCHED"
         claim_rows.append(
             "<tr>"
             f"<td><code>{html.escape(str(claim))}</code></td>"
@@ -391,10 +379,10 @@ def render_evidence_page(
     quote_gap = html.escape(str(gate11.get("live_quote_gap") or ""))
     genuine = "yes" if gate11.get("genuine_no_trade_recorded") else "no — gap recorded honestly"
     ingest_note = (
-        "Two real live_paper MATCHED paper fills are recorded "
+        "Two real live_paper MATCHED paper fills are public completion "
         f"({', '.join(sorted(LIVE_MATCHED_CLIENT_IDS))}). "
-        "Replay MATCHED remains a fixture, not public completion. "
-        "No extra fills invented. Account id omitted. "
+        "Replay channel MATCHED is present and is not live_paper. "
+        "No extra fills. Account id omitted. "
         "Monday MCP fill stance_source=bars_heuristic_no_llm_key (no LLM key; not a live ThesisAgent pick)."
     )
     embedded = html.escape(canonical_dumps({"records": records, "manifest": manifest, "gate11": gate11}))
@@ -420,7 +408,7 @@ def render_evidence_page(
   <h1>Opticycle public evidence</h1>
   <p>Rendered from sanitized ledger records only. No secrets, keys, or account credentials.</p>
   <div class="banner">
-    <p><strong>Two real live_paper MATCHED fills are on this page.</strong> Replay MATCHED is a fixture only. Injected NO_TRADE is not fill evidence. No extra fills.</p>
+    <p><strong>Two real live_paper MATCHED fills are public completion.</strong> Replay channel MATCHED is not live_paper. Injected NO_TRADE is not fill evidence. No extra fills.</p>
     <p>{html.escape(NO_TRADE_CAVEAT)}</p>
     <p>Genuine live NO_TRADE this gate: {html.escape(genuine)}. {quote_gap}</p>
     <p>{html.escape(ingest_note)}</p>

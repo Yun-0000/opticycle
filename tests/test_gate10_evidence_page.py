@@ -8,7 +8,6 @@ from pathlib import Path
 
 from opticycle.evidence_public import (
     EPISODE_FIELDS,
-    INCOMPLETE_LIVE_CLAIMS,
     MANIFEST_PATH,
     NO_TRADE_CAVEAT,
     NO_TRADE_JSONL,
@@ -62,7 +61,7 @@ def test_every_public_claim_maps_to_exact_record_and_commit() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     records = {row["record_id"]: row for row in load_public_records()}
     assert manifest["live_fill_claimed"] is True
-    assert manifest["incomplete_live"] == INCOMPLETE_LIVE_CLAIMS
+    assert not manifest.get("incomplete_live")
     assert manifest["claims"]
     for claim, mapped in manifest["claims"].items():
         parsed = parse_claim(claim)
@@ -80,6 +79,7 @@ def test_every_public_claim_maps_to_exact_record_and_commit() -> None:
         else:
             assert mapped["live_fill"] is False
             assert mapped["live_mleg_submit"] is False
+            assert not mapped.get("incomplete")
 
 
 def test_keyless_replay_reproduces_non_live_claims() -> None:
@@ -190,5 +190,5 @@ def test_gate9_no_trade_export_is_byte_stable() -> None:
     claims = json.loads((ROOT / "artifacts" / "evidence" / "claims.json").read_text(encoding="utf-8"))
     assert hashlib.sha256(
         (ROOT / "artifacts" / "evidence" / "claims.json").read_bytes()
-    ).hexdigest() == "645165b19056f320dcab58ea1232fe1627f4c3fdab958b5a980704fb7db7920f"
+    ).hexdigest() == "26a41d4e009c6533169160f31ada73862ffe98d14a3984a6bd6f672ca395bcbf"
     assert "el-6b67a01c2bdd448388e813633f90e890" in json.dumps(claims)

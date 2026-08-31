@@ -35,4 +35,4 @@ Two real MCP MLEG paper fills are recorded as `live_paper` `MATCHED` (not replay
 | `oc-204a8dfccffd40c9` | BEARISH bear-call SPY 2026-10-09 793C/809C qty 1 | 2.54 credit | 2.11 credit (`filled_avg_price=-2.11`) at 2026-08-31 13:30:03Z | recon equity 100007.95, cash 100210.95 |
 | `oc-715ad36a630d408e` | BEARISH bear-call SPY 2026-09-25 768C/769C qty 1 | 0.70 credit | 0.51 credit (`filled_avg_price=-0.51`) at 2026-08-31 14:05:49Z | `place_option_order`, `mcp_submit_count=1`; stdio hung after the broker had the order; no second submit; heuristic stance |
 
-Public evidence: `artifacts/evidence/index.html`. Replay MATCHED remains a test/fixture chain, not the public completion state.
+Public evidence: `artifacts/evidence/index.html`. Public completion is the two real `live_paper` MATCHED fills.

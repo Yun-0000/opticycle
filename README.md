@@ -39,7 +39,7 @@ Paper account ID is recorded in `docs/ALPACA_ACCOUNT.md` (ID only).
 
 ## Public evidence
 
-Judge packet (sanitized ledger only): `artifacts/evidence/index.html`. Two real live_paper MATCHED fills plus the replay/fixture MATCHED chain (tests/fixture, not public completion).
+Judge packet (sanitized ledger only): `artifacts/evidence/index.html`. Public completion is the two real live_paper MATCHED fills (`oc-204a8dfccffd40c9`, `oc-715ad36a630d408e`).
 
 ## License
 
