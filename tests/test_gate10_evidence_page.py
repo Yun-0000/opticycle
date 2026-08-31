@@ -118,6 +118,11 @@ def test_no_trade_public_jsonl_is_not_fill_evidence() -> None:
     html = PAGE_PATH.read_text(encoding="utf-8")
     assert NO_TRADE_CAVEAT in html
     assert "NOT fill evidence" in html
+    assert "blocked until Yun" not in html
+    assert "Yun confirms" not in html
+    assert "TODO:" not in html
+    assert "absent on this injected-quote NO_TRADE episode (not fill evidence)" in html
+    assert "does not mean live fills are missing" in html
     for field in EPISODE_FIELDS:
         assert field in row["episode"]
 
