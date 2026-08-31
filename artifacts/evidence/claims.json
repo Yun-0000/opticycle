@@ -1,8 +1,77 @@
 {
+  "opticycle:v1:ERROR:el-4e034b97b5fe4ad3a0bcfa5d6deba4d2:7924a0611ee2166b3feb1bad1659708818cf021e": {
+    "caveat": null,
+    "channel": "fault_injection",
+    "commit_sha": "7924a0611ee2166b3feb1bad1659708818cf021e",
+    "incomplete": [],
+    "live_fill": false,
+    "live_mleg_submit": false,
+    "outcome": "ERROR",
+    "record_id": "el-4e034b97b5fe4ad3a0bcfa5d6deba4d2"
+  },
+  "opticycle:v1:MATCHED:el-a1d5b569eaef48128526b74a27678e7a:7924a0611ee2166b3feb1bad1659708818cf021e": {
+    "caveat": "replay/fixture MATCHED chain; not a live_paper fill; not public completion",
+    "channel": "replay",
+    "commit_sha": "7924a0611ee2166b3feb1bad1659708818cf021e",
+    "incomplete": [],
+    "live_fill": false,
+    "live_mleg_submit": false,
+    "outcome": "MATCHED",
+    "record_id": "el-a1d5b569eaef48128526b74a27678e7a"
+  },
+  "opticycle:v1:MATCHED:el-ac177b1c1b344c7587fac4851939f3c2:c163d63a8a34f679d5a7ad4bc47535cd6ee7cc66": {
+    "caveat": "live_paper MATCHED fill; not a replay fixture; account id omitted",
+    "channel": "live_paper",
+    "commit_sha": "c163d63a8a34f679d5a7ad4bc47535cd6ee7cc66",
+    "incomplete": [],
+    "live_fill": true,
+    "live_mleg_submit": true,
+    "outcome": "MATCHED",
+    "record_id": "el-ac177b1c1b344c7587fac4851939f3c2"
+  },
+  "opticycle:v1:MATCHED:el-c40cea16e4f2477d89f451de8e1901b4:c163d63a8a34f679d5a7ad4bc47535cd6ee7cc66": {
+    "caveat": "live_paper MATCHED fill; not a replay fixture; account id omitted; stance_source=bars_heuristic_no_llm_key (no LLM key)",
+    "channel": "live_paper",
+    "commit_sha": "c163d63a8a34f679d5a7ad4bc47535cd6ee7cc66",
+    "incomplete": [],
+    "live_fill": true,
+    "live_mleg_submit": true,
+    "outcome": "MATCHED",
+    "record_id": "el-c40cea16e4f2477d89f451de8e1901b4"
+  },
   "opticycle:v1:NO_TRADE:el-6b67a01c2bdd448388e813633f90e890:18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b": {
+    "caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
     "channel": "live_paper",
     "commit_sha": "18ade8ccb48c087c817bbd6b9ca2c6fbaa9d169b",
+    "incomplete": [
+      "live_mleg_submit",
+      "live_broker_receipt",
+      "live_fill",
+      "live_pnl_snapshot"
+    ],
+    "live_fill": false,
+    "live_mleg_submit": false,
     "outcome": "NO_TRADE",
     "record_id": "el-6b67a01c2bdd448388e813633f90e890"
+  },
+  "opticycle:v1:NO_TRADE:el-ece2eb990a3a4ff090b8b46adafc2df3:7924a0611ee2166b3feb1bad1659708818cf021e": {
+    "caveat": null,
+    "channel": "replay",
+    "commit_sha": "7924a0611ee2166b3feb1bad1659708818cf021e",
+    "incomplete": [],
+    "live_fill": false,
+    "live_mleg_submit": false,
+    "outcome": "NO_TRADE",
+    "record_id": "el-ece2eb990a3a4ff090b8b46adafc2df3"
+  },
+  "opticycle:v1:VETO:el-1852f0880712438d8bb18b1def6fcd7a:7924a0611ee2166b3feb1bad1659708818cf021e": {
+    "caveat": null,
+    "channel": "replay",
+    "commit_sha": "7924a0611ee2166b3feb1bad1659708818cf021e",
+    "incomplete": [],
+    "live_fill": false,
+    "live_mleg_submit": false,
+    "outcome": "VETO",
+    "record_id": "el-1852f0880712438d8bb18b1def6fcd7a"
   }
 }

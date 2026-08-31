@@ -1,7 +1,7 @@
 """Replay/fixture Decision Episode: MCP MLEG → broker readback → MATCHED fill + P&L.
 
 This is a keyless public chain, labeled replay (not a live_paper fill).
-Do not bind oc-204a8dfccffd40c9. live_fill_claimed stays false.
+Do not bind oc-204a8dfccffd40c9 on the replay channel. live_fill_claimed stays false here.
 """
 
 from __future__ import annotations
@@ -174,7 +174,7 @@ def require_matched_chain(row: Mapping[str, Any]) -> None:
     missing: list[str] = []
     client_id = str(row.get("client_order_id") or "")
     if client_id == FORBIDDEN_LIVE_CLIENT_ORDER_ID:
-        raise ChainIncomplete("oc-204a8dfccffd40c9 must not appear as MATCHED")
+        raise ChainIncomplete("oc-204a8dfccffd40c9 must not appear as MATCHED on the replay channel")
     if str(row.get("channel") or "") == "live_paper":
         raise ChainIncomplete("chain must be labeled replay/fixture, not live_paper fill")
     if str(row.get("outcome") or "") != "MATCHED":

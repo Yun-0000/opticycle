@@ -61,7 +61,7 @@ def test_evidence_page_renders_from_sanitized_export_only() -> None:
 def test_every_public_claim_maps_to_exact_record_and_commit() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     records = {row["record_id"]: row for row in load_public_records()}
-    assert manifest["live_fill_claimed"] is False
+    assert manifest["live_fill_claimed"] is True
     assert manifest["incomplete_live"] == INCOMPLETE_LIVE_CLAIMS
     assert manifest["claims"]
     for claim, mapped in manifest["claims"].items():
@@ -72,8 +72,14 @@ def test_every_public_claim_maps_to_exact_record_and_commit() -> None:
         row = records[mapped["record_id"]]
         assert row["commit_sha"] == mapped["commit_sha"]
         assert row["claim"] == claim
-        assert mapped["live_fill"] is False
-        assert mapped["live_mleg_submit"] is False
+        if mapped["live_fill"]:
+            assert mapped["live_mleg_submit"] is True
+            assert mapped["channel"] == "live_paper"
+            assert mapped["outcome"] == "MATCHED"
+            assert not mapped["incomplete"]
+        else:
+            assert mapped["live_fill"] is False
+            assert mapped["live_mleg_submit"] is False
 
 
 def test_keyless_replay_reproduces_non_live_claims() -> None:
@@ -81,7 +87,10 @@ def test_keyless_replay_reproduces_non_live_claims() -> None:
     verified = replay_sanitized_records(records)
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     assert {item["claim"] for item in verified} == set(manifest["claims"])
-    assert all(item["live_fill"] is False for item in verified)
+    assert all(
+        (item["live_fill"] is True) == (item["channel"] == "live_paper" and item["outcome"] == "MATCHED")
+        for item in verified
+    )
     channels = {item["channel"] for item in verified}
     assert "replay" in channels
     assert "fault_injection" in channels
@@ -90,7 +99,7 @@ def test_keyless_replay_reproduces_non_live_claims() -> None:
     assert "NO_TRADE" in outcomes
     assert "VETO" in outcomes
     assert "ERROR" in outcomes
-    assert "HALT" in outcomes
+    assert "MATCHED" in outcomes
     replayed = next(item for item in verified if item["channel"] == "replay" and item["payload_hash"])
     assert COMMIT_SHA_RE.fullmatch(replayed["commit_sha"])
     assert len(replayed["payload_hash"]) == 64
@@ -113,17 +122,25 @@ def test_no_trade_public_jsonl_is_not_fill_evidence() -> None:
         assert field in row["episode"]
 
 
-def test_live_mleg_fill_claims_are_incomplete() -> None:
+def test_live_mleg_fill_claims_record_authorized_matched() -> None:
+    from opticycle.evidence_public import is_live_matched_fill
+
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    for name in ("live_mleg_submit", "live_broker_receipt", "live_fill", "live_pnl_snapshot"):
-        assert "Yun authorized" in manifest["incomplete_live"][name]
+    assert manifest["live_fill_claimed"] is True
     html = PAGE_PATH.read_text(encoding="utf-8")
-    assert "Live MLEG / fill" in html
-    assert "incomplete" in html.lower()
+    assert "oc-204a8dfccffd40c9" in html
+    assert "oc-715ad36a630d408e" in html
+    live_count = 0
     for row in load_public_records():
+        if is_live_matched_fill(row):
+            live_count += 1
+            for field in ("mcp_attempt", "broker_receipt", "reconciliation"):
+                assert row["episode"][field]["present"] is True
+            continue
         if row.get("channel") == "live_paper":
             for blocked in ("mcp_attempt", "broker_receipt", "reconciliation", "realized_pnl", "unrealized_pnl"):
                 assert row["episode"][blocked]["present"] is False
+    assert live_count == 2
 
 
 def test_foundation_md_is_absent() -> None:
@@ -173,5 +190,5 @@ def test_gate9_no_trade_export_is_byte_stable() -> None:
     claims = json.loads((ROOT / "artifacts" / "evidence" / "claims.json").read_text(encoding="utf-8"))
     assert hashlib.sha256(
         (ROOT / "artifacts" / "evidence" / "claims.json").read_bytes()
-    ).hexdigest() == "295f48d4bf6d1e530e5e27f7bc48527c910747cae1743f1751989ab8c1649a81"
+    ).hexdigest() == "645165b19056f320dcab58ea1232fe1627f4c3fdab958b5a980704fb7db7920f"
     assert "el-6b67a01c2bdd448388e813633f90e890" in json.dumps(claims)

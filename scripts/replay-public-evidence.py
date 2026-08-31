@@ -32,8 +32,11 @@ def main() -> int:
         if mapped["record_id"] != item["record_id"] or mapped["commit_sha"] != item["commit_sha"]:
             print(f"claim mapping mismatch: {item['claim']}", file=sys.stderr)
             return 1
-        if mapped.get("live_fill"):
-            print("manifest must not claim a live fill", file=sys.stderr)
+        if mapped.get("live_fill") and not item.get("live_fill"):
+            print(f"manifest live_fill does not match replay: {item['claim']}", file=sys.stderr)
+            return 1
+        if item.get("live_fill") and item.get("channel") != "live_paper":
+            print("live_fill is only allowed on live_paper episodes", file=sys.stderr)
             return 1
     print(f"replayed {len(verified)} non-live claims keylessly")
     return 0

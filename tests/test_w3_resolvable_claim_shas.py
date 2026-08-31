@@ -65,23 +65,32 @@ def test_ghost_fc974f1_is_gone_from_public_artifacts() -> None:
         assert GHOST_PREFIX not in text, path
 
 
-def test_public_completion_is_not_live_fill() -> None:
+def test_public_completion_is_two_live_matched_fills() -> None:
+    from opticycle.evidence_public import is_live_matched_fill
+    from opticycle.live_matched_fills import LIVE_MATCHED_CLIENT_IDS
+
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     html = PAGE_PATH.read_text(encoding="utf-8")
     public = PUBLIC_JSONL.read_text(encoding="utf-8")
-    assert manifest["live_fill_claimed"] is False
-    assert manifest["matched_claimed"] is False
-    assert "Monday live fill is not done" in html
+    assert manifest["live_fill_claimed"] is True
+    assert manifest["matched_claimed"] is True
     assert "not live fill / not completion" in html or "replay/fixture MATCHED" in html
-    assert FORBIDDEN_LIVE_CLIENT not in public
-    assert FORBIDDEN_LIVE_CLIENT not in html
+    for client_id in LIVE_MATCHED_CLIENT_IDS:
+        assert client_id in public
+        assert client_id in html
+    live = [row for row in load_public_records() if is_live_matched_fill(row)]
+    assert {row["client_order_id"] for row in live} == set(LIVE_MATCHED_CLIENT_IDS)
     for row in load_public_records():
         extra = row.get("extra") or {}
-        assert extra.get("live_fill_claimed") is not True
-        if row.get("outcome") == "MATCHED":
-            assert row.get("channel") == "replay"
-            assert row.get("client_order_id") != FORBIDDEN_LIVE_CLIENT
+        if row.get("channel") == "replay" and row.get("outcome") == "MATCHED":
+            assert extra.get("live_fill_claimed") is not True
             mapped = manifest["claims"][row["claim"]]
             assert mapped["live_fill"] is False
             assert mapped["caveat"]
             assert "not a live_paper fill" in mapped["caveat"]
+        elif is_live_matched_fill(row):
+            assert extra.get("live_fill_claimed") is True
+            mapped = manifest["claims"][row["claim"]]
+            assert mapped["live_fill"] is True
+        else:
+            assert extra.get("live_fill_claimed") is not True

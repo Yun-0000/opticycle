@@ -2,17 +2,14 @@
   "schema": "opticycle.paper-fill-ingest.v1",
   "yun_authorized_one_paper_mleg": true,
   "cloud_submit": false,
-  "sanitized_json_provided": false,
-  "live_fill_claimed": false,
-  "matched_claimed": false,
-  "waiting_for": [
-    "order_id",
-    "legs",
-    "limit",
-    "status",
-    "filled_avg_price",
-    "client_order_id"
-  ],
+  "sanitized_json_provided": true,
+  "live_fill_claimed": true,
+  "matched_claimed": true,
+  "waiting_for": [],
   "hook": "python3 scripts/ingest-paper-fill.py --from-json <sanitized.json>",
-  "detail": "Yun authorized one Alpaca paper MLEG. Cloud VM cannot submit. Provide sanitized broker JSON later; do not invent MATCHED, receipt, or P&L."
+  "detail": "Two real live_paper MATCHED fills recorded (oc-204a8dfccffd40c9, oc-715ad36a630d408e). Account id omitted. Cloud VM must not place another order.",
+  "authorized_live_client_order_ids": [
+    "oc-204a8dfccffd40c9",
+    "oc-715ad36a630d408e"
+  ]
 }
