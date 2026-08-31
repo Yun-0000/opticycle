@@ -1,8 +1,9 @@
-"""Two authorized live_paper MATCHED fills; no extras; heuristic stance honest."""
+"""Two authorized live_paper broker fills; not price-bound MATCHED."""
 
 from __future__ import annotations
 
 import json
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -17,20 +18,21 @@ from opticycle.evidence_public import (
 )
 from opticycle.ledger import COMMIT_SHA_RE, EvidenceLedger, current_commit_sha, parse_claim
 from opticycle.live_matched_fills import (
+    FILL_COMMIT_SHA,
     LIVE_MATCHED_CLIENT_IDS,
     MONDAY_CLIENT_ORDER_ID,
     WEEKEND_CLIENT_ORDER_ID,
     LiveFillError,
     append_live_matched_episodes,
     is_authorized_live_matched,
+    live_record_id,
     require_live_matched_fill,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-FILL_COMMIT_SHA = "c163d63a8a34f679d5a7ad4bc47535cd6ee7cc66"
 LIVE_RECORD_IDS = {
-    "el-ac177b1c1b344c7587fac4851939f3c2": WEEKEND_CLIENT_ORDER_ID,
-    "el-c40cea16e4f2477d89f451de8e1901b4": MONDAY_CLIENT_ORDER_ID,
+    live_record_id(WEEKEND_CLIENT_ORDER_ID): WEEKEND_CLIENT_ORDER_ID,
+    live_record_id(MONDAY_CLIENT_ORDER_ID): MONDAY_CLIENT_ORDER_ID,
 }
 
 
@@ -48,8 +50,12 @@ def test_ledger_records_both_authorized_fills_only(tmp_path: Path) -> None:
     for row in rows:
         require_live_matched_fill(row)
         assert row["channel"] == "live_paper"
-        assert row["outcome"] == "MATCHED"
+        assert row["outcome"] == "FILLED"
         assert row["extra"]["live_fill_claimed"] is True
+        assert row["extra"]["matched_claimed"] is False
+        assert row["episode"]["reconciliation"]["value"]["price_bound_matched"] is False
+        assert row["episode"]["reconciliation"]["value"]["credit_better_bound"] is False
+        assert row["episode"]["reconciliation"]["value"]["limit_sign_error"] is True
         assert row["commit_sha"] == sha
         assert COMMIT_SHA_RE.fullmatch(sha)
 
@@ -69,9 +75,13 @@ def test_weekend_fill_has_equity_not_invented_pnl(tmp_path: Path) -> None:
     assert row["episode"]["end_of_cycle_equity"]["value"] == "100007.95"
     assert row["extra"]["cash"] == "100210.95"
     assert row["episode"]["realized_pnl"]["present"] is False
-    assert row["episode"]["reconciliation"]["value"]["credit_fill"] == "2.11"
+    assert row["episode"]["reconciliation"]["value"]["fill_credit"] == "2.11"
+    recon = row["episode"]["reconciliation"]["value"]
+    assert recon["price_bound_matched"] is False
     monday = append_live_matched_episodes(EvidenceLedger(tmp_path / "other.jsonl"))[1]
     assert monday["episode"]["end_of_cycle_equity"]["present"] is False
+    assert monday["extra"]["fill_max_loss"] == "49"
+    assert Decimal(str(monday["episode"]["reconciliation"]["value"]["fill_max_loss"])) == Decimal("49.00")
 
 
 def test_unauthorized_live_matched_is_rejected() -> None:
@@ -97,19 +107,23 @@ def test_committed_public_export_has_both_live_fills() -> None:
     public = PUBLIC_JSONL.read_text(encoding="utf-8")
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     assert manifest["live_fill_claimed"] is True
-    assert manifest["matched_claimed"] is True
+    assert manifest["matched_claimed"] is False
+    assert "not price-bound MATCHED" in html
     for row in live:
         require_live_matched_fill(row)
         parsed = parse_claim(row["claim"])
         assert parsed["commit_sha"] == row["commit_sha"]
+        assert parsed["outcome"] == "FILLED"
         assert COMMIT_SHA_RE.fullmatch(row["commit_sha"])
         assert row["commit_sha"] == FILL_COMMIT_SHA
+        assert row["outcome"] == "FILLED"
         assert row["client_order_id"] in html
         assert row["commit_sha"] in html
         assert row["client_order_id"] in public
         mapped = manifest["claims"][row["claim"]]
         assert mapped["live_fill"] is True
         assert mapped["channel"] == "live_paper"
+        assert mapped["outcome"] == "FILLED"
         assert mapped["commit_sha"] == FILL_COMMIT_SHA
     assert "bars_heuristic_no_llm_key" in html
     assert "PA3V84C40PJQ" not in html

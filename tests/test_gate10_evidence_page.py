@@ -61,6 +61,7 @@ def test_every_public_claim_maps_to_exact_record_and_commit() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     records = {row["record_id"]: row for row in load_public_records()}
     assert manifest["live_fill_claimed"] is True
+    assert manifest["matched_claimed"] is False
     assert not manifest.get("incomplete_live")
     assert manifest["claims"]
     for claim, mapped in manifest["claims"].items():
@@ -74,7 +75,7 @@ def test_every_public_claim_maps_to_exact_record_and_commit() -> None:
         if mapped["live_fill"]:
             assert mapped["live_mleg_submit"] is True
             assert mapped["channel"] == "live_paper"
-            assert mapped["outcome"] == "MATCHED"
+            assert mapped["outcome"] == "FILLED"
             assert not mapped["incomplete"]
         else:
             assert mapped["live_fill"] is False
@@ -88,7 +89,8 @@ def test_keyless_replay_reproduces_non_live_claims() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     assert {item["claim"] for item in verified} == set(manifest["claims"])
     assert all(
-        (item["live_fill"] is True) == (item["channel"] == "live_paper" and item["outcome"] == "MATCHED")
+        (item["live_fill"] is True)
+        == (item["channel"] == "live_paper" and item["outcome"] in {"FILLED", "MATCHED"})
         for item in verified
     )
     channels = {item["channel"] for item in verified}
@@ -148,19 +150,23 @@ def test_live_mleg_fill_claims_record_authorized_matched() -> None:
     assert live_count == 2
 
 
-def test_foundation_md_is_absent() -> None:
-    assert not (ROOT / "FOUNDATION.md").is_file()
+def test_foundation_md_discloses_pinned_upstream() -> None:
+    path = ROOT / "FOUNDATION.md"
+    assert path.is_file()
+    text = path.read_text(encoding="utf-8")
+    assert "Gauss World Trader" in text
+    assert "https://github.com/Magica-Chen/GaussWorldTrader" in text
+    assert "31374551bae6fd34a0fe56fe11d208f4ff04fbb4" in text
+    assert "vendor/pin-31374551/" in text
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "FOUNDATION.md" not in readme
-    assert "FOUNDATION" not in readme
+    assert "FOUNDATION.md" in readme
     license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
     assert "Copyright (c) 2026 Zexun Chen" in license_text
     assert "MIT License" in license_text
 
 
-def test_upstream_names_stay_out_of_readme_demo_and_evidence_page() -> None:
+def test_upstream_names_stay_out_of_evidence_page() -> None:
     paths = [
-        ROOT / "README.md",
         PAGE_PATH,
         PUBLIC_JSONL,
         NO_TRADE_JSONL,
@@ -195,5 +201,5 @@ def test_gate9_no_trade_export_is_byte_stable() -> None:
     claims = json.loads((ROOT / "artifacts" / "evidence" / "claims.json").read_text(encoding="utf-8"))
     assert hashlib.sha256(
         (ROOT / "artifacts" / "evidence" / "claims.json").read_bytes()
-    ).hexdigest() == "26a41d4e009c6533169160f31ada73862ffe98d14a3984a6bd6f672ca395bcbf"
+    ).hexdigest() == "ac8d3607093ee8c6e437e1a0f09f710eb7e6152bf8504c29dd6147589b98d052"
     assert "el-6b67a01c2bdd448388e813633f90e890" in json.dumps(claims)

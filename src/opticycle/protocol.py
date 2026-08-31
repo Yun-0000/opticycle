@@ -43,6 +43,29 @@ def format_decimal(d: Decimal, places: int = 2) -> str:
     return str(d.quantize(q, rounding=ROUND_HALF_UP))
 
 
+def alpaca_signed_mleg_limit(*, is_credit: bool, premium: Decimal) -> Decimal:
+    """Alpaca MLEG `limit_price`: positive debit, negative credit.
+
+    Official Order API: a positive value is a debit (amount paid); a negative
+    value is a credit (amount received). Credit verticals therefore submit a
+    negative limit. The magnitude is the net premium per spread.
+    """
+    magnitude = abs(premium)
+    if magnitude <= 0:
+        raise ValueError("MLEG limit premium must be positive")
+    return -magnitude if is_credit else magnitude
+
+
+def fill_within_signed_mleg_limit(limit: Decimal, filled: Decimal) -> bool:
+    """True when a broker fill is at or better than the signed MLEG limit.
+
+    Under Alpaca's debit+/credit- convention this is `filled <= limit` for
+    both credits and debits: a better credit is more negative; a better
+    debit is less positive.
+    """
+    return filled <= limit
+
+
 class StrategyKind(str, Enum):
     VERTICAL_SPREAD = "vertical_spread"
 
@@ -376,8 +399,23 @@ class CanonicalOrderPayload:
             "underlying": self.underlying.strip().upper(),
         }
 
+    def is_credit_vertical(self) -> bool:
+        """True for a 2-leg credit vertical (bull put / bear call)."""
+        sells = [leg for leg in self.legs if leg.side == OrderSide.SELL]
+        buys = [leg for leg in self.legs if leg.side == OrderSide.BUY]
+        if len(sells) != 1 or len(buys) != 1:
+            return True
+        sell, buy = sells[0], buys[0]
+        if sell.option_type == OptionType.PUT:
+            return sell.strike_price > buy.strike_price
+        return sell.strike_price < buy.strike_price
+
     def to_mcp_arguments(self) -> dict[str, Any]:
-        """Produce exact alpaca-mcp-server tool arguments from canonical payload."""
+        """Produce exact alpaca-mcp-server tool arguments from canonical payload.
+
+        `limit_price` is forwarded with Alpaca's signed MLEG convention
+        (positive debit, negative credit). Callers must not abs() it.
+        """
         mcp_legs = []
         for leg in self.legs:
             leg_dict: dict[str, Any] = {

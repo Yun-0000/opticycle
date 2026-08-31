@@ -1,9 +1,11 @@
 """Deterministic pre-trade risk engine and payload-bound Risk Certificate.
 
-Prices and max-loss come only from real bid/ask quotes. Missing or stale
-quotes veto. The hardcoded pin fallback limit is never a risk input.
-Replay, live, and demo share one limit set. The LLM cannot issue or edit
-certificates.
+Quote bid/ask size the market credit. The certified max-loss for a credit
+vertical uses the signed Alpaca MLEG limit (negative = credit floor), so the
+certificate matches the exact payload the broker will accept. Missing or
+stale quotes veto. A credit vertical with a non-negative limit is vetoed.
+The hardcoded pin fallback limit is never a risk input. The LLM cannot
+issue or edit certificates.
 """
 
 from __future__ import annotations
@@ -668,6 +670,27 @@ class RiskEngine:
                     qty=payload.qty,
                     is_credit=is_credit,
                 )
+                if is_credit and payload.limit_price >= 0:
+                    reasons.append(
+                        "NO_TRADE: credit MLEG limit_price must be negative "
+                        "(Alpaca: positive=debit, negative=credit)"
+                    )
+                elif (not is_credit) and payload.limit_price <= 0:
+                    reasons.append(
+                        "NO_TRADE: debit MLEG limit_price must be positive "
+                        "(Alpaca: positive=debit, negative=credit)"
+                    )
+                elif is_credit and payload.limit_price < 0:
+                    limit_credit = -payload.limit_price
+                    max_loss, max_profit = independent_vertical_risk(
+                        width=width,
+                        net_credit=limit_credit,
+                        net_debit=Decimal("0"),
+                        qty=payload.qty,
+                        is_credit=True,
+                    )
+                    if limit_credit > width:
+                        reasons.append("NO_TRADE: credit exceeds width")
                 if width <= 0:
                     reasons.append("NO_TRADE: vertical width is missing")
                 if is_credit and net_credit > width:

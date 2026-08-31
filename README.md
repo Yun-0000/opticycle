@@ -26,12 +26,14 @@ Live paper orders use local environment variables only (`ALPACA_API_KEY`, `ALPAC
 5. Submit via MCP tool `place_option_order` (`order_class=mleg`) only.
 6. Append decision, gate, and order records to `data/journal.jsonl`.
 
-## Monday paper MATCHED fills
+## Monday paper broker fills
 
-Two real Opticycle MCP MLEG paper fills, channel `live_paper`, outcome `MATCHED`. Not replay-as-done. No extra fills. Account id omitted.
+Two real Opticycle MCP MLEG paper fills, channel `live_paper`. Broker filled both. They are **not** price-bound `MATCHED`. Account id omitted.
 
-1. `oc-204a8dfccffd40c9` — BEARISH bear-call credit, SPY 2026-10-09 793C/809C, qty 1, limit 2.54. Legs: sell `SPY261009C00793000` fill 2.95; buy `SPY261009C00809000` fill 0.84. Broker filled 2026-08-31 13:30:03Z, `filled_qty=1`, `filled_avg_price=-2.11` (2.11 credit vs 2.54 limit). Recon equity 100007.95, cash 100210.95.
-2. `oc-715ad36a630d408e` — BEARISH bear-call, SPY 2026-09-25 768C/769C, qty 1, limit 0.70, max_loss 30. Legs: sell `SPY260925C00768000` fill 8.68; buy `SPY260925C00769000` fill 8.17. Filled 2026-08-31 14:05:49Z, `filled_qty=1`, `filled_avg_price=-0.51`. MCP `place_option_order`, `mcp_submit_count=1` (stdio hung after the broker had the order; no second submit). **`stance_source=bars_heuristic_no_llm_key`**: no LLM key on the box — not a live ThesisAgent LLM pick. Certificate approval true.
+Alpaca MLEG `limit_price` is signed: **positive = debit, negative = credit**. These two orders were submitted with a **positive** (debit) limit. Production now requires a negative credit limit and the reconciler uses `filled <= limit`. Under that rule a 2.11 credit fill is worse than a 2.54 credit bound, and a 0.51 credit fill is worse than a 0.70 credit bound (certificate max_loss $30 vs fill max_loss $49).
+
+1. `oc-204a8dfccffd40c9` — BEARISH bear-call credit, SPY 2026-10-09 793C/809C, qty 1, submitted limit `+2.54`. Legs: sell `SPY261009C00793000` fill 2.95; buy `SPY261009C00809000` fill 0.84. Broker filled 2026-08-31 13:30:03Z, `filled_qty=1`, `filled_avg_price=-2.11`. Recon equity 100007.95, cash 100210.95. Outcome `FILLED`, not price-bound MATCHED.
+2. `oc-715ad36a630d408e` — BEARISH bear-call, SPY 2026-09-25 768C/769C, qty 1, submitted limit `+0.70`, certificate max_loss 30. Legs: sell `SPY260925C00768000` fill 8.68; buy `SPY260925C00769000` fill 8.17. Filled 2026-08-31 14:05:49Z, `filled_qty=1`, `filled_avg_price=-0.51`. MCP `place_option_order`, `mcp_submit_count=1`. **`stance_source=bars_heuristic_no_llm_key`**: no LLM key on the box — not a live ThesisAgent LLM pick. Fill max_loss $49.
 
 No demo video is committed in this packet. Remotion demo is Gate 12.
 
@@ -39,7 +41,11 @@ Paper account ID is recorded in `docs/ALPACA_ACCOUNT.md` (ID only).
 
 ## Public evidence
 
-Judge packet (sanitized ledger only): `artifacts/evidence/index.html`. Public completion is the two real live_paper MATCHED fills (`oc-204a8dfccffd40c9`, `oc-715ad36a630d408e`).
+Judge packet (sanitized ledger only): `artifacts/evidence/index.html`. The two live_paper fills are recorded as broker fills, not as price-bound MATCHED.
+
+## Foundation
+
+Pinned MIT foundation: Gauss World Trader, https://github.com/Magica-Chen/GaussWorldTrader @ `31374551bae6fd34a0fe56fe11d208f4ff04fbb4`, snapshot `vendor/pin-31374551/`. See `FOUNDATION.md` and `THIRD_PARTY_NOTICES.md` for reuse scope.
 
 ## License
 

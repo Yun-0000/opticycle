@@ -4,10 +4,10 @@
   "cloud_submit": false,
   "sanitized_json_provided": true,
   "live_fill_claimed": true,
-  "matched_claimed": true,
-  "waiting_for": [],
+  "matched_claimed": false,
+  "waiting_for": ["order_id", "mcp_result_hash"],
   "hook": "python3 scripts/ingest-paper-fill.py --from-json <sanitized.json>",
-  "detail": "Two real live_paper MATCHED fills recorded (oc-204a8dfccffd40c9, oc-715ad36a630d408e). Account id omitted. Cloud VM must not place another order.",
+  "detail": "Two real live_paper broker fills recorded (oc-204a8dfccffd40c9, oc-715ad36a630d408e). Submitted credit limits were debit-positive, so price-bound MATCHED is not claimed. Broker order_id / raw MCP result were not ingested. Account id omitted. Cloud VM must not place another order.",
   "authorized_live_client_order_ids": [
     "oc-204a8dfccffd40c9",
     "oc-715ad36a630d408e"

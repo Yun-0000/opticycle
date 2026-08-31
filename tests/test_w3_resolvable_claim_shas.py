@@ -73,7 +73,7 @@ def test_public_completion_is_two_live_matched_fills() -> None:
     html = PAGE_PATH.read_text(encoding="utf-8")
     public = PUBLIC_JSONL.read_text(encoding="utf-8")
     assert manifest["live_fill_claimed"] is True
-    assert manifest["matched_claimed"] is True
+    assert manifest["matched_claimed"] is False
     assert "replay/fixture" not in html
     assert "not public completion" not in html
     assert "Do not invent MATCHED" not in html

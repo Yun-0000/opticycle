@@ -296,13 +296,13 @@ def test_credit_price_improvement_is_matched_not_halt() -> None:
     report = reconcile(
         payload=payload,
         receipt=_receipt(payload),
-        broker=FakeBroker(orders=[_order(filled_avg_price="1.35")]),
+        broker=FakeBroker(orders=[_order(filled_avg_price="-1.35")]),
         settings=_settings(),
     )
     assert report.status == ReconciliationStatus.MATCHED
     assert report.complete is True
     assert report.halt_triggered is False
-    assert report.filled_avg_price == Decimal("1.35")
+    assert report.filled_avg_price == Decimal("-1.35")
     fill = next(item for item in report.comparisons if item.field == "filled_avg_price")
     assert fill.matched is True
 
@@ -312,7 +312,7 @@ def test_fill_worse_than_limit_still_halts() -> None:
     report = reconcile(
         payload=payload,
         receipt=_receipt(payload),
-        broker=FakeBroker(orders=[_order(filled_avg_price="1.00")]),
+        broker=FakeBroker(orders=[_order(filled_avg_price="-1.00")]),
         settings=_settings(),
     )
     assert report.status == ReconciliationStatus.MISMATCH

@@ -256,7 +256,7 @@ def _payload(
     legs: tuple[OptionLegSpec, ...],
     *,
     qty: int = 1,
-    limit_price: Decimal = Decimal("1.20"),
+    limit_price: Decimal = Decimal("-1.20"),
     account_id: str = ACCOUNT_ID,
     client_order_id: str = "cycle-gate5-001",
 ) -> CanonicalOrderPayload:
@@ -420,7 +420,7 @@ def test_account_change_is_rejected() -> None:
 def test_executor_rejects_leg_qty_or_limit_change_after_issue() -> None:
     engine = RiskEngine(_settings())
     legs = _bull_put_legs()
-    payload = _payload(legs, qty=1, limit_price=Decimal("1.20"))
+    payload = _payload(legs, qty=1, limit_price=Decimal("-1.20"))
     evidence = _evidence(_bull_put_quotes())
     portfolio = _portfolio()
     cert = engine.issue(payload, portfolio, evidence)
@@ -428,11 +428,11 @@ def test_executor_rejects_leg_qty_or_limit_change_after_issue() -> None:
     client = FakeMcpClient()
     executor = AlpacaMcpExecutor(client=client, dry_run=False)
 
-    qty_changed = _payload(legs, qty=2, limit_price=Decimal("1.20"))
+    qty_changed = _payload(legs, qty=2, limit_price=Decimal("-1.20"))
     with pytest.raises(ExecutionRejected, match="payload changed"):
         executor.place_certified_order_sync(qty_changed, cert, portfolio, evidence, settings=_settings())
 
-    limit_changed = _payload(legs, qty=1, limit_price=Decimal("1.55"))
+    limit_changed = _payload(legs, qty=1, limit_price=Decimal("-1.55"))
     with pytest.raises(ExecutionRejected, match="payload changed"):
         executor.place_certified_order_sync(limit_changed, cert, portfolio, evidence, settings=_settings())
 
@@ -449,7 +449,7 @@ def test_executor_rejects_leg_qty_or_limit_change_after_issue() -> None:
     # The mutated long leg has no quote either; payload hash change is enough.
     with pytest.raises(ExecutionRejected, match="payload changed"):
         executor.place_certified_order_sync(
-            _payload(mutated_legs, qty=1, limit_price=Decimal("1.20")),
+            _payload(mutated_legs, qty=1, limit_price=Decimal("-1.20")),
             cert,
             portfolio,
             evidence,
@@ -460,7 +460,7 @@ def test_executor_rejects_leg_qty_or_limit_change_after_issue() -> None:
     executor.place_certified_order_sync(payload, cert, portfolio, evidence, settings=_settings())
     assert client.calls[0][0] == PLACE_OPTION_ORDER
     assert client.calls[0][1]["qty"] == "1"
-    assert client.calls[0][1]["limit_price"] == "1.20"
+    assert client.calls[0][1]["limit_price"] == "-1.20"
     assert len(client.calls[0][1]["legs"]) == 2
 
 
@@ -558,7 +558,7 @@ def test_missing_quote_vetoes_without_using_pin_fallback() -> None:
 
 def test_certificate_prices_come_from_quotes_not_limit_fallback() -> None:
     engine = RiskEngine(_settings())
-    payload = _payload(_bull_put_legs(), limit_price=PIN_LIMIT_FALLBACK)
+    payload = _payload(_bull_put_legs(), limit_price=Decimal("-1.20"))
     cert = engine.issue(payload, _portfolio(), _evidence(_bull_put_quotes()))
     risk = cert.calculated_risk
     assert risk.net_credit == Decimal("1.20")
@@ -650,7 +650,7 @@ def test_pin_option_hardcoded_limit_is_gone() -> None:
 def test_bear_call_credit_formula_and_approval() -> None:
     engine = RiskEngine(_settings())
     cert = engine.issue(
-        _payload(_bear_call_legs(), limit_price=Decimal("1.00")),
+        _payload(_bear_call_legs(), limit_price=Decimal("-1.00")),
         _portfolio(),
         _evidence(_bear_call_quotes()),
     )

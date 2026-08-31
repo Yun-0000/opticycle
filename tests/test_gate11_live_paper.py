@@ -158,7 +158,7 @@ def test_injected_no_trade_not_promoted_and_fill_incomplete() -> None:
     assert status["injected_no_trade_promoted"] is False
     assert status["live_quotes_available"] is False
     assert status["yun_authorized_one_paper_mleg"] is True
-    assert status["matched_claimed"] is True
+    assert status["matched_claimed"] is False
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     assert manifest["live_fill_claimed"] is True
     assert manifest.get("injected_no_trade_promoted") is False

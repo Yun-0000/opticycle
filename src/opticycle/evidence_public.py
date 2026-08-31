@@ -1,9 +1,9 @@
 """Public judge evidence: sanitized page, claim manifest, keyless replay.
 
-Reads sanitized ledger exports only. Two authorized live_paper MATCHED fills
-are public completion. Replay MATCHED stays channel=replay (not live_paper).
-The committed NO_TRADE record is live-path plus an injected missing quote —
-not fill evidence.
+Reads sanitized ledger exports only. Two authorized live_paper broker fills
+are recorded. They are not price-bound MATCHED (credit limit sign error).
+Replay MATCHED stays channel=replay (not live_paper). The committed NO_TRADE
+record is live-path plus an injected missing quote — not fill evidence.
 """
 
 from __future__ import annotations
@@ -163,7 +163,10 @@ def is_injected_no_trade(record: Mapping[str, Any]) -> bool:
 
 REPLAY_MATCHED_CAVEAT = None
 
-LIVE_MATCHED_NOTE = "live_paper MATCHED fill; account id omitted"
+LIVE_MATCHED_NOTE = (
+    "live_paper broker fill; submitted credit limit had debit sign; "
+    "not price-bound MATCHED; account id omitted"
+)
 
 
 def is_live_matched_fill(record: Mapping[str, Any]) -> bool:
@@ -213,8 +216,9 @@ def build_manifest(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         "source": "sanitized_public_ledger",
         "live_fill_claimed": any_live,
         "injected_no_trade_promoted": False,
-        "matched_claimed": any_live
-        or any(str(row.get("outcome") or "") == "MATCHED" and is_live_matched_fill(row) for row in records),
+        "matched_claimed": any(
+            str(row.get("outcome") or "") == "MATCHED" and is_live_matched_fill(row) for row in records
+        ),
         "incomplete_live": {},
         "no_trade_injected_quote_caveat": NO_TRADE_CAVEAT,
         "authorized_live_client_order_ids": sorted(LIVE_MATCHED_CLIENT_IDS),
@@ -338,7 +342,7 @@ def render_evidence_page(
         if mapped.get("caveat") == NO_TRADE_CAVEAT:
             claim_status = "injected-quote NO_TRADE — not fill evidence"
         elif mapped.get("live_fill"):
-            claim_status = "live_paper MATCHED fill"
+            claim_status = "live_paper broker fill — not price-bound MATCHED"
         elif mapped.get("channel") == "replay" and mapped.get("outcome") == "MATCHED":
             claim_status = "replay MATCHED"
         claim_rows.append(
@@ -412,11 +416,14 @@ def render_evidence_page(
         else "no — gap recorded honestly (does not mean live fills are missing)"
     )
     ingest_note = (
-        "Two real live_paper MATCHED paper fills are public completion "
+        "Two real live_paper broker fills are recorded "
         f"({', '.join(sorted(LIVE_MATCHED_CLIENT_IDS))}). "
-        "Replay channel MATCHED is present and is not live_paper. "
+        "They are not price-bound MATCHED: submitted MLEG limits were "
+        "debit-positive, and fill credits were worse than the intended credit "
+        "bounds. Replay channel MATCHED is present and is not live_paper. "
         "No extra fills. Account id omitted. "
-        "Monday MCP fill stance_source=bars_heuristic_no_llm_key (no LLM key; not a live ThesisAgent pick)."
+        "Monday MCP fill stance_source=bars_heuristic_no_llm_key (no LLM key; not a live ThesisAgent pick). "
+        "Broker order_id / raw MCP result hash were not ingested."
     )
     page_records = _page_records(records)
     embedded = html.escape(canonical_dumps({"records": page_records, "manifest": manifest, "gate11": gate11}))
@@ -442,7 +449,7 @@ def render_evidence_page(
   <h1>Opticycle public evidence</h1>
   <p>Rendered from sanitized ledger records only. No secrets, keys, or account credentials.</p>
   <div class="banner">
-    <p><strong>Two real live_paper MATCHED fills are public completion.</strong> Replay channel MATCHED is not live_paper. Injected NO_TRADE is not fill evidence. No extra fills.</p>
+    <p><strong>Two real live_paper broker fills are recorded. They are not price-bound MATCHED.</strong> Replay channel MATCHED is not live_paper. Injected NO_TRADE is not fill evidence. No extra fills.</p>
     <p>{html.escape(NO_TRADE_CAVEAT)}</p>
     <p>Genuine live NO_TRADE this gate: {html.escape(genuine)}. {quote_gap}</p>
     <p>{html.escape(ingest_note)}</p>
