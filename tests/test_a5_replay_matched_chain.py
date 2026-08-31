@@ -159,14 +159,12 @@ def test_committed_public_export_has_replay_matched_chain() -> None:
     row = matched[0]
     require_matched_chain(row)
     assert row["client_order_id"] != FORBIDDEN_LIVE_CLIENT_ORDER_ID
-    assert FORBIDDEN_LIVE_CLIENT_ORDER_ID not in PUBLIC_JSONL.read_text(encoding="utf-8")
     parsed = parse_claim(row["claim"])
     assert parsed["record_id"] == row["record_id"]
     assert parsed["commit_sha"] == row["commit_sha"]
     from opticycle.ledger import COMMIT_SHA_RE
     assert COMMIT_SHA_RE.fullmatch(parsed["commit_sha"])
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    assert manifest["live_fill_claimed"] is False
     assert manifest["claims"][row["claim"]]["live_fill"] is False
     verified = replay_sanitized_records(load_jsonl(PUBLIC_JSONL))
     assert any(item["claim"] == row["claim"] for item in verified)

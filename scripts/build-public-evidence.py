@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build sanitized public.jsonl, claim manifest, and evidence page. No live fill."""
+"""Build sanitized public.jsonl, claim manifest, and evidence page."""
 
 from __future__ import annotations
 
@@ -24,6 +24,7 @@ from opticycle.evidence_public import (  # noqa: E402
     render_evidence_page,
 )
 from opticycle.ledger import EvidenceLedger, canonical_dumps, current_commit_sha  # noqa: E402
+from opticycle.live_matched_fills import append_live_matched_episodes  # noqa: E402
 from opticycle.replay_matched_chain import append_replay_matched_episode  # noqa: E402
 
 
@@ -105,15 +106,8 @@ def _replay_records(sha: str) -> list[dict]:
         },
         extra={"fault_injection": True},
     )
-    ledger.append_episode(
-        channel="live_paper",
-        outcome="HALT",
-        reason="live paper schema ready; MLEG/fill not claimed",
-        commit_sha=sha,
-        fields={"code_build_id": sha},
-        extra={"live_fill_claimed": False},
-    )
     append_replay_matched_episode(ledger, commit_sha=sha)
+    append_live_matched_episodes(ledger, commit_sha=sha)
     return ledger.export_public()
 
 
@@ -137,6 +131,8 @@ def main() -> int:
     PUBLIC_JSONL.write_text("".join(canonical_dumps(row) + "\n" for row in extras), encoding="utf-8")
     manifest = build_manifest(combined)
     MANIFEST_PATH.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    claims_path = PUBLIC_JSONL.parent / "claims.json"
+    claims_path.write_text(json.dumps(manifest["claims"], indent=2, sort_keys=True) + "\n", encoding="utf-8")
     PAGE_PATH.write_text(render_evidence_page(combined, manifest), encoding="utf-8")
     print(f"records={len(combined)} claims={len(manifest['claims'])} sha={sha}")
     print(f"page={PAGE_PATH}")
