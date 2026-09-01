@@ -2,6 +2,8 @@
 
 Opticycle is an autonomous paper options trader. Each cycle observes the market, asks ThesisAgent for a stance when an LLM key is present, runs risk gates sized for a $100,000 paper book, and — only after a payload-bound certificate — sends a defined-risk SPY vertical through official Alpaca MCP Server 2.3.0 (`place_option_order`, `order_class=mleg`). Equity-only orders are disabled. There is no CLI execution channel. ThesisAgent is an LLM call and is fail-closed without a key; a heuristic stance is labeled as such and is not a live ThesisAgent pick.
 
+**Strategy premise:** Trade one-lot SPY defined-risk credit verticals only when fresh evidence, an LLM stance, and an exact-payload deterministic certificate all agree; otherwise record `NO_TRADE` or `HALT`.
+
 ## AI decision logic
 
 Live ThesisAgent is an LLM call. The model chooses `BULLISH`, `BEARISH`, or `NO_TRADE` from pre-validated snapshot evidence in the prompt (quotes, freshness, bar return/trend, chain presence). Determined signals such as implied stance may appear as evidence; they are not the answer. The model may disagree. Missing or stale evidence stays fail-closed. Without an LLM key the live path is fail-closed `NO_TRADE` / `HALT` — not a silent deterministic direction labeled as AI.
@@ -40,4 +42,12 @@ Public evidence: `artifacts/evidence/index.html`. These two fills are broker fac
 
 On 2026-09-01 both verticals were closed via MCP `place_option_order` MLEG. Flatten equity `100055.67`. Close orders retained `raw_result_hash`.
 
-Then ThesisAgent submitted a signed-credit bull put: `oc-63db2a85298b4ecabefab59076a6397e`, limit `-2.26`, fill `-2.26`, broker `24b16fe6-0d8d-4478-afa6-0f3781eb6b33`. That episode is price-bound `MATCHED` (`filled <= limit`). After-fill equity `100049.62`.
+Then ThesisAgent submitted a signed-credit bull put: `oc-63db2a85298b4ecabefab59076a6397e`, limit `-2.26`, fill `-2.26`, broker `24b16fe6-0d8d-4478-afa6-0f3781eb6b33`. That episode is price-bound `MATCHED` (`filled <= limit`). The MCP envelope did not return after broker accept, so the agent made no second submit and reconciled the same client ID through Alpaca GET (`mcp_submit_count=1`, `second_submit=false`). After-fill equity `100049.62`.
+
+## Held-out and failure probes
+
+| probe | evidence | expected behavior | recorded result |
+| --- | --- | --- | --- |
+| stale SPY quote | live Alpaca observation | skip ThesisAgent and submit | `NO_TRADE` |
+| mutated or unsafe payload | credential-free risk replay | deterministic certificate veto | `VETO` |
+| MCP response unknown after accept | golden live episode | zero resubmit; GET same client ID | `MATCHED` |

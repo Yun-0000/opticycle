@@ -28,6 +28,10 @@ jobs:
         run: python3 scripts/scan-public-evidence.py
       - name: Keyless public-evidence replay
         run: python3 scripts/replay-public-evidence.py
+      - name: Credential-free zero-resubmit assertion
+        run: python3 scripts/assert-zero-resubmit.py
+      - name: Demo facts match public evidence
+        run: python3 scripts/verify-demo-evidence.py
       - name: Verify dry-run MCP path
         run: python3 scripts/verify-paper-mcp-order.py --dry-run
       - name: One autonomous dry-run cycle

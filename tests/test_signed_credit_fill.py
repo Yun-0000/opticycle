@@ -11,6 +11,7 @@ from opticycle.reconcile import evaluate_recorded_mleg_fill
 from opticycle.signed_credit_fill import (
     SIGNED_FILL,
     append_signed_credit_matched_episode,
+    assert_zero_resubmit_record,
     is_price_bound_matched_fill,
     signed_payload,
 )
@@ -31,7 +32,14 @@ def test_signed_credit_fill_is_price_bound_matched(tmp_path: Path) -> None:
     assert row["outcome"] == "MATCHED"
     assert row["client_order_id"] == SIGNED_CLIENT_ORDER_ID
     assert row["extra"]["matched_claimed"] is True
+    assert row["extra"]["mcp_submit_count"] == 1
+    assert row["extra"]["second_submit"] is False
+    assert row["episode"]["snapshot"]["value"]["prevalidated"] is True
     assert row["episode"]["thesis"]["value"]["model_called"] is True
+    proof = assert_zero_resubmit_record(row)
+    assert proof["credential_free"] is True
+    assert proof["mcp_submit_count"] == 1
+    assert proof["second_submit"] is False
     receipt = row["episode"]["broker_receipt"]["value"]
     assert receipt["broker_order_id"] == SIGNED_BROKER_ORDER_ID
     assert receipt["limit"] == "-2.26"

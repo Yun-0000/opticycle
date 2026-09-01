@@ -56,7 +56,7 @@ GENUINE_STALE_QUOTE_CAVEAT = (
     "genuine NO_TRADE; ThesisAgent not called (freshness fail-closed); not fill evidence"
 )
 
-DEMO_VIDEO_STATUS = "deleted; Remotion demo is Gate 12"
+DEMO_VIDEO_STATUS = "rendered at artifacts/demo.mp4; source in remotion/"
 
 FORBIDDEN_PUBLIC_TOKENS = (
     "PA3V84C40PJQ",
@@ -383,6 +383,62 @@ def _pre(value: Any) -> str:
     return f"<pre>{html.escape(dumped)}</pre>"
 
 
+def _golden_trace(records: Iterable[Mapping[str, Any]]) -> str:
+    golden = next(
+        (row for row in records if str(row.get("client_order_id") or "") == SIGNED_CLIENT_ORDER_ID),
+        None,
+    )
+    if golden is None or not is_price_bound_matched_fill(golden):
+        raise ValueError("missing price-bound golden trace")
+    snapshot = slot_value(golden, "snapshot") or {}
+    thesis = slot_value(golden, "thesis") or {}
+    candidate = slot_value(golden, "candidate_set") or {}
+    certificate = slot_value(golden, "certificate") or {}
+    mcp = slot_value(golden, "mcp_attempt") or {}
+    receipt = slot_value(golden, "broker_receipt") or {}
+    recon = slot_value(golden, "reconciliation") or {}
+    steps = [
+        (
+            "SNAPSHOT",
+            f"{snapshot.get('underlying', 'SPY')} · {snapshot.get('session', 'regular')} · sanitized",
+        ),
+        (
+            "LLM STANCE",
+            f"{thesis.get('stance')} · {thesis.get('model')} · model_called=true",
+        ),
+        (
+            "PAYLOAD",
+            f"bull put · qty {candidate.get('qty')} · limit {candidate.get('limit_price')}",
+        ),
+        (
+            "CERT",
+            f"approved · payload {str(certificate.get('payload_hash') or '')[:12]}…",
+        ),
+        (
+            "MCP",
+            f"place_option_order · mleg · submit {mcp.get('mcp_submit_count')}",
+        ),
+        (
+            "GET",
+            f"order {str(receipt.get('broker_order_id') or '')[:8]}… · fill {receipt.get('filled_avg_price')}",
+        ),
+        (
+            "MATCHED",
+            f"price_bound={str(recon.get('price_bound_matched')).lower()} · second_submit={str(mcp.get('second_submit')).lower()}",
+        ),
+    ]
+    return "<div class='trace'>" + "".join(
+        (
+            "<div class='trace-step'>"
+            f"<strong>{html.escape(title)}</strong>"
+            f"<span>{html.escape(detail)}</span>"
+            "</div>"
+            + ("<div class='arrow'>→</div>" if index < len(steps) - 1 else "")
+        )
+        for index, (title, detail) in enumerate(steps)
+    ) + "</div>"
+
+
 def render_evidence_page(
     records: list[dict[str, Any]],
     manifest: Mapping[str, Any],
@@ -486,43 +542,101 @@ def render_evidence_page(
         "Account id omitted. Flatten then new fill equity 100049.62."
     )
     page_records = _page_records(records)
+    golden_trace = _golden_trace(page_records)
+    strategy_premise = (
+        "Trade one-lot SPY defined-risk credit verticals only when fresh evidence, "
+        "an LLM stance, and an exact-payload deterministic certificate all agree; "
+        "otherwise record NO_TRADE or HALT."
+    )
     embedded = html.escape(canonical_dumps({"records": page_records, "manifest": manifest, "gate11": gate11}))
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Opticycle public evidence</title>
   <style>
-    body {{ font-family: ui-sans-serif, system-ui, sans-serif; margin: 2rem; max-width: 960px; color: #111; }}
-    h1 {{ font-size: 1.6rem; }}
-    .banner, .caveat {{ background: #fff3cd; border: 1px solid #e6c200; padding: 0.75rem 1rem; }}
-    article.episode {{ border: 1px solid #ddd; padding: 1rem; margin: 1.25rem 0; }}
+    :root {{ color-scheme: dark; --bg: #080a0d; --panel: #11151b; --line: #2a313b; --ink: #f4f6f8; --muted: #a7b0bd; --acid: #a6ff00; --gold: #f6d365; }}
+    * {{ box-sizing: border-box; }}
+    body {{ font-family: ui-sans-serif, system-ui, sans-serif; margin: 0 auto; padding: 3rem 1.25rem 6rem; max-width: 1440px; color: var(--ink); background: var(--bg); }}
+    h1 {{ font-size: clamp(2.6rem, 7vw, 6.5rem); line-height: .9; letter-spacing: -.07em; margin: .4rem 0 1.2rem; max-width: 930px; }}
+    h2 {{ margin-top: 2rem; }}
+    .eyebrow {{ color: var(--acid); font-size: .78rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }}
+    .lede {{ color: var(--muted); max-width: 780px; font-size: 1.1rem; line-height: 1.6; }}
+    .trace {{ display: grid; grid-template-columns: repeat(13, minmax(0, auto)); align-items: stretch; gap: .55rem; margin: 2.5rem 0 1.1rem; overflow-x: auto; padding-bottom: .5rem; }}
+    .trace-step {{ min-width: 145px; padding: 1rem; border: 1px solid var(--line); background: var(--panel); }}
+    .trace-step:last-child {{ border-color: var(--acid); box-shadow: inset 0 -3px var(--acid); }}
+    .trace-step strong {{ display: block; color: var(--acid); font-size: .78rem; letter-spacing: .1em; }}
+    .trace-step span {{ display: block; margin-top: .65rem; color: var(--muted); font-size: .82rem; line-height: 1.35; }}
+    .arrow {{ display: grid; place-items: center; color: #647080; }}
+    .facts {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 1rem 0 2.5rem; }}
+    .fact {{ background: var(--panel); padding: 1.15rem; }}
+    .fact small {{ display: block; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }}
+    .fact strong {{ display: block; margin-top: .45rem; font-size: 1.25rem; }}
+    .banner, .caveat {{ background: #211d0f; border: 1px solid #69591a; padding: 1rem 1.2rem; }}
+    .premise {{ border-left: 4px solid var(--acid); padding: .1rem 0 .1rem 1.2rem; margin: 2.5rem 0; font-size: 1.35rem; line-height: 1.5; max-width: 1050px; }}
+    .actions {{ display: flex; flex-wrap: wrap; gap: .75rem; margin: 1.5rem 0 2.5rem; }}
+    .button {{ color: #090b0d; background: var(--acid); padding: .8rem 1rem; font-weight: 800; text-decoration: none; }}
+    .button.secondary {{ color: var(--ink); background: transparent; border: 1px solid var(--line); }}
+    details {{ border: 1px solid var(--line); background: #0b0e12; padding: 1rem 1.2rem; margin-top: 2rem; }}
+    summary {{ cursor: pointer; font-size: 1.15rem; font-weight: 800; }}
+    article.episode {{ border: 1px solid var(--line); padding: 1rem; margin: 1.25rem 0; background: var(--panel); }}
     dt {{ font-weight: 600; margin-top: 0.4rem; }}
-    pre {{ background: #f6f8fa; padding: 0.75rem; overflow: auto; }}
+    pre {{ background: #080a0d; padding: 0.75rem; overflow: auto; border: 1px solid var(--line); }}
     code {{ font-size: 0.9em; word-break: break-all; }}
     table {{ border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.85rem; }}
-    th, td {{ border: 1px solid #ddd; padding: 0.4rem 0.5rem; text-align: left; vertical-align: top; }}
-    .empty {{ color: #666; }}
+    th, td {{ border: 1px solid var(--line); padding: .65rem .7rem; text-align: left; vertical-align: top; }}
+    th {{ color: var(--acid); }}
+    .empty, .muted {{ color: var(--muted); }}
+    @media (max-width: 780px) {{ .facts {{ grid-template-columns: 1fr; }} body {{ padding-top: 2rem; }} }}
   </style>
 </head>
 <body>
-  <h1>Opticycle public evidence</h1>
-  <p>Rendered from sanitized ledger records only. No secrets, keys, or account credentials.</p>
+  <div class="eyebrow">OPTICYCLE / GOLDEN TRADE / SANITIZED PAPER EVIDENCE</div>
+  <h1>One order.<br/>Seven proofs.</h1>
+  <p class="lede">The judge path starts with the only live, price-bound MATCHED fill. Every step below resolves to the sanitized ledger and an independent Alpaca GET receipt. No secrets, keys, or account credentials.</p>
+  {golden_trace}
+  <div class="facts">
+    <div class="fact"><small>Golden client order</small><strong>{SIGNED_CLIENT_ORDER_ID}</strong></div>
+    <div class="fact"><small>SPY bull put · expiry 2026-10-16</small><strong>Sell SPY 740P / Buy SPY 724P · qty 1</strong></div>
+    <div class="fact"><small>Price integrity</small><strong>Limit -2.26 / Fill -2.26</strong></div>
+    <div class="fact"><small>Official transport</small><strong>Alpaca MCP 2.3.0 · MLEG only</strong></div>
+    <div class="fact"><small>Timeout invariant</small><strong>mcp_submit_count=1 · second_submit=false</strong></div>
+    <div class="fact"><small>After-fill equity</small><strong>100049.62</strong></div>
+  </div>
+  <div class="actions">
+    <a class="button" href="../demo.mp4">Watch the rendered demo</a>
+    <a class="button secondary" href="broker_lookup.json">Open broker GET receipts</a>
+    <a class="button secondary" href="paper_fill_ingest.json">Open fill ingest summary</a>
+  </div>
+  <p class="premise"><strong>Strategy premise.</strong> {html.escape(strategy_premise)}</p>
+  <h2>Held-out and failure probes</h2>
+  <table>
+    <thead><tr><th>Probe</th><th>Evidence type</th><th>Expected behavior</th><th>Recorded result</th></tr></thead>
+    <tbody>
+      <tr><td>Stale SPY quote</td><td>Live Alpaca observation</td><td>Do not call ThesisAgent; do not submit</td><td>NO_TRADE</td></tr>
+      <tr><td>Mutated or unsafe payload</td><td>Credential-free risk replay</td><td>Certificate veto</td><td>VETO</td></tr>
+      <tr><td>MCP response unknown after accept</td><td>Golden live episode</td><td>Zero resubmit; GET same client ID</td><td>MATCHED</td></tr>
+    </tbody>
+  </table>
   <div class="banner">
     <p><strong>One in-session live_paper fill is price-bound MATCHED</strong> (negative credit limit, filled &lt;= limit, ThesisAgent called). Two earlier live_paper fills remain unsigned-limit FILLED, not MATCHED. Replay channel MATCHED is not live_paper. Injected NO_TRADE is not fill evidence.</p>
     <p>{html.escape(NO_TRADE_CAVEAT)}</p>
     <p>Genuine live NO_TRADE this gate: {html.escape(genuine)}. {quote_gap}</p>
     <p>{html.escape(ingest_note)}</p>
-    <p>No demo video is committed in this packet. Remotion demo is Gate 12.</p>
+    <p>Demo status: {html.escape(str(gate11.get('demo_mp4') or DEMO_VIDEO_STATUS))}.</p>
     <p>Authorized live_paper client_order_id values:</p>
     <ul>{live_ids}</ul>
   </div>
-  <h2>Claim → record → commit</h2>
-  <table>
-    <thead><tr><th>claim</th><th>record id</th><th>commit (40-char)</th><th>status</th></tr></thead>
-    <tbody>{''.join(claim_rows)}</tbody>
-  </table>
-  {''.join(cards)}
+  <details>
+    <summary>Full sanitized ledger and claim map</summary>
+    <h2>Claim → record → commit</h2>
+    <table>
+      <thead><tr><th>claim</th><th>record id</th><th>commit (40-char)</th><th>status</th></tr></thead>
+      <tbody>{''.join(claim_rows)}</tbody>
+    </table>
+{''.join(cards)}
+  </details>
   <script type="application/json" id="sanitized-ledger">{embedded}</script>
 </body>
 </html>

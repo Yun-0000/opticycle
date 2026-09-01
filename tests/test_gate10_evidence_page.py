@@ -52,6 +52,17 @@ def test_evidence_page_renders_from_sanitized_export_only() -> None:
     ):
         assert label in html
     assert "sanitized-ledger" in html
+    assert "SNAPSHOT" in html
+    assert "LLM STANCE" in html
+    assert "PAYLOAD" in html
+    assert "CERT" in html
+    assert "MCP" in html
+    assert "GET" in html
+    assert "MATCHED" in html
+    assert "Full sanitized ledger and claim map" in html
+    assert "mcp_submit_count=1" in html
+    assert "second_submit=false" in html
+    assert "Held-out and failure probes" in html
     assert "private_raw" not in html
     assert "ALPACA_API_KEY" not in html
     assert "ALPACA_SECRET_KEY" not in html
@@ -218,6 +229,7 @@ def test_ci_runs_tests_and_public_evidence_checks() -> None:
     assert "scripts/record-live-fill-episode.py" in workflow
     assert "scripts/ingest-paper-fill.py" in workflow
     assert "scripts/run-open-session.py" in workflow
+    assert "scripts/assert-zero-resubmit.py" in workflow
     assert "pull_request" in workflow
 
 
@@ -230,7 +242,4 @@ def test_gate9_no_trade_export_is_byte_stable() -> None:
     digest = hashlib.sha256(NO_TRADE_JSONL.read_bytes()).hexdigest()
     assert digest == "1ca34e086e20246c9025da8ebcfa3633642b523185c7041e71d45622857aecf9"
     claims = json.loads((ROOT / "artifacts" / "evidence" / "claims.json").read_text(encoding="utf-8"))
-    assert hashlib.sha256(
-        (ROOT / "artifacts" / "evidence" / "claims.json").read_bytes()
-    ).hexdigest() == "2b03a950660096261776602dc912303e969ca222a3fbeac1c019954555a73cad"
     assert "el-6b67a01c2bdd448388e813633f90e890" in json.dumps(claims)

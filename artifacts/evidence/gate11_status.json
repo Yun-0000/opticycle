@@ -9,7 +9,7 @@
     "oc-63db2a85298b4ecabefab59076a6397e": "24b16fe6-0d8d-4478-afa6-0f3781eb6b33",
     "oc-715ad36a630d408e": "2a6d6b7c-caad-4c24-959a-8d93455a36fe"
   },
-  "demo_mp4": "deleted; Remotion demo is Gate 12",
+  "demo_mp4": "rendered at artifacts/demo.mp4; source in remotion/",
   "genuine_no_trade_recorded": true,
   "injected_no_trade_caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
   "injected_no_trade_promoted": false,

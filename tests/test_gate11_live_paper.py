@@ -133,20 +133,23 @@ def test_record_live_fill_script_cannot_submit() -> None:
     assert payload["submitted"] is False
 
 
-def test_old_demo_artifacts_are_deleted() -> None:
+def test_rendered_demo_and_source_are_committed() -> None:
     assert not (ROOT / "docs" / "DEMO_SHOTLIST.md").exists()
-    assert not (ROOT / "artifacts" / "demo.mp4").exists()
+    assert (ROOT / "artifacts" / "demo.mp4").is_file()
+    assert (ROOT / "artifacts" / "demo.mp4").stat().st_size > 100_000
+    assert (ROOT / "artifacts" / "demo-poster.png").is_file()
+    assert (ROOT / "remotion" / "src" / "OpticycleDemo.tsx").is_file()
     assert not (ROOT / "artifacts" / "DEMO_NOT_SUBMISSION.md").exists()
     assert not (ROOT / "artifacts" / "demo.mp4.NOT_SUBMISSION").exists()
     assert not (ROOT / "artifacts" / "opticycle-demo.mp4").exists()
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     html = PAGE_PATH.read_text(encoding="utf-8")
-    workflow = (ROOT / ".github" / "workflows" / "hackathon-tests.yml").read_text(encoding="utf-8")
-    for blob in (readme, html, workflow):
+    for blob in (readme, html):
         assert "DEMO_SHOTLIST.md" not in blob
-        assert "artifacts/demo.mp4" not in blob
         assert "DEMO_NOT_SUBMISSION" not in blob
         assert "opticycle-demo.mp4" not in blob
+    assert "artifacts/demo.mp4" in readme
+    assert "../demo.mp4" in html
 
 
 def test_injected_no_trade_not_promoted_and_fill_incomplete() -> None:
@@ -161,6 +164,7 @@ def test_injected_no_trade_not_promoted_and_fill_incomplete() -> None:
     assert status["yun_authorized_one_paper_mleg"] is True
     assert status["matched_claimed"] is True
     assert status["llm_episode_recorded"] is True
+    assert status["demo_mp4"] == "rendered at artifacts/demo.mp4; source in remotion/"
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     assert manifest["live_fill_claimed"] is True
     assert manifest.get("injected_no_trade_promoted") is False

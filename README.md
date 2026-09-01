@@ -4,6 +4,8 @@ Autonomous options trader for the Alpaca AI Trading Agents Hackathon.
 
 Opticycle runs an unattended paper cycle: ThesisAgent (LLM) chooses `BULLISH` / `BEARISH` / `NO_TRADE` from live snapshot evidence when a key is present, binds a SPY defined-risk credit vertical, applies $100k book risk gates, and places **option** orders through **official Alpaca MCP Server 2.3.0** (`place_option_order`, `order_class=mleg`) only. Stock-only orders are rejected. There is no CLI execution channel. Without an LLM key the live path is fail-closed unless an explicit heuristic stance is recorded as such.
 
+**Strategy premise:** Trade one-lot SPY defined-risk credit verticals only when fresh evidence, an LLM stance, and an exact-payload deterministic certificate all agree; otherwise record `NO_TRADE` or `HALT`.
+
 ## Quick start (dry-run, no keys)
 
 ```bash
@@ -39,17 +41,19 @@ Those two verticals were closed 2026-09-01 during regular hours via official MCP
 
 ## In-session signed-credit MATCHED fill
 
-`oc-63db2a85298b4ecabefab59076a6397e` — ThesisAgent `gpt-5.6-luna` `model_called=true`, BULLISH bull-put credit, SPY 2026-10-16 740P/724P, qty 1, submitted limit **`-2.26`**. Legs: sell `SPY261016P00740000` fill 6.80; buy `SPY261016P00724000` fill 4.54. Broker filled 2026-09-01 16:20:42Z, `filled_qty=1`, `filled_avg_price=-2.26`, Alpaca `order_id=24b16fe6-0d8d-4478-afa6-0f3781eb6b33`. **Price-bound `MATCHED`**: `filled <= limit`. After-fill equity `100049.62`. The MCP stdio client did not return the tool envelope after broker accept for this working order; Alpaca GET is the fill source.
+`oc-63db2a85298b4ecabefab59076a6397e` — ThesisAgent `gpt-5.6-luna` `model_called=true`, BULLISH bull-put credit, SPY 2026-10-16 740P/724P, qty 1, submitted limit **`-2.26`**. Legs: sell `SPY261016P00740000` fill 6.80; buy `SPY261016P00724000` fill 4.54. Broker filled 2026-09-01 16:20:42Z, `filled_qty=1`, `filled_avg_price=-2.26`, Alpaca `order_id=24b16fe6-0d8d-4478-afa6-0f3781eb6b33`. **Price-bound `MATCHED`**: `filled <= limit`. After-fill equity `100049.62`. The MCP stdio client did not return the tool envelope after broker accept; the agent made no second submit and reconciled the same client ID through Alpaca GET (`mcp_submit_count=1`, `second_submit=false`).
 
 After-hours 2026-08-31 Alpaca GET (account id omitted): both earlier verticals were still open; equity `100010.9`, cash `100261.9`, unrealized `+11`; identity `cash + long_mv + short_mv`. A live observation the same evening was genuine `NO_TRADE` (`SPY quote is stale`).
 
-No demo video is committed in this packet. Remotion demo is Gate 12.
+Rendered demo: [`artifacts/demo.mp4`](artifacts/demo.mp4). Editable source: [`remotion/`](remotion/).
 
 Paper account ID is recorded in `docs/ALPACA_ACCOUNT.md` (ID only).
 
 ## Public evidence
 
 Judge packet (sanitized ledger only): `artifacts/evidence/index.html`. Historical unsigned-limit fills stay `FILLED`. The 2026-09-01 signed-credit fill is price-bound `MATCHED`. Independent Alpaca GET receipts are in `artifacts/evidence/broker_lookup.json`.
+
+Credential-free timeout proof: `PYTHONPATH=src python3 scripts/assert-zero-resubmit.py`.
 
 Regular-session automation (observe / ThesisAgent / at most one paper MLEG): `docs/OPEN_SESSION_AUTOMATION.md`.
 
