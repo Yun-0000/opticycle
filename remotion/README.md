@@ -1,10 +1,13 @@
-# Opticycle demo (Remotion)
+# Opticycle demo film
 
-Official programmatic demo source for Opticycle. Not a screen recording. No MP4 is committed until Gate 12.
+Original Remotion source for the Opticycle hackathon demo. The film separates architecture claims from sanitized Alpaca paper evidence and explicitly labels the heuristic paper episode.
 
 ```bash
-npm i
-npx remotion render OpticycleDemo
+npm install
+npm run check
+npm run render
 ```
 
-Composition: `OpticycleDemo` · 1920×1080 · 30 fps. Render output is Gate 12; no MP4 is in this tree.
+- Composition: `OpticycleDemo`
+- Output: `artifacts/demo.mp4`
+- Format: 1920×1080, 30 fps, 45 seconds

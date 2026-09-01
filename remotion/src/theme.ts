@@ -1,26 +1,18 @@
-import { loadFont as loadGeistSans } from "@remotion/google-fonts/Geist";
-import { loadFont as loadGeistMono } from "@remotion/google-fonts/GeistMono";
+import {loadFont} from "@remotion/google-fonts/SpaceMono";
 
-const sans = loadGeistSans("normal", {
-  weights: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-});
-const mono = loadGeistMono("normal", {
-  weights: ["400", "500", "600"],
-  subsets: ["latin"],
-});
+const {fontFamily} = loadFont("normal", {weights: ["400", "700"], subsets: ["latin"]});
 
-export const sansFont = sans.fontFamily;
-export const monoFont = mono.fontFamily;
+export const typeface = fontFamily;
 
-export const colors = {
-  bg: "#05080f",
-  bgLift: "#0c1424",
-  line: "#1c2a44",
-  text: "#f4f7fb",
-  muted: "#9aa8bd",
-  teal: "#3ee0b0",
-  blue: "#7aa2ff",
-  coral: "#ff6b6b",
-  gold: "#f0c36a",
-};
+export const c = {
+  black: "#000000",
+  white: "#F7F7F2",
+  gray: "#909090",
+  dim: "#4B4B4B",
+  acid: "#A6FF00",
+  red: "#FF2638",
+  yellow: "#FCFF76",
+  orange: "#FF5B29",
+  paper: "#F0EEE6",
+  ink: "#080808"
+} as const;

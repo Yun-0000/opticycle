@@ -1,118 +1,35 @@
-import { Audio, Easing, Sequence, interpolate, staticFile, useCurrentFrame } from "remotion";
-import { colors, monoFont } from "../theme";
-import { SceneFrame } from "./SceneFrame";
+import {Audio} from "@remotion/media";
+import {Sequence, interpolate, staticFile, useCurrentFrame} from "remotion";
+import {c} from "../theme";
+import {Label, SceneFrame, show} from "./SceneFrame";
 
-export const SceneExecution: React.FC<{ durationInFrames?: number }> = ({
-  durationInFrames = 300,
-}) => {
+export const SceneExecution: React.FC<{durationInFrames?: number}> = ({durationInFrames = 240}) => {
   const frame = useCurrentFrame();
-
+  const stopWidth = interpolate(frame, [36, 66], [0, 560], {extrapolateLeft: "clamp", extrapolateRight: "clamp"});
+  const lookupWidth = interpolate(frame, [92, 126], [0, 760], {extrapolateLeft: "clamp", extrapolateRight: "clamp"});
   return (
-    <SceneFrame accent={colors.teal} kicker="EXECUTION" durationInFrames={durationInFrames}>
-      <Audio src={staticFile("sfx/whoosh.wav")} volume={0.35} />
-      <Audio src={staticFile("sfx/hit.wav")} volume={0.3} />
-
-      {/* Positive confirm chime when primary MCP highlights */}
-      <Sequence from={35} layout="none">
-        <Audio src={staticFile("sfx/confirm_beep.wav")} volume={0.45} />
-      </Sequence>
-
-      <div
-        style={{
-          position: "absolute",
-          left: 96,
-          top: 180,
-          opacity: interpolate(frame, [14, 34], [0, 1], {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-            easing: Easing.bezier(0.16, 1, 0.3, 1),
-          }),
-        }}
-      >
-        <div style={{ fontSize: 84, fontWeight: 700, letterSpacing: -1.4 }}>
-          Alpaca MCP first, CLI fallback
-        </div>
-        <div style={{ marginTop: 18, fontSize: 36, color: colors.muted, maxWidth: 1600 }}>
-          Orders do not use alpaca-py submit_order on this path. Paper flags stay forced.
-        </div>
+    <SceneFrame durationInFrames={durationInFrames} index="04 / 06" accent={c.red}>
+      <Audio src={staticFile("sfx/whoosh.wav")} volume={0.28} />
+      <Sequence from={126} layout="none"><Audio src={staticFile("sfx/confirm_beep.wav")} volume={0.45} /></Sequence>
+      <div style={{position: "absolute", left: 68, top: 178, fontSize: 178, fontWeight: 700, letterSpacing: -13, lineHeight: 0.86, opacity: show(frame, 12, 18)}}>
+        TIMEOUT<br /><span style={{color: c.red}}>≠ RETRY</span>
       </div>
-
-      <div
-        style={{
-          position: "absolute",
-          left: 96,
-          right: 96,
-          top: 430,
-          display: "flex",
-          gap: 32,
-        }}
-      >
-        <div
-          style={{
-            flex: 1.15,
-            backgroundColor: colors.bgLift,
-            border: `1px solid ${colors.teal}`,
-            boxShadow: `0 0 20px rgba(62, 224, 176, 0.15)`,
-            padding: "40px 44px",
-            borderRadius: 6,
-            opacity: interpolate(frame, [25, 45], [0, 1], {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-            }),
-          }}
-        >
-          <div style={{ fontSize: 24, color: colors.teal, letterSpacing: 2, fontWeight: 700 }}>
-            PRIMARY
-          </div>
-          <div style={{ marginTop: 16, fontSize: 44, fontWeight: 700 }}>Alpaca MCP Server 2.3.0</div>
-          <div
-            style={{
-              marginTop: 22,
-              fontFamily: monoFont,
-              fontSize: 30,
-              color: colors.text,
-              backgroundColor: "#071018",
-              padding: "18px 22px",
-              borderRadius: 4,
-            }}
-          >
-            uvx alpaca-mcp-server==2.3.0
-            <br />
-            place_option_order
-          </div>
-        </div>
-
-        <div
-          style={{
-            flex: 1,
-            backgroundColor: colors.bgLift,
-            border: `1px solid ${colors.line}`,
-            padding: "40px 44px",
-            borderRadius: 6,
-            opacity: interpolate(frame, [45, 65], [0, 1], {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-            }),
-          }}
-        >
-          <div style={{ fontSize: 24, color: colors.blue, letterSpacing: 2, fontWeight: 700 }}>
-            FALLBACK
-          </div>
-          <div style={{ marginTop: 16, fontSize: 44, fontWeight: 700 }}>Official Alpaca CLI</div>
-          <div
-            style={{
-              marginTop: 22,
-              fontFamily: monoFont,
-              fontSize: 30,
-              color: colors.text,
-              backgroundColor: "#071018",
-              padding: "18px 22px",
-              borderRadius: 4,
-            }}
-          >
-            alpaca order submit
-          </div>
-        </div>
+      <div style={{position: "absolute", left: 76, top: 598, width: 1220, height: 170}}>
+        <div style={{position: "absolute", left: 0, top: 38, width: stopWidth, height: 2, background: c.red}} />
+        <div style={{position: "absolute", left: 556, top: 28, width: 22, height: 22, background: c.red, opacity: show(frame, 62, 5)}} />
+        <Label color={c.red} style={{position: "absolute", left: 0, top: 0, opacity: show(frame, 24, 12)}}>RESPONSE LOST / ORDER STATE UNKNOWN</Label>
+        <div style={{position: "absolute", left: 578, top: 104, width: lookupWidth, height: 2, background: c.yellow}} />
+        <Label color={c.yellow} style={{position: "absolute", left: 578, top: 70, opacity: show(frame, 86, 12)}}>LOOK UP THE SAME CLIENT ID</Label>
+        <div style={{position: "absolute", left: 1326, top: 94, width: 22, height: 22, background: c.acid, opacity: show(frame, 122, 5)}} />
+      </div>
+      <div style={{position: "absolute", right: 76, top: 248, width: 490, opacity: show(frame, 128, 16)}}>
+        <Label color={c.gray}>CLIENT ORDER ID</Label>
+        <div style={{fontSize: 29, marginTop: 16, letterSpacing: -1.5}}>oc-715ad36a630d408e</div>
+        <div style={{height: 1, background: c.dim, margin: "26px 0"}} />
+        <Label color={c.acid} style={{fontSize: 24}}>FOUND / FILLED</Label>
+      </div>
+      <div style={{position: "absolute", left: 76, bottom: 82, display: "flex", gap: 56, opacity: show(frame, 154, 14)}}>
+        <Label>SUBMITS 01</Label><Label color={c.red}>SECOND SUBMIT FALSE</Label>
       </div>
     </SceneFrame>
   );

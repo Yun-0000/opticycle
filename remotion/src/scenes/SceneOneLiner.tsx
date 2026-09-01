@@ -1,84 +1,22 @@
-import { Audio, Easing, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
-import { colors } from "../theme";
-import { SceneFrame } from "./SceneFrame";
+import {Audio} from "@remotion/media";
+import {Sequence, interpolate, staticFile, useCurrentFrame} from "remotion";
+import {c} from "../theme";
+import {Convergence, Label, SceneFrame, show} from "./SceneFrame";
 
-export const SceneOneLiner: React.FC<{ durationInFrames?: number }> = ({
-  durationInFrames = 300,
-}) => {
+export const SceneOneLiner: React.FC<{durationInFrames?: number}> = ({durationInFrames = 180}) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
+  const verifiedWidth = interpolate(frame, [70, 104], [0, 380], {extrapolateLeft: "clamp", extrapolateRight: "clamp"});
   return (
-    <SceneFrame durationInFrames={durationInFrames}>
-      <Audio src={staticFile("sfx/whoosh.wav")} volume={0.35} />
-      <Audio src={staticFile("sfx/hit.wav")} startFrom={0} volume={0.3} />
-
-      <div
-        style={{
-          position: "absolute",
-          left: 96,
-          right: 96,
-          top: 210,
-          opacity: interpolate(frame, [14, 34], [0, 1], {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-            easing: Easing.bezier(0.16, 1, 0.3, 1),
-          }),
-          translate: interpolate(frame, [14, 34], ["0px 24px", "0px 0px"], {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-            easing: Easing.bezier(0.16, 1, 0.3, 1),
-          }),
-        }}
-      >
-        <div style={{ fontSize: 104, fontWeight: 800, lineHeight: 1.05, letterSpacing: -2 }}>
-          Opticycle
-        </div>
-        <div
-          style={{
-            marginTop: 36,
-            maxWidth: 1480,
-            fontSize: 48,
-            lineHeight: 1.25,
-            color: colors.muted,
-            fontWeight: 500,
-          }}
-        >
-          Autonomous options-only paper trading agent on Alpaca. One cycle: decide, gate, then send an option order.
-        </div>
+    <SceneFrame durationInFrames={durationInFrames} index="01 / 06" accent={c.acid}>
+      <Audio src={staticFile("sfx/whoosh.wav")} volume={0.28} />
+      <Sequence from={74} layout="none"><Audio src={staticFile("sfx/hit.wav")} volume={0.42} /></Sequence>
+      <Convergence start={8} />
+      <div style={{position: "absolute", left: 176, top: 104, fontSize: 224, fontWeight: 700, lineHeight: 0.82, letterSpacing: -17, opacity: show(frame, 8, 18)}}>
+        PROOF<br />BEFORE<br />CAPITAL
       </div>
-
-      <div
-        style={{
-          position: "absolute",
-          left: 96,
-          bottom: 120,
-          display: "flex",
-          gap: 20,
-          opacity: interpolate(frame, [0.8 * fps, 1.2 * fps], [0, 1], {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-          }),
-        }}
-      >
-        {["OPTIONS ONLY", "UNATTENDED CYCLE", "PAPER TRADING"].map((label) => (
-          <div
-            key={label}
-            style={{
-              border: `1px solid ${colors.line}`,
-              backgroundColor: colors.bgLift,
-              color: colors.teal,
-              padding: "16px 24px",
-              fontSize: 26,
-              fontWeight: 600,
-              letterSpacing: 1.5,
-              borderRadius: 4,
-            }}
-          >
-            {label}
-          </div>
-        ))}
-      </div>
+      <div style={{position: "absolute", left: 1480, top: 538, width: verifiedWidth, height: 3, background: c.acid, boxShadow: `0 0 12px ${c.acid}`}} />
+      <Label color={c.acid} style={{position: "absolute", left: 1490, top: 490, opacity: show(frame, 66, 12)}}>VERIFIED PATH</Label>
+      <Label color={c.gray} style={{position: "absolute", right: 72, bottom: 62, opacity: show(frame, 94, 12)}}>ONE AGENT / ONE AUTHORIZED ORDER</Label>
     </SceneFrame>
   );
 };

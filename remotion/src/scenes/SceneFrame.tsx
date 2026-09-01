@@ -1,148 +1,55 @@
-import type { ReactNode } from "react";
-import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
-import { colors, sansFont } from "../theme";
+import type {ReactNode} from "react";
+import {AbsoluteFill, Easing, interpolate, useCurrentFrame} from "remotion";
+import {c, typeface} from "../theme";
 
-export const SceneFrame: React.FC<{
-  children: ReactNode;
-  accent?: string;
-  kicker?: string;
-  durationInFrames: number;
-}> = ({
-  children,
-  accent = colors.teal,
-  kicker = "OPTICYCLE",
-  durationInFrames,
-}) => {
-  const frame = useCurrentFrame();
-  const { fps, width } = useVideoConfig();
-
-  // Subtle background grid drift
-  const gridOffset = interpolate(frame, [0, durationInFrames], [0, 40], {
+export const show = (frame: number, start: number, duration = 12) =>
+  interpolate(frame, [start, start + duration], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
+    easing: Easing.bezier(0.16, 1, 0.3, 1)
   });
 
-  // Soft ambient glow pulse
-  const glowOpacity = interpolate(
-    Math.sin((frame / fps) * Math.PI * 0.8),
-    [-1, 1],
-    [0.08, 0.18],
-  );
+export const Label: React.FC<{children: ReactNode; color?: string; style?: React.CSSProperties}> = ({children, color = c.white, style}) => (
+  <div style={{color, fontSize: 16, fontWeight: 700, letterSpacing: 2.4, lineHeight: 1.25, textTransform: "uppercase", ...style}}>
+    {children}
+  </div>
+);
 
-  // Scene-level fade in and fade out to avoid crossfade overlap
-  const sceneOpacity = interpolate(
-    frame,
-    [0, 14, durationInFrames - 16, durationInFrames],
-    [0, 1, 1, 0],
-    {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-      easing: Easing.bezier(0.16, 1, 0.3, 1),
-    },
-  );
+export const Corner: React.FC<{x: number; y: number; flipX?: boolean; flipY?: boolean; color?: string}> = ({x, y, flipX, flipY, color = c.white}) => (
+  <div style={{position: "absolute", left: flipX ? undefined : x, right: flipX ? x : undefined, top: flipY ? undefined : y, bottom: flipY ? y : undefined, width: 22, height: 22, borderLeft: flipX ? undefined : `1px solid ${color}`, borderRight: flipX ? `1px solid ${color}` : undefined, borderTop: flipY ? undefined : `1px solid ${color}`, borderBottom: flipY ? `1px solid ${color}` : undefined}} />
+);
 
+export const SceneFrame: React.FC<{children: ReactNode; durationInFrames: number; index: string; accent?: string}> = ({children, durationInFrames, index, accent = c.white}) => {
+  const frame = useCurrentFrame();
+  const opacity = interpolate(frame, [0, 5, durationInFrames - 5, durationInFrames - 1], [0, 1, 1, 0], {extrapolateLeft: "clamp", extrapolateRight: "clamp"});
   return (
-    <AbsoluteFill
-      style={{
-        backgroundColor: colors.bg,
-        fontFamily: sansFont,
-        color: colors.text,
-        opacity: sceneOpacity,
-      }}
-    >
-      {/* Background gradient */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage:
-            "linear-gradient(180deg, rgba(12,20,36,0.95) 0%, rgba(5,8,15,1) 60%)",
-        }}
-      />
-
-      {/* Subtle animated high-tech grid */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: `
-            linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)
-          `,
-          backgroundSize: "60px 60px",
-          backgroundPosition: `${gridOffset}px ${gridOffset}px`,
-          opacity: 0.7,
-        }}
-      />
-
-      {/* Soft ambient color glow */}
-      <div
-        style={{
-          position: "absolute",
-          top: -200,
-          left: width / 2 - 400,
-          width: 800,
-          height: 600,
-          borderRadius: "50%",
-          background: `radial-gradient(circle, ${accent} 0%, transparent 70%)`,
-          opacity: glowOpacity,
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Top progress accent line */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          height: 6,
-          width: interpolate(frame, [0, 0.6 * fps], [0, width], {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-            easing: Easing.bezier(0.16, 1, 0.3, 1),
-          }),
-          backgroundColor: accent,
-        }}
-      />
-
-      {/* Top Header Bar */}
-      <div
-        style={{
-          position: "absolute",
-          top: 36,
-          left: 96,
-          fontSize: 22,
-          letterSpacing: 4.5,
-          fontWeight: 700,
-          color: accent,
-          opacity: interpolate(frame, [8, 22], [0, 1], {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-          }),
-        }}
-      >
-        {kicker}
+    <AbsoluteFill style={{backgroundColor: c.black, color: c.white, fontFamily: typeface, opacity}}>
+      <Corner x={28} y={28} color={accent} />
+      <Corner x={28} y={28} flipX color={accent} />
+      <Corner x={28} y={28} flipY color={accent} />
+      <Corner x={28} y={28} flipX flipY color={accent} />
+      <div style={{position: "absolute", left: 56, top: 46, display: "flex", gap: 18, alignItems: "center"}}>
+        <Label color={accent}>OPTICYCLE</Label>
+        <div style={{width: 44, height: 1, background: c.dim}} />
+        <Label color={c.gray}>{index}</Label>
       </div>
-      <div
-        style={{
-          position: "absolute",
-          top: 36,
-          right: 96,
-          fontSize: 20,
-          letterSpacing: 2.2,
-          fontWeight: 500,
-          color: colors.muted,
-          opacity: interpolate(frame, [8, 22], [0, 1], {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-          }),
-        }}
-      >
-        ALPACA PAPER · OPTIONS ONLY
-      </div>
-
-      {children}
+      <Label color={c.gray} style={{position: "absolute", right: 56, top: 46}}>PAPER / MCP MLEG</Label>
+      <div style={{position: "absolute", inset: 0, overflow: "hidden"}}>{children}</div>
     </AbsoluteFill>
   );
+};
+
+const seeds = Array.from({length: 86}, (_, i) => ({x: 30 + ((i * 83) % 980), y: 70 + ((i * 137) % 920), alpha: 0.14 + ((i * 17) % 52) / 100, delay: (i * 7) % 45}));
+
+export const Convergence: React.FC<{targetX?: number; targetY?: number; color?: string; start?: number}> = ({targetX = 1490, targetY = 540, color = c.white, start = 10}) => {
+  const frame = useCurrentFrame();
+  return <>{seeds.map((seed, i) => {
+    const dx = targetX - seed.x;
+    const dy = targetY - seed.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+    const p = show(frame, start + seed.delay, 22);
+    const trim = interpolate(p, [0, 1], [0.08, 1]);
+    return <div key={i} style={{position: "absolute", left: seed.x, top: seed.y, width: length * trim, height: 1, background: color, opacity: seed.alpha * p, transformOrigin: "0 50%", rotate: `${angle}deg`}}><div style={{position: "absolute", right: -2, top: -1.5, width: 4, height: 4, background: color}} /></div>;
+  })}</>;
 };
