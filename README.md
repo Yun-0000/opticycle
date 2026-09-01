@@ -1,5 +1,7 @@
 # Opticycle
 
+![Opticycle — proof-carrying SPY options agent](artifacts/readme-hero.svg)
+
 **A proof-carrying SPY options agent.**
 
 | Three reasons it is different | What the judge can verify |

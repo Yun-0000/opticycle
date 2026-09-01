@@ -96,11 +96,16 @@
       "record_id": "el-7f15d063e92e467488cfd4879efe3164"
     }
   },
+  "demo_mp4": "rendered at artifacts/demo.mp4; source in remotion/",
+  "genuine_no_trade_recorded": true,
   "incomplete_live": {},
   "injected_no_trade_promoted": false,
   "live_fill_claimed": true,
+  "live_quotes_available": true,
   "matched_claimed": true,
   "no_trade_injected_quote_caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
+  "sanitized_json_provided": true,
   "schema": "opticycle.claim-evidence.v1",
-  "source": "sanitized_public_ledger"
+  "source": "sanitized_public_ledger",
+  "yun_authorized_one_paper_mleg": true
 }

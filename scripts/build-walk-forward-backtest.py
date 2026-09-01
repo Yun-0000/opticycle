@@ -239,36 +239,38 @@ def render_chart(result: dict[str, Any], path: Path) -> None:
     agent_values = [float(row["equity"]) for row in result["equity_points"]]
     benchmark_values = [float(row["equity"]) for row in result["benchmark_points"]]
     fig, ax = plt.subplots(figsize=(12, 5.2), dpi=160)
-    fig.patch.set_facecolor("#ffffff")
-    ax.set_facecolor("#ffffff")
+    fig.patch.set_facecolor("#0b0e12")
+    ax.set_facecolor("#0b0e12")
     ax.step(
         agent_dates,
         agent_values,
         where="post",
-        color="#2563eb",
+        color="#cab16a",
         linewidth=2.5,
         label="Modeled realized vertical equity",
     )
-    ax.plot(agent_dates, benchmark_values, color="#d97706", linewidth=1.8, linestyle="--", label="SPY close benchmark")
-    ax.axhline(STARTING_EQUITY, color="#94a3b8", linewidth=1, linestyle=":")
-    ax.set_title("Modeled walk-forward equity", loc="left", fontsize=19, fontweight="bold", color="#0f172a", pad=23)
+    ax.plot(agent_dates, benchmark_values, color="#818284", linewidth=1.8, linestyle="--", label="SPY close benchmark")
+    ax.axhline(STARTING_EQUITY, color="#434547", linewidth=1, linestyle=":")
+    ax.set_title("Modeled walk-forward equity", loc="left", fontsize=19, fontweight="normal", color="#dedede", pad=23)
     ax.text(
         0,
         1.02,
         "SPY IEX daily • prior-20d inputs • 7–10 DTE • 0.25Δ • $5 width • BS modeled prices",
         transform=ax.transAxes,
-        color="#64748b",
+        color="#818284",
         fontsize=9.5,
     )
     ax.yaxis.set_major_formatter(FuncFormatter(lambda value, _pos: f"${value:,.0f}"))
     ax.xaxis.set_major_locator(mdates.AutoDateLocator(minticks=5, maxticks=9))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
-    ax.grid(axis="y", color="#e2e8f0", linewidth=0.9)
+    ax.grid(axis="y", color="#303235", linewidth=0.9)
     ax.spines[["top", "right"]].set_visible(False)
-    ax.spines[["left", "bottom"]].set_color("#cbd5e1")
-    ax.tick_params(colors="#64748b")
-    ax.legend(frameon=False, loc="upper left", ncol=2)
-    fig.text(0.99, 0.015, "MODELED — NOT BROKER P&L", ha="right", color="#b45309", fontsize=9, fontweight="bold")
+    ax.spines[["left", "bottom"]].set_color("#303235")
+    ax.tick_params(colors="#818284")
+    legend = ax.legend(frameon=False, loc="upper left", ncol=2)
+    for label in legend.get_texts():
+        label.set_color("#bababb")
+    fig.text(0.99, 0.015, "MODELED — NOT BROKER P&L", ha="right", color="#cab16a", fontsize=9, fontweight="bold")
     fig.subplots_adjust(left=0.10, right=0.97, top=0.80, bottom=0.18)
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, facecolor=fig.get_facecolor())
@@ -284,12 +286,12 @@ def render_one_page(result: dict[str, Any], path: Path) -> None:
     limitations = "".join(f"<li>{html.escape(item)}</li>" for item in result["limitations"])
     page = f"""<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width'>
 <title>Opticycle modeled walk-forward</title><style>
-body{{font-family:Inter,ui-sans-serif,system-ui;max-width:1080px;margin:0 auto;padding:32px;color:#0f172a;background:#fff}}h1{{font-size:42px;letter-spacing:-.04em;margin:.2em 0}}.flag{{color:#92400e;background:#fffbeb;border:1px solid #fcd34d;padding:10px 14px;font-weight:800}}.grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:20px 0}}.kpi{{border:1px solid #e2e8f0;padding:14px}}.kpi small{{color:#64748b}}.kpi strong{{display:block;font-size:24px;margin-top:5px}}img{{width:100%;height:auto}}.two{{display:grid;grid-template-columns:1.4fr 1fr;gap:24px}}table{{border-collapse:collapse;width:100%}}td,th{{border-bottom:1px solid #e2e8f0;padding:8px;text-align:left}}p,li{{line-height:1.45;color:#334155}}code{{font-size:.9em}}@media(max-width:760px){{.grid,.two{{grid-template-columns:1fr 1fr}}}}@media print{{body{{padding:0;font-size:10px}}h1{{font-size:28px}}}}
-</style></head><body><div class='flag'>MODELED — NOT BROKER P&amp;L</div><h1>SPY vertical walk-forward</h1><p>Rolling-origin test using Alpaca IEX daily stock bars. Every decision uses only prior observations; options are priced with Black-Scholes.</p>
+:root{{--carbon:#0b0e12;--graphite:#1f2124;--slate:#303235;--ash:#818284;--platinum:#bababb;--snow:#dedede;--amber:#cab16a}}*{{box-sizing:border-box}}body{{font-family:Inter,ui-sans-serif,system-ui;max-width:1120px;margin:0 auto;padding:48px 32px 72px;color:var(--platinum);background:var(--carbon);background-image:linear-gradient(var(--graphite) 1px,transparent 1px),linear-gradient(90deg,var(--graphite) 1px,transparent 1px);background-size:32px 32px}}main{{background:var(--carbon);border:1px solid var(--slate);padding:32px}}h1{{font-size:44px;font-weight:400;letter-spacing:-.035em;line-height:1.05;margin:.5em 0}}h2{{color:var(--snow);font-size:20px;font-weight:400}}.flag{{display:inline-block;color:var(--carbon);background:var(--amber);padding:7px 10px;font:700 12px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em}}.grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--slate);border:1px solid var(--slate);margin:24px 0}}.kpi{{background:var(--graphite);padding:16px}}.kpi small{{color:var(--ash);font:12px ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase}}.kpi strong{{display:block;color:var(--snow);font-size:26px;font-weight:400;margin-top:8px}}img{{display:block;width:100%;height:auto;border:1px solid var(--slate)}}.two{{display:grid;grid-template-columns:1.4fr 1fr;gap:32px;margin-top:28px}}table{{border-collapse:collapse;width:100%;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}}td,th{{border-bottom:1px solid var(--slate);padding:9px;text-align:left}}th{{color:var(--amber);font-weight:400}}p,li{{line-height:1.55;color:var(--ash)}}b,code{{color:var(--platinum)}}code{{font-size:.9em}}@media(max-width:760px){{body{{padding:16px}}main{{padding:20px}}.grid,.two{{grid-template-columns:1fr 1fr}}}}@media print{{body{{padding:0;font-size:10px}}main{{border:0}}h1{{font-size:28px}}}}
+</style></head><body><main><div class='flag'>MODELED — NOT BROKER P&amp;L</div><h1>SPY vertical walk-forward</h1><p>Rolling-origin test using Alpaca IEX daily stock bars. Every decision uses only prior observations; options are priced with Black-Scholes.</p>
 <div class='grid'><div class='kpi'><small>Total return</small><strong>{metrics['total_return_pct']:+.2f}%</strong></div><div class='kpi'><small>Trades</small><strong>{metrics['trades']}</strong></div><div class='kpi'><small>Win rate</small><strong>{metrics['win_rate_pct']:.1f}%</strong></div><div class='kpi'><small>Max drawdown</small><strong>{metrics['max_drawdown_pct']:.2f}%</strong></div></div>
 <img src='walk-forward-backtest.png' alt='Modeled walk-forward equity compared with SPY close benchmark'>
 <div class='two'><section><h2>Method</h2><ul>{''.join(f'<li><b>{html.escape(k)}</b>: {html.escape(v)}</li>' for k,v in result['method'].items())}</ul></section><section><h2>Calendar folds</h2><table><thead><tr><th>Exit year</th><th>Trades</th><th>Modeled P&amp;L</th></tr></thead><tbody>{folds}</tbody></table></section></div>
-<h2>Limitations</h2><ul>{limitations}</ul><p><small>Source: {html.escape(result['source'])}, feed={result['feed']}; range {result['date_range']['start']} to {result['date_range']['end']}. Reproduce with <code>scripts/build-walk-forward-backtest.py</code>. Dataset SHA-256: {result['bars_sha256']}</small></p></body></html>"""
+<h2>Limitations</h2><ul>{limitations}</ul><p><small>Source: {html.escape(result['source'])}, feed={result['feed']}; range {result['date_range']['start']} to {result['date_range']['end']}. Reproduce with <code>scripts/build-walk-forward-backtest.py</code>. Dataset SHA-256: {result['bars_sha256']}</small></p></main></body></html>"""
     path.write_text(page, encoding="utf-8")
 
 

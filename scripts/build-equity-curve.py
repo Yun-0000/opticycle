@@ -62,11 +62,11 @@ def render_equity_png(points: list[dict[str, float | int]], path: Path) -> None:
 
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 11})
     fig, ax = plt.subplots(figsize=(12, 5.4), dpi=160)
-    fig.patch.set_facecolor("#ffffff")
-    ax.set_facecolor("#ffffff")
-    ax.scatter(dates, values, color="#2563eb", s=58, zorder=3)
-    ax.axhline(start, color="#64748b", linewidth=1.2, linestyle=(0, (4, 4)), zorder=1)
-    ax.text(dates[0], start, f"  Start ${start:,.2f}", color="#475569", va="bottom")
+    fig.patch.set_facecolor("#0b0e12")
+    ax.set_facecolor("#0b0e12")
+    ax.scatter(dates, values, color="#00d892", s=58, zorder=3)
+    ax.axhline(start, color="#434547", linewidth=1.2, linestyle=(0, (4, 4)), zorder=1)
+    ax.text(dates[0], start, f"  Start ${start:,.2f}", color="#a3a4a5", va="bottom")
     ax.annotate(
         f"End ${end:,.2f}\nNet {change:+,.2f}",
         xy=(dates[-1], end),
@@ -74,30 +74,30 @@ def render_equity_png(points: list[dict[str, float | int]], path: Path) -> None:
         textcoords="offset points",
         ha="right",
         va="bottom" if change >= 0 else "top",
-        color="#0f172a",
-        fontweight="bold",
-        bbox={"boxstyle": "round,pad=0.35", "facecolor": "#eff6ff", "edgecolor": "#93c5fd"},
-        arrowprops={"arrowstyle": "-", "color": "#2563eb"},
+        color="#dedede",
+        fontweight="normal",
+        bbox={"boxstyle": "square,pad=0.42", "facecolor": "#002923", "edgecolor": "#00d892"},
+        arrowprops={"arrowstyle": "-", "color": "#00d892"},
     )
-    ax.set_title("Alpaca paper equity observations", loc="left", fontsize=20, fontweight="bold", color="#0f172a", pad=24)
+    ax.set_title("Alpaca paper equity observations", loc="left", fontsize=20, fontweight="normal", color="#dedede", pad=24)
     ax.text(
         0,
         1.02,
         f"{len(points)} observed broker points • {dates[0]:%b %d}–{dates[-1]:%b %d, %Y} • no fabricated values between dates",
         transform=ax.transAxes,
-        color="#64748b",
+        color="#818284",
         fontsize=10,
     )
-    ax.set_ylabel("Account equity (USD)", color="#475569")
-    ax.set_xlabel("Broker date (UTC)", color="#475569", labelpad=10)
+    ax.set_ylabel("Account equity (USD)", color="#a3a4a5")
+    ax.set_xlabel("Broker date (UTC)", color="#a3a4a5", labelpad=10)
     ax.yaxis.set_major_formatter(FuncFormatter(lambda value, _pos: f"${value:,.0f}"))
     ax.xaxis.set_major_locator(mdates.AutoDateLocator(minticks=3, maxticks=7))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
-    ax.grid(axis="y", color="#e2e8f0", linewidth=0.9)
+    ax.grid(axis="y", color="#303235", linewidth=0.9)
     ax.grid(axis="x", visible=False)
     ax.spines[["top", "right"]].set_visible(False)
-    ax.spines[["left", "bottom"]].set_color("#cbd5e1")
-    ax.tick_params(colors="#64748b")
+    ax.spines[["left", "bottom"]].set_color("#303235")
+    ax.tick_params(colors="#818284")
     spread = max(values) - min(values)
     padding = max(spread * 0.8, 15)
     ax.set_ylim(min(values) - padding, max(values) + padding)
@@ -106,7 +106,7 @@ def render_equity_png(points: list[dict[str, float | int]], path: Path) -> None:
         0.015,
         "Source: Alpaca GET /v2/account/portfolio/history • Paper account PA3V84C40PJQ",
         ha="right",
-        color="#64748b",
+        color="#5d5e61",
         fontsize=8.5,
     )
     fig.subplots_adjust(left=0.11, right=0.97, top=0.82, bottom=0.18)

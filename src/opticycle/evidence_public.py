@@ -597,42 +597,45 @@ def render_evidence_page(
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Opticycle public evidence</title>
   <style>
-    :root {{ color-scheme: dark; --bg: #080a0d; --panel: #11151b; --line: #2a313b; --ink: #f4f6f8; --muted: #a7b0bd; --acid: #a6ff00; --gold: #f6d365; }}
+    :root {{ color-scheme: dark; --bg: #0b0e12; --panel: #1f2124; --line: #303235; --ink: #dedede; --muted: #818284; --accent: #00d892; --accent-dark: #002923; --amber: #cab16a; --red: #ff6285; }}
     * {{ box-sizing: border-box; }}
-    body {{ font-family: ui-sans-serif, system-ui, sans-serif; margin: 0 auto; padding: 3rem 1.25rem 6rem; max-width: 1440px; color: var(--ink); background: var(--bg); }}
-    h1 {{ font-size: clamp(2.6rem, 7vw, 6.5rem); line-height: .9; letter-spacing: -.07em; margin: .4rem 0 1.2rem; max-width: 930px; }}
+    body {{ font-family: Inter, ui-sans-serif, system-ui, sans-serif; margin: 0 auto; padding: 3.5rem 1.5rem 7rem; max-width: 1320px; color: var(--ink); background-color: var(--bg); background-image: linear-gradient(#1f2124 1px, transparent 1px), linear-gradient(90deg, #1f2124 1px, transparent 1px); background-size: 32px 32px; }}
+    h1 {{ font-size: clamp(2.8rem, 7vw, 5.5rem); font-weight: 400; line-height: .94; letter-spacing: -.055em; margin: .55rem 0 1.3rem; max-width: 880px; text-wrap: balance; }}
     h2 {{ margin-top: 2rem; }}
-    .eyebrow {{ color: var(--acid); font-size: .78rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }}
+    a {{ color: var(--ink); }}
+    .eyebrow {{ color: var(--accent); font: 600 .74rem ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .16em; text-transform: uppercase; }}
     .lede {{ color: var(--muted); max-width: 780px; font-size: 1.1rem; line-height: 1.6; }}
     .trace {{ display: grid; grid-template-columns: repeat(13, minmax(0, auto)); align-items: stretch; gap: .55rem; margin: 2.5rem 0 1.1rem; overflow-x: auto; padding-bottom: .5rem; }}
-    .trace-step {{ min-width: 145px; padding: 1rem; border: 1px solid var(--line); background: var(--panel); }}
-    .trace-step:last-child {{ border-color: var(--acid); box-shadow: inset 0 -3px var(--acid); }}
-    .trace-step strong {{ display: block; color: var(--acid); font-size: .78rem; letter-spacing: .1em; }}
+    .trace-step {{ min-width: 145px; padding: 1rem; border: 1px solid var(--line); border-radius: 1px; background: var(--panel); }}
+    .trace-step:last-child {{ border-color: var(--accent); box-shadow: inset 0 -3px var(--accent); }}
+    .trace-step strong {{ display: block; color: var(--accent); font: 600 .76rem ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .1em; }}
     .trace-step span {{ display: block; margin-top: .65rem; color: var(--muted); font-size: .82rem; line-height: 1.35; }}
     .arrow {{ display: grid; place-items: center; color: #647080; }}
-    .facts {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 1rem 0 2.5rem; }}
+    .facts {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 1px; margin: 1rem 0 2.5rem; }}
     .fact {{ background: var(--panel); padding: 1.15rem; }}
-    .fact small {{ display: block; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }}
-    .fact strong {{ display: block; margin-top: .45rem; font-size: 1.25rem; }}
-    .equity {{ border: 1px solid var(--line); background: var(--panel); padding: 1rem; margin: 2rem 0; }}
+    .fact small {{ display: block; color: var(--muted); font: .7rem ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; letter-spacing: .1em; }}
+    .fact strong {{ display: block; margin-top: .45rem; font-size: 1.2rem; font-weight: 400; }}
+    .equity {{ border: 1px solid var(--line); border-radius: 1px; background: var(--panel); padding: 1rem; margin: 2rem 0; }}
+    .equity.modeled {{ border-color: #554b32; }}
+    .equity.modeled .eyebrow {{ color: var(--amber); }}
     .equity img {{ display: block; width: 100%; height: auto; background: var(--bg); }}
     .result {{ font-size: 1rem; }}
-    .positive {{ color: var(--acid); font-weight: 800; }}
-    .negative {{ color: #ff7b8c; font-weight: 800; }}
-    .banner, .caveat {{ background: #211d0f; border: 1px solid #69591a; padding: 1rem 1.2rem; }}
-    .premise {{ border-left: 4px solid var(--acid); padding: .1rem 0 .1rem 1.2rem; margin: 2.5rem 0; font-size: 1.35rem; line-height: 1.5; max-width: 1050px; }}
+    .positive {{ color: var(--accent); font-weight: 600; }}
+    .negative {{ color: var(--red); font-weight: 600; }}
+    .banner, .caveat {{ background: #181712; border: 1px solid #554b32; padding: 1rem 1.2rem; }}
+    .premise {{ border-left: 3px solid var(--accent); padding: .1rem 0 .1rem 1.2rem; margin: 2.5rem 0; font-size: 1.3rem; line-height: 1.5; max-width: 1050px; }}
     .actions {{ display: flex; flex-wrap: wrap; gap: .75rem; margin: 1.5rem 0 2.5rem; }}
-    .button {{ color: #090b0d; background: var(--acid); padding: .8rem 1rem; font-weight: 800; text-decoration: none; }}
+    .button {{ color: var(--accent); background: var(--accent-dark); border: 1px solid #005441; border-radius: 1px; padding: .8rem 1rem; font: 600 .78rem ui-monospace, SFMono-Regular, Menlo, monospace; text-decoration: none; text-transform: uppercase; letter-spacing: .06em; }}
     .button.secondary {{ color: var(--ink); background: transparent; border: 1px solid var(--line); }}
-    details {{ border: 1px solid var(--line); background: #0b0e12; padding: 1rem 1.2rem; margin-top: 2rem; }}
+    details {{ border: 1px solid var(--line); border-radius: 1px; background: var(--bg); padding: 1rem 1.2rem; margin-top: 2rem; }}
     summary {{ cursor: pointer; font-size: 1.15rem; font-weight: 800; }}
-    article.episode {{ border: 1px solid var(--line); padding: 1rem; margin: 1.25rem 0; background: var(--panel); }}
+    article.episode {{ border: 1px solid var(--line); border-radius: 1px; padding: 1rem; margin: 1.25rem 0; background: var(--panel); }}
     dt {{ font-weight: 600; margin-top: 0.4rem; }}
-    pre {{ background: #080a0d; padding: 0.75rem; overflow: auto; border: 1px solid var(--line); }}
-    code {{ font-size: 0.9em; word-break: break-all; }}
+    pre {{ background: var(--bg); padding: 0.75rem; overflow: auto; border: 1px solid var(--line); }}
+    code {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; word-break: break-all; }}
     table {{ border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.85rem; }}
     th, td {{ border: 1px solid var(--line); padding: .65rem .7rem; text-align: left; vertical-align: top; }}
-    th {{ color: var(--acid); }}
+    th {{ color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 400; }}
     .empty, .muted {{ color: var(--muted); }}
     @media (max-width: 780px) {{ .facts {{ grid-template-columns: 1fr; }} body {{ padding-top: 2rem; }} }}
   </style>
@@ -657,7 +660,7 @@ def render_evidence_page(
     <img src="equity-curve.png" alt="Paper account equity curve generated from Alpaca portfolio history"/>
     <p class="muted">Machine-readable source: <a href="portfolio_history.json">portfolio_history.json</a></p>
   </section>
-  {walk_forward}
+{walk_forward}
   <h2>Closed-trade results</h2>
   <table class="result">
     <thead><tr><th>Spread</th><th>Broker entry</th><th>MCP exit</th><th>Approx. realized P&amp;L</th></tr></thead>
