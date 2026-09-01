@@ -6,6 +6,7 @@ bound to a Risk Certificate is the only live submit path. No real broker call.
 
 from __future__ import annotations
 
+import asyncio
 import importlib
 import json
 from datetime import datetime
@@ -134,6 +135,32 @@ def test_certified_mleg_is_the_only_live_submit() -> None:
     assert datetime.fromisoformat(result["timestamp"].replace("Z", "+00:00"))
 
 
+class HangingMcpClient:
+    async def call_tool(self, name: str, arguments: dict) -> dict:
+        await asyncio.sleep(30)
+        return {"id": "too-late", "status": "accepted"}
+
+
+def test_certified_mcp_timeout_keeps_arguments_hash_without_inventing_raw_result() -> None:
+    _, payload, cert, portfolio, evidence = _issue_cert()
+    executor = AlpacaMcpExecutor(
+        client=HangingMcpClient(),
+        dry_run=False,
+        mcp_call_timeout_sec=0.05,
+    )
+    result = executor.place_certified_order_sync(
+        payload, cert, portfolio, evidence, settings=_settings()
+    )
+    assert result["mcp_call_timeout"] is True
+    assert result["submitted"] is False
+    assert result["raw_result_hash"] == ""
+    assert result["tool"] == PLACE_OPTION_ORDER
+    assert result["arguments"] == payload.to_mcp_arguments()
+    assert result["arguments_hash"] == digest_canonical(payload.to_mcp_arguments())
+    assert result["raw"]["mcp_call_timeout"] is True
+    assert "ok" not in result
+
+
 def test_certified_submit_does_not_collapse_success_to_ok_true() -> None:
     raw = {"id": "broker-1", "status": "new", "qty": "1"}
     client = RecordingMcpClient(raw)
@@ -156,7 +183,7 @@ def test_paper_host_and_designated_account_are_forced() -> None:
 
     params = _stdio_params(MCP_SERVER_SPEC, {"ALPACA_PAPER_TRADE": "false"})
     assert params.command == "uvx"
-    assert params.args == ["alpaca-mcp-server==2.3.0"]
+    assert params.args == ["--with", "fastmcp>=3.1.0,<4", "alpaca-mcp-server==2.3.0"]
     assert params.env["APCA_API_BASE_URL"] == PAPER_API_HOST
     assert params.env["ALPACA_PAPER_TRADE"] == "true"
 

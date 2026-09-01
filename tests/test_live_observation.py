@@ -106,6 +106,35 @@ def _account(**kwargs):
     return SimpleNamespace(**payload)
 
 
+def test_paper_account_id_prefers_pa_account_number_over_uuid() -> None:
+    from opticycle.observe import paper_account_id
+
+    account = _account(id="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", account_number="PA3V84C40PJQ")
+    assert paper_account_id(account) == "PA3V84C40PJQ"
+    now = datetime.now(timezone.utc)
+    bars = [
+        SimpleNamespace(open=499, high=501, low=498, close=500, volume=1_000_000, timestamp=now)
+        for _ in range(20)
+    ]
+    chain_quote = SimpleNamespace(
+        latest_quote=SimpleNamespace(bid_price=1.2, ask_price=1.4, timestamp=now),
+        latest_trade=SimpleNamespace(price=1.3),
+        greeks=SimpleNamespace(delta=-0.20, gamma=0.01, theta=-0.04, vega=0.08),
+    )
+    result = observe_live(
+        HackathonSettings(),
+        client=_PartialClient(
+            account=account,
+            quote={"SPY": SimpleNamespace(bid_price=500.0, ask_price=500.2, timestamp=now)},
+            bars={"SPY": bars},
+            chain={"SPY260918P00500000": chain_quote, "SPY260918P00490000": chain_quote},
+        ),
+    )
+    assert result.outcome == ObservationOutcome.OK
+    assert result.portfolio is not None
+    assert result.portfolio.account_id == "PA3V84C40PJQ"
+
+
 def test_live_observe_missing_account_is_halt() -> None:
     result = observe_live(HackathonSettings(), client=_PartialClient(account=None, quote={"SPY": object()}))
     assert result.outcome == ObservationOutcome.HALT

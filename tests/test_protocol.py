@@ -70,7 +70,7 @@ def _make_sample_payload(
     client_order_id: str = "cycle-20260829-001",
     account_id: str = "PA3V84C40PJQ",
     qty: int = 1,
-    limit_price: Decimal = Decimal("2.45"),
+    limit_price: Decimal = Decimal("-2.45"),
     legs: tuple[OptionLegSpec, ...] | None = None,
 ) -> CanonicalOrderPayload:
     if legs is None:
@@ -326,7 +326,7 @@ def test_mcp_arguments_derived_strictly_from_payload() -> None:
     assert args["type"] == "limit"
     assert args["time_in_force"] == "day"
     assert args["qty"] == "1"
-    assert args["limit_price"] == "2.45"
+    assert args["limit_price"] == "-2.45"
     assert args["client_order_id"] == "cycle-20260829-001"
     assert len(args["legs"]) == 2
 

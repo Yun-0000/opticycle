@@ -22,8 +22,10 @@ from opticycle.protocol import (
 from opticycle.runner import run_once
 from opticycle.settings import HackathonSettings
 from opticycle.thesis import (
+    DEFAULT_LLM_MODEL,
     STANCE_CREDIT_TYPE,
     ThesisAgent,
+    chat_completion_payload,
     features_to_prompt,
     persist_thesis_episode,
     summarize_features,
@@ -386,3 +388,13 @@ def test_no_llm_key_is_fail_closed_not_silent_deterministic_ai() -> None:
     assert thesis.model_called is False
     assert thesis.reason_code == ThesisReasonCode.LLM_DISABLED.value
     assert thesis.bound_credit_type == ""
+
+
+def test_gpt56_luna_payload_omits_temperature() -> None:
+    assert DEFAULT_LLM_MODEL == "gpt-5.6-luna"
+    luna = chat_completion_payload("gpt-5.6-luna", "choose stance")
+    assert luna["model"] == "gpt-5.6-luna"
+    assert "temperature" not in luna
+    assert luna["response_format"] == {"type": "json_object"}
+    legacy = chat_completion_payload("gpt-4o-mini", "choose stance")
+    assert legacy["temperature"] == 0

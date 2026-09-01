@@ -1,0 +1,19 @@
+{
+  "client_order_id": "oc-63db2a85298b4ecabefab59076a6397e",
+  "filled_avg_price": "-2.26",
+  "legs": [
+    {
+      "ratio_qty": "1",
+      "side": "sell",
+      "symbol": "SPY261016P00740000"
+    },
+    {
+      "ratio_qty": "1",
+      "side": "buy",
+      "symbol": "SPY261016P00724000"
+    }
+  ],
+  "limit": "-2.26",
+  "order_id": "24b16fe6-0d8d-4478-afa6-0f3781eb6b33",
+  "status": "filled"
+}

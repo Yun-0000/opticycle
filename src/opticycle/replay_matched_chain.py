@@ -68,7 +68,7 @@ def replay_payload() -> CanonicalOrderPayload:
         order_type="limit",
         time_in_force="day",
         qty=1,
-        limit_price=Decimal("1.20"),
+        limit_price=Decimal("-1.20"),
         legs=(short, long),
     )
 
@@ -119,7 +119,7 @@ def matched_chain_fields(*, commit_sha: str, payload: CanonicalOrderPayload | No
             "status": "matched",
             "broker_status": "filled",
             "filled_qty": 1,
-            "filled_avg_price": "1.20",
+            "filled_avg_price": "-1.20",
             "complete": True,
             "halt_triggered": False,
             "payload_hash": order.payload_hash,
@@ -152,7 +152,7 @@ def append_replay_matched_episode(
             "live_fill_claimed": False,
             "channel_label": "replay",
             "filled_qty": 1,
-            "filled_avg_price": "1.20",
+            "filled_avg_price": "-1.20",
             "operational_complete": True,
             "operational_verdict": "matched",
         },

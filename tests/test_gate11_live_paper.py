@@ -154,21 +154,23 @@ def test_injected_no_trade_not_promoted_and_fill_incomplete() -> None:
     assert digest == NO_TRADE_SHA
     status = json.loads(GATE11_STATUS_PATH.read_text(encoding="utf-8"))
     assert status["live_fill_claimed"] is True
-    assert status["genuine_no_trade_recorded"] is False
+    assert status["genuine_no_trade_recorded"] is True
     assert status["injected_no_trade_promoted"] is False
-    assert status["live_quotes_available"] is False
+    assert status["live_quotes_available"] is True
+    assert status["observation_reason"] == "SPY quote is stale"
     assert status["yun_authorized_one_paper_mleg"] is True
     assert status["matched_claimed"] is True
+    assert status["llm_episode_recorded"] is True
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     assert manifest["live_fill_claimed"] is True
     assert manifest.get("injected_no_trade_promoted") is False
     html = PAGE_PATH.read_text(encoding="utf-8")
     assert "NOT fill evidence" in html
     assert "injected missing quote" in html
-    from opticycle.evidence_public import is_live_matched_fill
+    from opticycle.evidence_public import is_live_fill_row
 
     for row in load_public_records():
-        if is_live_matched_fill(row):
+        if is_live_fill_row(row):
             continue
         if row.get("channel") == "live_paper":
             for blocked in ("mcp_attempt", "broker_receipt", "reconciliation", "realized_pnl", "unrealized_pnl"):
@@ -195,6 +197,31 @@ def test_snapshot_from_namespace_objects() -> None:
     report = pnl_from_snapshot(snapshot)
     assert report.matched is True
     assert report.live_claimed is False
+    assert report.realized_present is False
+
+
+def test_equity_identity_uses_alpaca_signed_short_market_value() -> None:
+    snapshot = snapshot_from_objects(
+        account={
+            "equity": "100010.9",
+            "cash": "100261.9",
+            "long_market_value": "904",
+            "short_market_value": "-1155",
+        },
+        positions=[
+            {"symbol": "SPY260925C00768000", "qty": "-1", "market_value": "-892", "unrealized_pl": "-24"},
+            {"symbol": "SPY260925C00769000", "qty": "1", "market_value": "834", "unrealized_pl": "17"},
+            {"symbol": "SPY261009C00793000", "qty": "-1", "market_value": "-263", "unrealized_pl": "32"},
+            {"symbol": "SPY261009C00809000", "qty": "1", "market_value": "70", "unrealized_pl": "-14"},
+        ],
+        fills=[],
+        source=SOURCE_LIVE_BROKER,
+    )
+    report = pnl_from_snapshot(snapshot)
+    assert report.matched is True
+    assert report.live_claimed is False
+    assert report.end_of_cycle_equity == Decimal("100010.9")
+    assert report.unrealized_pnl == Decimal("11")
     assert report.realized_present is False
 
 

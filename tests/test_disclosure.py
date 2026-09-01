@@ -2,35 +2,23 @@ from __future__ import annotations
 
 from pathlib import Path
 
-FORBIDDEN = (
-    "GaussWorldTrader",
+ROOT = Path(__file__).resolve().parents[1]
+
+REQUIRED_DISCLOSURE = (
     "Gauss World Trader",
-    "gauss-world-trader",
-    "GaussOptions",
-    "gaussoptions",
-    "Gauss",
-    "Magica-Chen",
-    "Magica Chen",
-    "github.com/Magica",
-    "inspired by",
-    "based on",
-    "forked from",
+    "https://github.com/Magica-Chen/GaussWorldTrader",
+    "31374551bae6fd34a0fe56fe11d208f4ff04fbb4",
+    "vendor/pin-31374551/",
 )
 
 
-def test_public_docs_do_not_name_upstream_project() -> None:
-    root = Path(__file__).resolve().parents[1]
-    paths = [
-        root / "README.md",
-        root / "docs" / "SUBMISSION_WRITEUP.md",
-        root / "docs" / "ALPACA_ACCOUNT.md",
-        root / "THIRD_PARTY_NOTICES.md",
-        root / ".env.example",
-        root / "PLAN.md",
-        root / ".hackathon" / "candidate-report.md",
-    ]
-    for path in paths:
-        text = path.read_text(encoding="utf-8")
-        lower = text.lower()
-        for token in FORBIDDEN:
-            assert token.lower() not in lower, f"{path} contains {token!r}"
+def test_foundation_and_notices_disclose_upstream() -> None:
+    foundation = (ROOT / "FOUNDATION.md").read_text(encoding="utf-8")
+    notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    for token in REQUIRED_DISCLOSURE:
+        assert token in foundation, f"FOUNDATION.md missing {token!r}"
+        assert token in notices, f"THIRD_PARTY_NOTICES.md missing {token!r}"
+    assert "FOUNDATION.md" in readme
+    assert "Reuse scope" in foundation or "reuse scope" in foundation.lower()
+    assert "Pinned baseline" in notices or "reuse scope" in notices.lower()

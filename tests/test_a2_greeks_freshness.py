@@ -6,6 +6,8 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from types import SimpleNamespace
 
+import pytest
+
 from opticycle.observe import observe_live
 from opticycle.protocol import freshness_seconds
 from opticycle.risk import RiskEngine, observed_greeks
@@ -130,7 +132,7 @@ def test_fixture_only_zeros_are_not_real_greeks() -> None:
     assert observed_greeks(real) is True
 
 
-def test_live_positions_without_greeks_omit_portfolio_greeks() -> None:
+def test_live_positions_use_chain_greeks_when_broker_omits_them() -> None:
     now = datetime.now(timezone.utc)
     bars = [
         SimpleNamespace(open=499, high=501, low=498, close=500, volume=1_000_000, timestamp=now)
@@ -140,6 +142,40 @@ def test_live_positions_without_greeks_omit_portfolio_greeks() -> None:
         latest_quote=SimpleNamespace(bid_price=1.2, ask_price=1.4, timestamp=now),
         latest_trade=SimpleNamespace(price=1.3),
         greeks=SimpleNamespace(delta=-0.2, gamma=0.01, theta=-0.05, vega=0.1),
+    )
+
+    class Client(_PartialClient):
+        def fetch_positions(self):
+            return [SimpleNamespace(symbol="SPY260918P00500000", qty="1")]
+
+    result = observe_live(
+        HackathonSettings(),
+        client=Client(
+            account=_account(),
+            quote={"SPY": SimpleNamespace(bid_price=500.0, ask_price=500.2, timestamp=now)},
+            bars={"SPY": bars},
+            chain={"SPY260918P00500000": chain_snap, "SPY260918P00490000": chain_snap},
+        ),
+    )
+    assert result.outcome.value == "OK"
+    assert result.portfolio is not None
+    assert result.portfolio.open_positions == 1
+    assert result.portfolio.net_delta == pytest.approx(-0.2)
+    assert result.portfolio.net_vega == pytest.approx(0.1)
+    assert result.portfolio.net_gamma == pytest.approx(0.01)
+    assert result.portfolio.net_theta == pytest.approx(-0.05)
+
+
+def test_live_positions_without_chain_greeks_still_omit_portfolio_greeks() -> None:
+    now = datetime.now(timezone.utc)
+    bars = [
+        SimpleNamespace(open=499, high=501, low=498, close=500, volume=1_000_000, timestamp=now)
+        for _ in range(20)
+    ]
+    chain_snap = SimpleNamespace(
+        latest_quote=SimpleNamespace(bid_price=1.2, ask_price=1.4, timestamp=now),
+        latest_trade=SimpleNamespace(price=1.3),
+        greeks=None,
     )
 
     class Client(_PartialClient):
