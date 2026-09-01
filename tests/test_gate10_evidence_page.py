@@ -7,7 +7,9 @@ import json
 from pathlib import Path
 
 from opticycle.evidence_public import (
+    BROKER_LOOKUP_PATH,
     EPISODE_FIELDS,
+    GENUINE_STALE_QUOTE_CAVEAT,
     MANIFEST_PATH,
     NO_TRADE_CAVEAT,
     NO_TRADE_JSONL,
@@ -61,6 +63,7 @@ def test_every_public_claim_maps_to_exact_record_and_commit() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     records = {row["record_id"]: row for row in load_public_records()}
     assert manifest["live_fill_claimed"] is True
+    assert manifest["matched_claimed"] is True
     assert not manifest.get("incomplete_live")
     assert manifest["claims"]
     for claim, mapped in manifest["claims"].items():
@@ -74,7 +77,7 @@ def test_every_public_claim_maps_to_exact_record_and_commit() -> None:
         if mapped["live_fill"]:
             assert mapped["live_mleg_submit"] is True
             assert mapped["channel"] == "live_paper"
-            assert mapped["outcome"] == "MATCHED"
+            assert mapped["outcome"] in {"FILLED", "MATCHED"}
             assert not mapped["incomplete"]
         else:
             assert mapped["live_fill"] is False
@@ -88,7 +91,8 @@ def test_keyless_replay_reproduces_non_live_claims() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     assert {item["claim"] for item in verified} == set(manifest["claims"])
     assert all(
-        (item["live_fill"] is True) == (item["channel"] == "live_paper" and item["outcome"] == "MATCHED")
+        (item["live_fill"] is True)
+        == (item["channel"] == "live_paper" and item["outcome"] in {"FILLED", "MATCHED"})
         for item in verified
     )
     channels = {item["channel"] for item in verified}
@@ -117,6 +121,7 @@ def test_no_trade_public_jsonl_is_not_fill_evidence() -> None:
     assert "matched" not in blob
     html = PAGE_PATH.read_text(encoding="utf-8")
     assert NO_TRADE_CAVEAT in html
+    assert GENUINE_STALE_QUOTE_CAVEAT in html or "SPY quote is stale" in html
     assert "NOT fill evidence" in html
     assert "blocked until Yun" not in html
     assert "Yun confirms" not in html
@@ -127,44 +132,75 @@ def test_no_trade_public_jsonl_is_not_fill_evidence() -> None:
         assert field in row["episode"]
 
 
+def test_claim_table_labels_price_bound_matched_separately_from_unsigned_fills() -> None:
+    from opticycle.signed_credit_fill import SIGNED_CLIENT_ORDER_ID
+
+    html = PAGE_PATH.read_text(encoding="utf-8")
+    assert "live_paper price-bound MATCHED" in html
+    assert "live_paper broker fill — not price-bound MATCHED" in html
+    assert "replay MATCHED" in html
+    matched_row = next(
+        row for row in load_public_records() if row.get("client_order_id") == SIGNED_CLIENT_ORDER_ID
+    )
+    claim = str(matched_row["claim"])
+    start = html.find(claim)
+    assert start > 0
+    cell = html[start : html.find("</tr>", start)]
+    assert "live_paper price-bound MATCHED" in cell
+    assert "not price-bound MATCHED" not in cell
+
+
 def test_live_mleg_fill_claims_record_authorized_matched() -> None:
-    from opticycle.evidence_public import is_live_matched_fill
+    from opticycle.evidence_public import is_live_fill_row, is_live_matched_fill
+    from opticycle.signed_credit_fill import is_price_bound_matched_fill
 
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     assert manifest["live_fill_claimed"] is True
+    assert manifest["matched_claimed"] is True
     html = PAGE_PATH.read_text(encoding="utf-8")
     assert "oc-204a8dfccffd40c9" in html
     assert "oc-715ad36a630d408e" in html
+    assert "oc-63db2a85298b4ecabefab59076a6397e" in html
     live_count = 0
+    signed_count = 0
     for row in load_public_records():
-        if is_live_matched_fill(row):
-            live_count += 1
+        if is_live_fill_row(row):
             for field in ("mcp_attempt", "broker_receipt", "reconciliation"):
                 assert row["episode"][field]["present"] is True
+            if is_live_matched_fill(row):
+                live_count += 1
+            if is_price_bound_matched_fill(row):
+                signed_count += 1
             continue
         if row.get("channel") == "live_paper":
             for blocked in ("mcp_attempt", "broker_receipt", "reconciliation", "realized_pnl", "unrealized_pnl"):
                 assert row["episode"][blocked]["present"] is False
     assert live_count == 2
+    assert signed_count == 1
 
 
-def test_foundation_md_is_absent() -> None:
-    assert not (ROOT / "FOUNDATION.md").is_file()
+def test_foundation_md_discloses_pinned_upstream() -> None:
+    path = ROOT / "FOUNDATION.md"
+    assert path.is_file()
+    text = path.read_text(encoding="utf-8")
+    assert "Gauss World Trader" in text
+    assert "https://github.com/Magica-Chen/GaussWorldTrader" in text
+    assert "31374551bae6fd34a0fe56fe11d208f4ff04fbb4" in text
+    assert "vendor/pin-31374551/" in text
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "FOUNDATION.md" not in readme
-    assert "FOUNDATION" not in readme
+    assert "FOUNDATION.md" in readme
     license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
     assert "Copyright (c) 2026 Zexun Chen" in license_text
     assert "MIT License" in license_text
 
 
-def test_upstream_names_stay_out_of_readme_demo_and_evidence_page() -> None:
+def test_upstream_names_stay_out_of_evidence_page() -> None:
     paths = [
-        ROOT / "README.md",
         PAGE_PATH,
         PUBLIC_JSONL,
         NO_TRADE_JSONL,
         MANIFEST_PATH,
+        BROKER_LOOKUP_PATH,
     ]
     for path in paths:
         text = path.read_text(encoding="utf-8")
@@ -181,6 +217,7 @@ def test_ci_runs_tests_and_public_evidence_checks() -> None:
     assert "scripts/replay-public-evidence.py" in workflow
     assert "scripts/record-live-fill-episode.py" in workflow
     assert "scripts/ingest-paper-fill.py" in workflow
+    assert "scripts/run-open-session.py" in workflow
     assert "pull_request" in workflow
 
 
@@ -195,5 +232,5 @@ def test_gate9_no_trade_export_is_byte_stable() -> None:
     claims = json.loads((ROOT / "artifacts" / "evidence" / "claims.json").read_text(encoding="utf-8"))
     assert hashlib.sha256(
         (ROOT / "artifacts" / "evidence" / "claims.json").read_bytes()
-    ).hexdigest() == "26a41d4e009c6533169160f31ada73862ffe98d14a3984a6bd6f672ca395bcbf"
+    ).hexdigest() == "2b03a950660096261776602dc912303e969ca222a3fbeac1c019954555a73cad"
     assert "el-6b67a01c2bdd448388e813633f90e890" in json.dumps(claims)

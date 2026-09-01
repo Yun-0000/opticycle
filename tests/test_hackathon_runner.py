@@ -49,6 +49,8 @@ def test_vertical_spread_plan_is_multileg() -> None:
     assert plan.request.is_multileg
     assert len(plan.request.legs or []) == 2
     assert all("P" in str(leg["symbol"]) for leg in plan.request.legs or [])
+    assert plan.request.limit_price is not None
+    assert float(plan.request.limit_price) < 0
 
 
 def test_run_once_decision_gate_mcp_order(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -108,6 +110,8 @@ def test_bearish_plan_is_bear_call_credit() -> None:
     assert plan.metadata.get("spread_type") == "bear_call"
     assert plan.metadata.get("stance") == "BEARISH"
     assert all("C" in str(leg["symbol"]) for leg in plan.request.legs or [])
+    assert plan.request.limit_price is not None
+    assert float(plan.request.limit_price) < 0
 
 
 def test_missing_or_no_trade_stance_is_no_trade() -> None:

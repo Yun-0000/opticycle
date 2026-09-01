@@ -23,11 +23,10 @@ from opticycle.protocol import (
     BrokerReceipt,
     CanonicalOrderPayload,
     FieldComparison,
-    OptionType,
-    OrderSide,
     ReconciliationReport,
     ReconciliationStatus,
     ensure_utc,
+    fill_within_signed_mleg_limit,
     format_decimal,
 )
 from opticycle.settings import HackathonSettings
@@ -120,14 +119,7 @@ def _compare(field: str, expected: Any, observed: Any) -> FieldComparison:
 
 
 def _is_credit_vertical(payload: CanonicalOrderPayload) -> bool:
-    sells = [leg for leg in payload.legs if leg.side == OrderSide.SELL]
-    buys = [leg for leg in payload.legs if leg.side == OrderSide.BUY]
-    if len(sells) != 1 or len(buys) != 1:
-        return True
-    sell, buy = sells[0], buys[0]
-    if sell.option_type == OptionType.PUT:
-        return sell.strike_price > buy.strike_price
-    return sell.strike_price < buy.strike_price
+    return payload.is_credit_vertical()
 
 
 def is_working_broker_status(status: str) -> bool:
@@ -136,13 +128,45 @@ def is_working_broker_status(status: str) -> bool:
 
 
 def _fill_within_limit(payload: CanonicalOrderPayload, filled_price: Decimal | None) -> bool:
-    """Limit is a bound. Credit improvement (fill above limit) must not HALT."""
+    """Alpaca signed MLEG bound: fill is acceptable iff filled <= limit."""
     if filled_price is None:
         return False
-    limit = payload.limit_price
-    if _is_credit_vertical(payload):
-        return filled_price >= limit
-    return filled_price <= limit
+    return fill_within_signed_mleg_limit(payload.limit_price, filled_price)
+
+
+def evaluate_recorded_mleg_fill(
+    payload: CanonicalOrderPayload,
+    filled_price: Decimal,
+) -> dict[str, Any]:
+    """Production signed-limit check for an already-observed broker fill.
+
+    Does not invent MATCHED. A credit vertical submitted with a positive
+    (debit) limit is a sign error: `filled <= submitted` may pass as a debit
+    cap while the intended credit bound fails.
+    """
+    credit = _is_credit_vertical(payload)
+    submitted = payload.limit_price
+    sign_error = bool(credit and submitted > 0)
+    intended = -abs(submitted) if credit else submitted
+    within_submitted = fill_within_signed_mleg_limit(submitted, filled_price)
+    within_intended = fill_within_signed_mleg_limit(intended, filled_price)
+    price_bound = (not sign_error) and within_submitted
+    credit_better = bool(credit and filled_price < intended)
+    fill_credit = -filled_price if filled_price < 0 else Decimal("0")
+    intended_credit = -intended if intended < 0 else Decimal("0")
+    return {
+        "status": "matched" if price_bound else "mismatch",
+        "price_bound_matched": price_bound,
+        "credit_better_bound": credit_better,
+        "limit_sign_error": sign_error,
+        "submitted_limit": format_decimal(submitted, 2),
+        "intended_credit_limit": format_decimal(intended, 2) if credit else None,
+        "filled_avg_price": format_decimal(filled_price, 2),
+        "fill_credit": format_decimal(fill_credit, 2) if credit else None,
+        "intended_credit": format_decimal(intended_credit, 2) if credit else None,
+        "within_submitted_signed_limit": within_submitted,
+        "within_intended_credit_limit": within_intended,
+    }
 
 
 def _compare_fill_price(
@@ -318,7 +342,9 @@ def reconcile(
     if account is None or broker is None:
         return _unknown(report_id, cycle, payload, receipt, clock, "broker account missing")
 
-    account_id = _text(_attr(account, "id", "account_number", "account_id"))
+    from opticycle.observe import paper_account_id as _paper_account_id
+
+    account_id = _text(_paper_account_id(account) or _attr(account, "id", "account_number", "account_id"))
     comparisons.append(_compare("account", designated, account_id))
     if not comparisons[-1].matched:
         discrepancies.append("account")

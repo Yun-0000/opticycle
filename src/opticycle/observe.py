@@ -284,42 +284,108 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _portfolio_greeks(positions: list[Any]) -> tuple[float | None, float | None, float | None, float | None]:
-    """Sum broker position greeks. Empty book is 0. Missing inputs are omitted, not 0."""
+def paper_account_id(account: Any) -> str:
+    """Prefer the PA… paper account number over the broker UUID `id`."""
+    number = str(getattr(account, "account_number", None) or "").strip()
+    ident = str(
+        getattr(account, "id", None) or getattr(account, "account_id", None) or ""
+    ).strip()
+    if number.startswith("PA"):
+        return number
+    if ident.startswith("PA"):
+        return ident
+    return ident or number
+
+
+def _item_getter(item: Any):
+    if isinstance(item, dict):
+        return item.get
+    return lambda key, default=None: getattr(item, key, default)
+
+
+def _signed_position_qty(item: Any) -> Decimal | None:
+    getter = _item_getter(item)
+    qty = _first_decimal(getter("qty", None), getter("qty_available", None))
+    if qty is None:
+        return None
+    side = getter("side", None)
+    side_text = str(getattr(side, "value", side) or "").lower()
+    if "short" in side_text and qty > 0:
+        return -qty
+    return qty
+
+
+def _complete_greeks(
+    delta: Decimal | None,
+    gamma: Decimal | None,
+    theta: Decimal | None,
+    vega: Decimal | None,
+) -> dict[str, Decimal] | None:
+    parsed = {"delta": delta, "gamma": gamma, "theta": theta, "vega": vega}
+    if any(value is None for value in parsed.values()):
+        return None
+    if all(value == Decimal("0") for value in parsed.values()):
+        return None
+    return parsed  # type: ignore[return-value]
+
+
+def _greeks_from_position(item: Any) -> dict[str, Decimal] | None:
+    getter = _item_getter(item)
+    nested = getter("greeks", None)
+    return _complete_greeks(
+        _first_decimal(
+            getter("delta", None),
+            getattr(nested, "delta", None) if nested is not None else None,
+            nested.get("delta") if isinstance(nested, dict) else None,
+        ),
+        _first_decimal(
+            getter("gamma", None),
+            getattr(nested, "gamma", None) if nested is not None else None,
+            nested.get("gamma") if isinstance(nested, dict) else None,
+        ),
+        _first_decimal(
+            getter("theta", None),
+            getattr(nested, "theta", None) if nested is not None else None,
+            nested.get("theta") if isinstance(nested, dict) else None,
+        ),
+        _first_decimal(
+            getter("vega", None),
+            getattr(nested, "vega", None) if nested is not None else None,
+            nested.get("vega") if isinstance(nested, dict) else None,
+        ),
+    )
+
+
+def _greeks_from_quote(quote: OptionContractQuote | None) -> dict[str, Decimal] | None:
+    if quote is None:
+        return None
+    return _complete_greeks(quote.delta, quote.gamma, quote.theta, quote.vega)
+
+
+def _portfolio_greeks(
+    positions: list[Any],
+    chain_quotes: tuple[OptionContractQuote, ...] | list[OptionContractQuote] = (),
+) -> tuple[float | None, float | None, float | None, float | None]:
+    """Sum observed greeks. Empty book is 0. Missing inputs are omitted, not 0.
+
+    Alpaca trading Position objects do not carry greeks. When the already-fetched
+    option chain has real greeks for an open OCC symbol, those are used.
+    """
     if not positions:
         return 0.0, 0.0, 0.0, 0.0
+    quotes = {str(quote.symbol).upper(): quote for quote in chain_quotes}
     totals = {"delta": Decimal("0"), "gamma": Decimal("0"), "theta": Decimal("0"), "vega": Decimal("0")}
     for item in positions:
-        getter = item.get if isinstance(item, dict) else lambda key, default=None: getattr(item, key, default)
-        nested = getter("greeks", None)
-        parsed = {
-            "delta": _first_decimal(
-                getter("delta", None),
-                getattr(nested, "delta", None) if nested is not None else None,
-                nested.get("delta") if isinstance(nested, dict) else None,
-            ),
-            "gamma": _first_decimal(
-                getter("gamma", None),
-                getattr(nested, "gamma", None) if nested is not None else None,
-                nested.get("gamma") if isinstance(nested, dict) else None,
-            ),
-            "theta": _first_decimal(
-                getter("theta", None),
-                getattr(nested, "theta", None) if nested is not None else None,
-                nested.get("theta") if isinstance(nested, dict) else None,
-            ),
-            "vega": _first_decimal(
-                getter("vega", None),
-                getattr(nested, "vega", None) if nested is not None else None,
-                nested.get("vega") if isinstance(nested, dict) else None,
-            ),
-        }
-        if any(value is None for value in parsed.values()):
+        getter = _item_getter(item)
+        symbol = str(getter("symbol", "") or "").upper()
+        qty = _signed_position_qty(item)
+        if qty is None:
             return None, None, None, None
-        if all(value == Decimal("0") for value in parsed.values()):
+        chosen = _greeks_from_position(item) or _greeks_from_quote(quotes.get(symbol))
+        if chosen is None:
             return None, None, None, None
-        for key, value in parsed.items():
-            totals[key] += value
+        for key, value in chosen.items():
+            totals[key] += value * qty
     return (
         float(totals["delta"]),
         float(totals["gamma"]),
@@ -640,7 +706,7 @@ def observe_live(
     equity = _as_decimal(getattr(account, "equity", None))
     buying_power = _as_decimal(getattr(account, "buying_power", None))
     cash = _as_decimal(getattr(account, "cash", None))
-    account_id = str(getattr(account, "id", None) or getattr(account, "account_number", "") or "")
+    account_id = paper_account_id(account)
     if equity is None or buying_power is None or cash is None or not account_id:
         datums.append(_datum("account", "alpaca.trading.get_account", correlation_id, ok=False, detail="incomplete"))
         return _closed(ObservationOutcome.HALT, "account equity or buying power missing", correlation_id, datums)
@@ -715,7 +781,7 @@ def observe_live(
         datums.append(_datum("account", "alpaca.trading.get_account", correlation_id, ok=False, detail="options approval missing"))
         return _closed(ObservationOutcome.HALT, "options approval missing or not confirmed", correlation_id, datums)
 
-    net_delta, net_gamma, net_theta, net_vega = _portfolio_greeks(position_list)
+    net_delta, net_gamma, net_theta, net_vega = _portfolio_greeks(position_list, chain_quotes)
     portfolio = PortfolioSnapshot(
         equity=float(equity),
         buying_power=float(buying_power),

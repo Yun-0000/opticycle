@@ -61,10 +61,10 @@ def _order(**kwargs) -> SimpleNamespace:
         client_order_id="cycle-gate5-001",
         order_class="mleg",
         qty="1",
-        limit_price="1.20",
+        limit_price="-1.20",
         status="filled",
         filled_qty="1",
-        filled_avg_price="1.20",
+        filled_avg_price="-1.20",
         legs=_legs(),
     )
     payload.update(kwargs)
@@ -143,13 +143,13 @@ def test_price_improvement_is_matched() -> None:
     report = reconcile(
         payload=payload,
         receipt=_receipt(payload),
-        broker=FakeBroker(orders=[_order(filled_avg_price="1.31")]),
+        broker=FakeBroker(orders=[_order(filled_avg_price="-1.31")]),
         settings=_settings(),
     )
     assert report.status == ReconciliationStatus.MATCHED
     assert report.complete is True
     assert report.halt_triggered is False
-    assert report.filled_avg_price == Decimal("1.31")
+    assert report.filled_avg_price == Decimal("-1.31")
 
 
 def test_matched_fill_is_the_only_completion() -> None:
@@ -164,7 +164,7 @@ def test_matched_fill_is_the_only_completion() -> None:
     assert report.complete is True
     assert report.halt_triggered is False
     assert report.filled_qty == 1
-    assert report.filled_avg_price == Decimal("1.20")
+    assert report.filled_avg_price == Decimal("-1.20")
     fields = {item.field for item in report.comparisons}
     for required in (
         "account",
@@ -258,7 +258,7 @@ def test_partial_fill_uses_deterministic_containment() -> None:
                     qty="2",
                     filled_qty="1",
                     status="partially_filled",
-                    filled_avg_price="1.20",
+                    filled_avg_price="-1.20",
                 )
             ]
         ),

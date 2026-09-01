@@ -37,7 +37,7 @@ EPISODE_FIELDS = (
 )
 
 CHANNELS = ("replay", "live_paper", "fault_injection")
-OUTCOMES = ("NO_TRADE", "HALT", "VETO", "ERROR", "PROFIT", "LOSS", "MATCHED")
+OUTCOMES = ("NO_TRADE", "HALT", "VETO", "ERROR", "PROFIT", "LOSS", "MATCHED", "FILLED")
 LEDGER_CLASS_PRIVATE = "private_raw"
 LEDGER_CLASS_PUBLIC = "public_sanitized"
 GENESIS_HASH = "0" * 64
@@ -220,7 +220,8 @@ def _apply_live_paper_block(
     if channel != "live_paper":
         return episode
     extra = extra or {}
-    if bool(extra.get("operational_complete")) and str(extra.get("operational_verdict") or "").lower() == "matched":
+    verdict = str(extra.get("operational_verdict") or "").lower()
+    if bool(extra.get("operational_complete")) and verdict in {"matched", "filled"}:
         return episode
     ingest = bool(extra.get("ingest_sanitized_broker_json"))
     blocked = dict(episode)
@@ -293,6 +294,8 @@ class EvidenceLedger:
         client_order_id: str = "",
         fields: Mapping[str, Any] | None = None,
         extra: Mapping[str, Any] | None = None,
+        record_id: str | None = None,
+        ts: str | None = None,
     ) -> dict[str, Any]:
         if channel not in CHANNELS:
             raise LedgerError(f"channel must be one of {CHANNELS}")
@@ -308,14 +311,18 @@ class EvidenceLedger:
             raise LedgerError("episode code_build_id must equal the exact commit SHA")
         previous = self._last()
         seq = int(previous["seq"]) + 1 if previous else 1
-        record_id = f"el-{uuid.uuid4().hex}"
-        claim = make_claim(record_id=record_id, commit_sha=sha, outcome=outcome)
+        assigned_id = record_id or f"el-{uuid.uuid4().hex}"
+        if not str(assigned_id).startswith("el-"):
+            raise LedgerError("record_id must start with el-")
+        claim = make_claim(record_id=assigned_id, commit_sha=sha, outcome=outcome)
         extra_dict = dict(extra or {})
-        matched_complete = bool(extra_dict.get("operational_complete")) and str(
-            extra_dict.get("operational_verdict") or ""
-        ).lower() == "matched"
+        verdict = str(extra_dict.get("operational_verdict") or "").lower()
+        matched_complete = bool(extra_dict.get("operational_complete")) and verdict in {
+            "matched",
+            "filled",
+        }
         body = {
-            "record_id": record_id,
+            "record_id": assigned_id,
             "seq": seq,
             "ledger_class": LEDGER_CLASS_PRIVATE,
             "channel": channel,
@@ -326,7 +333,7 @@ class EvidenceLedger:
             "commit_sha": sha,
             "code_build_id": sha,
             "claim": claim,
-            "ts": _now(),
+            "ts": ts or _now(),
             "episode": episode,
             "live_paper_incomplete": (
                 None

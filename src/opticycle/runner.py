@@ -214,13 +214,17 @@ def _mcp_attempt_fields(
     cycle_id: str,
 ) -> dict[str, Any]:
     if mcp_result:
-        return {
+        fields = {
             "tool": str(mcp_result.get("tool") or PLACE_OPTION_ORDER),
             "arguments_hash": str(mcp_result.get("arguments_hash") or ""),
             "submitted": bool(mcp_result.get("submitted")),
             "dry_run": bool(mcp_result.get("dry_run")),
             "order_class": "mleg",
         }
+        if mcp_result.get("mcp_call_timeout"):
+            fields["mcp_call_timeout"] = True
+            fields["raw_result_hash"] = str(mcp_result.get("raw_result_hash") or "")
+        return fields
     attempt = store.attempt(cycle_id) if store is not None else None
     if attempt:
         return {

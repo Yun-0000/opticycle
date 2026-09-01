@@ -20,7 +20,7 @@ from tests.test_gate8_halt_engine import RecordingMcp, _advance
 from tests.test_risk_certificate import _bull_put_legs, _payload, _settings
 
 
-def _fill_broker(payload, *, filled_avg_price: str = "1.20") -> FakeBroker:
+def _fill_broker(payload, *, filled_avg_price: str = "-1.20") -> FakeBroker:
     order = _order(client_order_id=payload.client_order_id, filled_avg_price=filled_avg_price)
     fills = [
         SimpleNamespace(
@@ -63,7 +63,7 @@ def test_filled_terminal_matching_legs_is_matched_with_fill_and_pnl() -> None:
     assert report.complete is True
     assert report.halt_triggered is False
     assert report.filled_qty == 1
-    assert report.filled_avg_price == Decimal("1.20")
+    assert report.filled_avg_price == Decimal("-1.20")
     assert all(
         item.matched
         for item in report.comparisons
@@ -76,13 +76,13 @@ def test_improved_fill_vs_limit_is_matched() -> None:
     report = reconcile(
         payload=payload,
         receipt=_receipt(payload),
-        broker=_fill_broker(payload, filled_avg_price="1.35"),
+        broker=_fill_broker(payload, filled_avg_price="-1.35"),
         settings=_settings(),
     )
     assert report.status == ReconciliationStatus.MATCHED
     assert report.complete is True
     assert report.halt_triggered is False
-    assert report.filled_avg_price == Decimal("1.35")
+    assert report.filled_avg_price == Decimal("-1.35")
     fill = next(item for item in report.comparisons if item.field == "filled_avg_price")
     assert fill.matched is True
 
@@ -108,7 +108,7 @@ def test_runner_complete_path_does_not_write_halt_for_matched(tmp_path: Path) ->
     assert result["outcome"] == "MATCHED"
     assert result["outcome"] != "HALT"
     assert result["filled_qty"] == 1
-    assert Decimal(str(result["filled_avg_price"])) == Decimal("1.20")
+    assert Decimal(str(result["filled_avg_price"])) == Decimal("-1.20")
     assert result["realized_pnl"] is not None
     assert result["unrealized_pnl"] is not None
     assert result["end_of_cycle_equity"] is not None
@@ -159,7 +159,7 @@ def test_partial_fill_is_still_containment_halt_not_matched() -> None:
                     qty="2",
                     filled_qty="1",
                     status="partially_filled",
-                    filled_avg_price="1.20",
+                    filled_avg_price="-1.20",
                 )
             ],
         ),

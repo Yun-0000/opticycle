@@ -187,10 +187,16 @@ def _spread_request(plan: Any, underlying: str) -> OptionOrderRequest:
     limit = plan.target_price
     if limit is None:
         raise ExecutionRejected("NO_TRADE: missing market-derived limit price")
+    signed_limit = float(limit)
+    if spread_type in ALLOWED_CREDIT_SPREADS and signed_limit >= 0:
+        raise ExecutionRejected(
+            "NO_TRADE: credit MLEG limit_price must be negative "
+            "(Alpaca: positive=debit, negative=credit)"
+        )
     return OptionOrderRequest(
         qty=1,
         order_type="limit",
-        limit_price=abs(float(limit)),
+        limit_price=signed_limit,
         order_class="mleg",
         legs=legs,
         reason=str(plan.reason or "vertical_spread"),
@@ -306,7 +312,7 @@ def build_pin_cycle_plan(
     candidate = _credit_candidate_for_type(strategy, market, underlying, spread_type)
     action_plan = types.SimpleNamespace(
         metadata=candidate.metadata,
-        target_price=abs(float(candidate.limit_price)),
+        target_price=float(candidate.limit_price),
         reason=candidate.reason,
         action=candidate.action,
     )

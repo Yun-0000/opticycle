@@ -12,7 +12,9 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from opticycle.evidence_public import (  # noqa: E402
+    BROKER_LOOKUP_PATH,
     GATE11_STATUS_PATH,
+    GENUINE_NO_TRADE_JSONL,
     MANIFEST_PATH,
     NO_TRADE_JSONL,
     PAGE_PATH,
@@ -26,7 +28,16 @@ from opticycle.evidence_public import (  # noqa: E402
 
 def main() -> int:
     hits: list[str] = []
-    for path in (NO_TRADE_JSONL, PUBLIC_JSONL, MANIFEST_PATH, PAGE_PATH, GATE11_STATUS_PATH, PAPER_FILL_INGEST_PATH):
+    for path in (
+        NO_TRADE_JSONL,
+        GENUINE_NO_TRADE_JSONL,
+        PUBLIC_JSONL,
+        MANIFEST_PATH,
+        PAGE_PATH,
+        GATE11_STATUS_PATH,
+        PAPER_FILL_INGEST_PATH,
+        BROKER_LOOKUP_PATH,
+    ):
         if not path.is_file():
             print(f"missing {path}", file=sys.stderr)
             return 1

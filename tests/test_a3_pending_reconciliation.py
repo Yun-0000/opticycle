@@ -165,7 +165,7 @@ def test_pending_restart_queries_same_client_id_without_resubmit(tmp_path: Path)
 
     working.status = "filled"
     working.filled_qty = "1"
-    working.filled_avg_price = "1.20"
+    working.filled_avg_price = "-1.20"
     third = run_once(
         HackathonSettings(),
         dry_run=False,
