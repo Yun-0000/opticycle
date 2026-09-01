@@ -1,0 +1,3152 @@
+{
+  "bars_sha256": "b51c70b027b48b0ec806039a349b2e875793d2a05c43277daaabe14d6673f46b",
+  "benchmark_points": [
+    {
+      "date": "2024-03-27",
+      "equity": 100000.0
+    },
+    {
+      "date": "2024-04-04",
+      "equity": 98095.5
+    },
+    {
+      "date": "2024-04-15",
+      "equity": 96452.13
+    },
+    {
+      "date": "2024-04-23",
+      "equity": 96638.66
+    },
+    {
+      "date": "2024-05-01",
+      "equity": 95607.87
+    },
+    {
+      "date": "2024-05-09",
+      "equity": 99440.43
+    },
+    {
+      "date": "2024-05-17",
+      "equity": 101229.09
+    },
+    {
+      "date": "2024-05-28",
+      "equity": 101299.77
+    },
+    {
+      "date": "2024-06-05",
+      "equity": 102210.79
+    },
+    {
+      "date": "2024-06-13",
+      "equity": 103683.34
+    },
+    {
+      "date": "2024-06-21",
+      "equity": 104350.9
+    },
+    {
+      "date": "2024-07-01",
+      "equity": 104564.91
+    },
+    {
+      "date": "2024-07-09",
+      "equity": 106610.78
+    },
+    {
+      "date": "2024-07-17",
+      "equity": 106840.49
+    },
+    {
+      "date": "2024-07-25",
+      "equity": 103259.25
+    },
+    {
+      "date": "2024-08-02",
+      "equity": 102208.83
+    },
+    {
+      "date": "2024-08-12",
+      "equity": 102279.51
+    },
+    {
+      "date": "2024-08-20",
+      "equity": 107144.82
+    },
+    {
+      "date": "2024-08-28",
+      "equity": 107085.92
+    },
+    {
+      "date": "2024-09-05",
+      "equity": 105377.76
+    },
+    {
+      "date": "2024-09-13",
+      "equity": 107765.26
+    },
+    {
+      "date": "2024-09-23",
+      "equity": 109579.44
+    },
+    {
+      "date": "2024-10-01",
+      "equity": 109388.99
+    },
+    {
+      "date": "2024-10-09",
+      "equity": 111016.65
+    },
+    {
+      "date": "2024-10-17",
+      "equity": 112025.84
+    },
+    {
+      "date": "2024-10-25",
+      "equity": 111389.7
+    },
+    {
+      "date": "2024-11-04",
+      "equity": 109612.82
+    },
+    {
+      "date": "2024-11-12",
+      "equity": 114833.5
+    },
+    {
+      "date": "2024-11-20",
+      "equity": 113598.52
+    },
+    {
+      "date": "2024-11-29",
+      "equity": 115905.52
+    },
+    {
+      "date": "2024-12-09",
+      "equity": 116321.76
+    },
+    {
+      "date": "2024-12-17",
+      "equity": 116243.23
+    },
+    {
+      "date": "2024-12-26",
+      "equity": 116041.0
+    },
+    {
+      "date": "2025-01-03",
+      "equity": 114260.19
+    },
+    {
+      "date": "2025-01-13",
+      "equity": 112228.07
+    },
+    {
+      "date": "2025-01-21",
+      "equity": 116378.7
+    },
+    {
+      "date": "2025-01-29",
+      "equity": 116166.65
+    },
+    {
+      "date": "2025-02-06",
+      "equity": 117020.73
+    },
+    {
+      "date": "2025-02-14",
+      "equity": 117662.77
+    },
+    {
+      "date": "2025-02-25",
+      "equity": 114717.66
+    },
+    {
+      "date": "2025-03-05",
+      "equity": 112538.29
+    },
+    {
+      "date": "2025-03-13",
+      "equity": 106473.34
+    },
+    {
+      "date": "2025-03-21",
+      "equity": 109227.99
+    },
+    {
+      "date": "2025-03-31",
+      "equity": 108275.74
+    },
+    {
+      "date": "2025-04-08",
+      "equity": 96145.84
+    },
+    {
+      "date": "2025-04-16",
+      "equity": 101784.73
+    },
+    {
+      "date": "2025-04-24",
+      "equity": 105794.0
+    },
+    {
+      "date": "2025-05-02",
+      "equity": 109689.39
+    },
+    {
+      "date": "2025-05-12",
+      "equity": 112860.28
+    },
+    {
+      "date": "2025-05-20",
+      "equity": 114786.38
+    },
+    {
+      "date": "2025-05-28",
+      "equity": 113802.72
+    },
+    {
+      "date": "2025-06-05",
+      "equity": 114823.69
+    },
+    {
+      "date": "2025-06-13",
+      "equity": 115540.33
+    },
+    {
+      "date": "2025-06-24",
+      "equity": 117817.87
+    },
+    {
+      "date": "2025-07-02",
+      "equity": 120474.36
+    },
+    {
+      "date": "2025-07-10",
+      "equity": 121548.34
+    },
+    {
+      "date": "2025-07-18",
+      "equity": 121864.45
+    },
+    {
+      "date": "2025-07-28",
+      "equity": 123682.56
+    },
+    {
+      "date": "2025-08-05",
+      "equity": 121948.87
+    },
+    {
+      "date": "2025-08-13",
+      "equity": 125229.72
+    },
+    {
+      "date": "2025-08-21",
+      "equity": 123425.35
+    },
+    {
+      "date": "2025-09-02",
+      "equity": 124352.08
+    },
+    {
+      "date": "2025-09-10",
+      "equity": 126659.07
+    },
+    {
+      "date": "2025-09-18",
+      "equity": 128596.95
+    },
+    {
+      "date": "2025-09-26",
+      "equity": 128860.05
+    },
+    {
+      "date": "2025-10-06",
+      "equity": 130770.44
+    },
+    {
+      "date": "2025-10-14",
+      "equity": 128952.33
+    },
+    {
+      "date": "2025-10-22",
+      "equity": 130036.13
+    },
+    {
+      "date": "2025-10-30",
+      "equity": 132427.55
+    },
+    {
+      "date": "2025-11-07",
+      "equity": 130640.85
+    },
+    {
+      "date": "2025-11-17",
+      "equity": 129627.74
+    },
+    {
+      "date": "2025-11-25",
+      "equity": 131434.07
+    },
+    {
+      "date": "2025-12-03",
+      "equity": 133150.08
+    },
+    {
+      "date": "2025-12-11",
+      "equity": 134190.69
+    },
+    {
+      "date": "2025-12-19",
+      "equity": 132900.73
+    },
+    {
+      "date": "2025-12-29",
+      "equity": 134357.57
+    },
+    {
+      "date": "2026-01-06",
+      "equity": 135105.63
+    },
+    {
+      "date": "2026-01-14",
+      "equity": 134873.95
+    },
+    {
+      "date": "2026-01-22",
+      "equity": 134549.99
+    },
+    {
+      "date": "2026-02-04",
+      "equity": 133990.42
+    },
+    {
+      "date": "2026-02-12",
+      "equity": 133032.28
+    },
+    {
+      "date": "2026-02-20",
+      "equity": 134642.27
+    },
+    {
+      "date": "2026-03-03",
+      "equity": 132855.57
+    },
+    {
+      "date": "2026-03-11",
+      "equity": 132083.96
+    },
+    {
+      "date": "2026-03-19",
+      "equity": 128867.9
+    },
+    {
+      "date": "2026-03-27",
+      "equity": 124167.52
+    },
+    {
+      "date": "2026-04-06",
+      "equity": 129032.83
+    },
+    {
+      "date": "2026-04-14",
+      "equity": 135981.31
+    },
+    {
+      "date": "2026-04-22",
+      "equity": 139277.86
+    },
+    {
+      "date": "2026-04-30",
+      "equity": 140689.55
+    },
+    {
+      "date": "2026-05-08",
+      "equity": 144437.68
+    },
+    {
+      "date": "2026-05-18",
+      "equity": 144604.57
+    },
+    {
+      "date": "2026-05-26",
+      "equity": 146966.54
+    },
+    {
+      "date": "2026-06-03",
+      "equity": 147694.97
+    },
+    {
+      "date": "2026-06-11",
+      "equity": 144461.24
+    },
+    {
+      "date": "2026-06-22",
+      "equity": 146130.13
+    },
+    {
+      "date": "2026-07-01",
+      "equity": 146404.03
+    },
+    {
+      "date": "2026-07-09",
+      "equity": 147559.49
+    },
+    {
+      "date": "2026-07-17",
+      "equity": 145935.76
+    },
+    {
+      "date": "2026-07-29",
+      "equity": 143243.93
+    },
+    {
+      "date": "2026-08-06",
+      "equity": 150914.95
+    },
+    {
+      "date": "2026-08-14",
+      "equity": 152418.91
+    },
+    {
+      "date": "2026-08-24",
+      "equity": 149897.9
+    },
+    {
+      "date": "2026-09-01",
+      "equity": 149538.6
+    }
+  ],
+  "date_range": {
+    "end": "2026-09-01",
+    "start": "2024-01-02"
+  },
+  "equity_points": [
+    {
+      "date": "2024-03-27",
+      "equity": 100000.0
+    },
+    {
+      "date": "2024-04-04",
+      "equity": 98303.31
+    },
+    {
+      "date": "2024-04-15",
+      "equity": 96622.49
+    },
+    {
+      "date": "2024-04-23",
+      "equity": 96938.41
+    },
+    {
+      "date": "2024-05-01",
+      "equity": 97247.29
+    },
+    {
+      "date": "2024-05-09",
+      "equity": 95595.92
+    },
+    {
+      "date": "2024-05-17",
+      "equity": 95915.32
+    },
+    {
+      "date": "2024-05-28",
+      "equity": 96255.01
+    },
+    {
+      "date": "2024-06-05",
+      "equity": 96561.01
+    },
+    {
+      "date": "2024-06-13",
+      "equity": 96855.38
+    },
+    {
+      "date": "2024-06-21",
+      "equity": 97159.77
+    },
+    {
+      "date": "2024-07-01",
+      "equity": 97490.58
+    },
+    {
+      "date": "2024-07-09",
+      "equity": 97818.89
+    },
+    {
+      "date": "2024-07-17",
+      "equity": 98157.66
+    },
+    {
+      "date": "2024-07-25",
+      "equity": 96440.93
+    },
+    {
+      "date": "2024-08-02",
+      "equity": 96779.21
+    },
+    {
+      "date": "2024-08-12",
+      "equity": 95131.47
+    },
+    {
+      "date": "2024-08-20",
+      "equity": 93613.49
+    },
+    {
+      "date": "2024-08-28",
+      "equity": 94027.79
+    },
+    {
+      "date": "2024-09-05",
+      "equity": 94422.15
+    },
+    {
+      "date": "2024-09-13",
+      "equity": 94790.72
+    },
+    {
+      "date": "2024-09-23",
+      "equity": 95145.9
+    },
+    {
+      "date": "2024-10-01",
+      "equity": 95518.7
+    },
+    {
+      "date": "2024-10-09",
+      "equity": 95875.73
+    },
+    {
+      "date": "2024-10-17",
+      "equity": 96206.2
+    },
+    {
+      "date": "2024-10-25",
+      "equity": 96259.06
+    },
+    {
+      "date": "2024-11-04",
+      "equity": 94562.04
+    },
+    {
+      "date": "2024-11-12",
+      "equity": 92878.48
+    },
+    {
+      "date": "2024-11-20",
+      "equity": 93232.95
+    },
+    {
+      "date": "2024-11-29",
+      "equity": 93614.19
+    },
+    {
+      "date": "2024-12-09",
+      "equity": 93948.51
+    },
+    {
+      "date": "2024-12-17",
+      "equity": 94287.51
+    },
+    {
+      "date": "2024-12-26",
+      "equity": 94592.6
+    },
+    {
+      "date": "2025-01-03",
+      "equity": 94964.4
+    },
+    {
+      "date": "2025-01-13",
+      "equity": 95339.26
+    },
+    {
+      "date": "2025-01-21",
+      "equity": 93689.55
+    },
+    {
+      "date": "2025-01-29",
+      "equity": 94078.74
+    },
+    {
+      "date": "2025-02-06",
+      "equity": 94428.73
+    },
+    {
+      "date": "2025-02-14",
+      "equity": 94784.9
+    },
+    {
+      "date": "2025-02-25",
+      "equity": 93147.45
+    },
+    {
+      "date": "2025-03-05",
+      "equity": 93452.34
+    },
+    {
+      "date": "2025-03-13",
+      "equity": 93784.33
+    },
+    {
+      "date": "2025-03-21",
+      "equity": 94148.25
+    },
+    {
+      "date": "2025-03-31",
+      "equity": 94541.37
+    },
+    {
+      "date": "2025-04-08",
+      "equity": 94903.74
+    },
+    {
+      "date": "2025-04-16",
+      "equity": 95295.4
+    },
+    {
+      "date": "2025-04-24",
+      "equity": 95696.37
+    },
+    {
+      "date": "2025-05-02",
+      "equity": 96104.52
+    },
+    {
+      "date": "2025-05-12",
+      "equity": 96567.08
+    },
+    {
+      "date": "2025-05-20",
+      "equity": 96977.91
+    },
+    {
+      "date": "2025-05-28",
+      "equity": 97332.25
+    },
+    {
+      "date": "2025-06-05",
+      "equity": 97732.06
+    },
+    {
+      "date": "2025-06-13",
+      "equity": 98111.58
+    },
+    {
+      "date": "2025-06-24",
+      "equity": 98496.09
+    },
+    {
+      "date": "2025-07-02",
+      "equity": 98814.69
+    },
+    {
+      "date": "2025-07-10",
+      "equity": 99134.17
+    },
+    {
+      "date": "2025-07-18",
+      "equity": 99437.52
+    },
+    {
+      "date": "2025-07-28",
+      "equity": 99794.81
+    },
+    {
+      "date": "2025-08-05",
+      "equity": 99372.78
+    },
+    {
+      "date": "2025-08-13",
+      "equity": 99677.85
+    },
+    {
+      "date": "2025-08-21",
+      "equity": 98676.99
+    },
+    {
+      "date": "2025-09-02",
+      "equity": 99021.99
+    },
+    {
+      "date": "2025-09-10",
+      "equity": 99347.22
+    },
+    {
+      "date": "2025-09-18",
+      "equity": 99694.21
+    },
+    {
+      "date": "2025-09-26",
+      "equity": 100061.21
+    },
+    {
+      "date": "2025-10-06",
+      "equity": 100421.75
+    },
+    {
+      "date": "2025-10-14",
+      "equity": 100272.51
+    },
+    {
+      "date": "2025-10-22",
+      "equity": 100636.34
+    },
+    {
+      "date": "2025-10-30",
+      "equity": 101002.77
+    },
+    {
+      "date": "2025-11-07",
+      "equity": 100357.62
+    },
+    {
+      "date": "2025-11-17",
+      "equity": 98690.71
+    },
+    {
+      "date": "2025-11-25",
+      "equity": 97026.63
+    },
+    {
+      "date": "2025-12-03",
+      "equity": 97380.96
+    },
+    {
+      "date": "2025-12-11",
+      "equity": 97762.07
+    },
+    {
+      "date": "2025-12-19",
+      "equity": 98098.32
+    },
+    {
+      "date": "2025-12-29",
+      "equity": 98447.55
+    },
+    {
+      "date": "2026-01-06",
+      "equity": 98818.73
+    },
+    {
+      "date": "2026-01-14",
+      "equity": 99152.91
+    },
+    {
+      "date": "2026-01-22",
+      "equity": 99514.83
+    },
+    {
+      "date": "2026-02-04",
+      "equity": 98827.1
+    },
+    {
+      "date": "2026-02-12",
+      "equity": 99176.54
+    },
+    {
+      "date": "2026-02-20",
+      "equity": 99546.34
+    },
+    {
+      "date": "2026-03-03",
+      "equity": 99923.05
+    },
+    {
+      "date": "2026-03-11",
+      "equity": 100269.31
+    },
+    {
+      "date": "2026-03-19",
+      "equity": 100636.21
+    },
+    {
+      "date": "2026-03-27",
+      "equity": 100995.45
+    },
+    {
+      "date": "2026-04-06",
+      "equity": 99364.0
+    },
+    {
+      "date": "2026-04-14",
+      "equity": 97735.93
+    },
+    {
+      "date": "2026-04-22",
+      "equity": 98166.59
+    },
+    {
+      "date": "2026-04-30",
+      "equity": 98574.1
+    },
+    {
+      "date": "2026-05-08",
+      "equity": 98939.02
+    },
+    {
+      "date": "2026-05-18",
+      "equity": 99308.75
+    },
+    {
+      "date": "2026-05-26",
+      "equity": 99642.0
+    },
+    {
+      "date": "2026-06-03",
+      "equity": 99987.1
+    },
+    {
+      "date": "2026-06-11",
+      "equity": 98360.23
+    },
+    {
+      "date": "2026-06-22",
+      "equity": 98737.68
+    },
+    {
+      "date": "2026-07-01",
+      "equity": 99128.46
+    },
+    {
+      "date": "2026-07-09",
+      "equity": 99508.93
+    },
+    {
+      "date": "2026-07-17",
+      "equity": 99209.15
+    },
+    {
+      "date": "2026-07-29",
+      "equity": 97580.99
+    },
+    {
+      "date": "2026-08-06",
+      "equity": 95929.31
+    },
+    {
+      "date": "2026-08-14",
+      "equity": 96311.72
+    },
+    {
+      "date": "2026-08-24",
+      "equity": 96501.75
+    },
+    {
+      "date": "2026-09-01",
+      "equity": 96895.7
+    }
+  ],
+  "feed": "iex",
+  "folds": {
+    "2024": {
+      "pnl": -5407.37,
+      "trades": 32
+    },
+    "2025": {
+      "pnl": 3854.95,
+      "trades": 43
+    },
+    "2026": {
+      "pnl": -1551.85,
+      "trades": 28
+    }
+  },
+  "label": "MODELED \u2014 NOT BROKER P&L",
+  "limitations": [
+    "Modeled option prices are not historical option-chain quotes or fills.",
+    "European Black-Scholes omits early assignment, discrete dividends, quote microstructure, and volatility skew.",
+    "IEX daily bars are a stock-price source; this result is research context, not a performance claim."
+  ],
+  "method": {
+    "costs": "$0.02 modeled slippage per leg; commissions and regulatory fees excluded",
+    "pricing": "Black-Scholes European price with rolling 20-day realized volatility",
+    "signal": "20-day close return above +0.5% bullish, below -0.5% bearish, otherwise abstain",
+    "sizing": "2% equity max-loss budget, maximum 4 contracts, one vertical at a time",
+    "structure": "7 calendar DTE target (actual 7-10), exact $5 width, 0.25 absolute short delta",
+    "walk_forward": "rolling-origin; every decision uses only the preceding 20 closes"
+  },
+  "metrics": {
+    "average_pnl": -30.14,
+    "ending_equity": 96895.7,
+    "max_drawdown_pct": -7.122,
+    "profit_factor": 0.901,
+    "starting_equity": 100000.0,
+    "total_return_pct": -3.104,
+    "trades": 103,
+    "win_rate_pct": 77.7
+  },
+  "schema": "opticycle.modeled-walk-forward.v1",
+  "source": "Alpaca Market Data API IEX daily bars",
+  "trades": [
+    {
+      "dte": 7,
+      "entry_date": "2024-03-28",
+      "equity_after": 98303.31,
+      "equity_before": 100000.0,
+      "exit_date": "2024-04-04",
+      "exit_spot": 499.62,
+      "kind": "put",
+      "long_strike": 500.0,
+      "max_loss": 1696.69,
+      "modeled_credit": 0.7583,
+      "pnl": -1696.69,
+      "qty": 4,
+      "realized_volatility_20d": 0.101272,
+      "short_strike": 505.0,
+      "signal_lookback_end": "2024-03-27",
+      "spot": 509.37,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.03258,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-04-08",
+      "equity_after": 96622.49,
+      "equity_before": 98303.31,
+      "exit_date": "2024-04-15",
+      "exit_spot": 491.25,
+      "kind": "put",
+      "long_strike": 496.0,
+      "max_loss": 1680.82,
+      "modeled_credit": 0.7979,
+      "pnl": -1680.82,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 501.0,
+      "signal_lookback_end": "2024-04-05",
+      "spot": 505.0,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.016488,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-04-16",
+      "equity_after": 96938.41,
+      "equity_before": 96622.49,
+      "exit_date": "2024-04-23",
+      "exit_spot": 492.2,
+      "kind": "call",
+      "long_strike": 501.0,
+      "max_loss": 1684.07,
+      "modeled_credit": 0.7898,
+      "pnl": 315.93,
+      "qty": 4,
+      "realized_volatility_20d": 0.119069,
+      "short_strike": 496.0,
+      "signal_lookback_end": "2024-04-15",
+      "spot": 490.16,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.01632,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-04-24",
+      "equity_after": 97247.29,
+      "equity_before": 96938.41,
+      "exit_date": "2024-05-01",
+      "exit_spot": 486.95,
+      "kind": "call",
+      "long_strike": 504.0,
+      "max_loss": 1691.12,
+      "modeled_credit": 0.7722,
+      "pnl": 308.88,
+      "qty": 4,
+      "realized_volatility_20d": 0.128815,
+      "short_strike": 499.0,
+      "signal_lookback_end": "2024-04-23",
+      "spot": 492.36,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.025482,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-05-02",
+      "equity_after": 95595.92,
+      "equity_before": 97247.29,
+      "exit_date": "2024-05-09",
+      "exit_spot": 506.47,
+      "kind": "call",
+      "long_strike": 503.0,
+      "max_loss": 1651.37,
+      "modeled_credit": 0.8716,
+      "pnl": -1651.37,
+      "qty": 4,
+      "realized_volatility_20d": 0.134346,
+      "short_strike": 498.0,
+      "signal_lookback_end": "2024-05-01",
+      "spot": 491.74,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.025359,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-05-10",
+      "equity_after": 95915.32,
+      "equity_before": 95595.92,
+      "exit_date": "2024-05-17",
+      "exit_spot": 515.58,
+      "kind": "put",
+      "long_strike": 496.0,
+      "max_loss": 1680.59,
+      "modeled_credit": 0.7985,
+      "pnl": 319.41,
+      "qty": 4,
+      "realized_volatility_20d": 0.13132,
+      "short_strike": 501.0,
+      "signal_lookback_end": "2024-05-09",
+      "spot": 507.11,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.018153,
+      "width": 5.0
+    },
+    {
+      "dte": 8,
+      "entry_date": "2024-05-20",
+      "equity_after": 96255.01,
+      "equity_before": 95915.32,
+      "exit_date": "2024-05-28",
+      "exit_spot": 515.94,
+      "kind": "put",
+      "long_strike": 506.0,
+      "max_loss": 1660.32,
+      "modeled_credit": 0.8492,
+      "pnl": 339.68,
+      "qty": 4,
+      "realized_volatility_20d": 0.112362,
+      "short_strike": 511.0,
+      "signal_lookback_end": "2024-05-17",
+      "spot": 516.1,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.059992,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-05-29",
+      "equity_after": 96561.01,
+      "equity_before": 96255.01,
+      "exit_date": "2024-06-05",
+      "exit_spot": 520.58,
+      "kind": "put",
+      "long_strike": 503.0,
+      "max_loss": 1694.0,
+      "modeled_credit": 0.765,
+      "pnl": 306.0,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 508.0,
+      "signal_lookback_end": "2024-05-28",
+      "spot": 512.28,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.055006,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-06-06",
+      "equity_after": 96855.38,
+      "equity_before": 96561.01,
+      "exit_date": "2024-06-13",
+      "exit_spot": 528.08,
+      "kind": "put",
+      "long_strike": 511.0,
+      "max_loss": 1705.63,
+      "modeled_credit": 0.7359,
+      "pnl": 294.37,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 516.0,
+      "signal_lookback_end": "2024-06-05",
+      "spot": 520.56,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.033738,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-06-14",
+      "equity_after": 97159.77,
+      "equity_before": 96855.38,
+      "exit_date": "2024-06-21",
+      "exit_spot": 531.48,
+      "kind": "put",
+      "long_strike": 519.0,
+      "max_loss": 1695.6,
+      "modeled_credit": 0.761,
+      "pnl": 304.4,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 524.0,
+      "signal_lookback_end": "2024-06-13",
+      "spot": 528.51,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.025557,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-06-24",
+      "equity_after": 97490.58,
+      "equity_before": 97159.77,
+      "exit_date": "2024-07-01",
+      "exit_spot": 532.57,
+      "kind": "put",
+      "long_strike": 521.0,
+      "max_loss": 1669.19,
+      "modeled_credit": 0.827,
+      "pnl": 330.81,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 526.0,
+      "signal_lookback_end": "2024-06-21",
+      "spot": 530.14,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.037804,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-07-02",
+      "equity_after": 97818.89,
+      "equity_before": 97490.58,
+      "exit_date": "2024-07-09",
+      "exit_spot": 542.99,
+      "kind": "put",
+      "long_strike": 527.0,
+      "max_loss": 1671.69,
+      "modeled_credit": 0.8208,
+      "pnl": 328.31,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 532.0,
+      "signal_lookback_end": "2024-07-01",
+      "spot": 536.25,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.03637,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-07-10",
+      "equity_after": 98157.66,
+      "equity_before": 97818.89,
+      "exit_date": "2024-07-17",
+      "exit_spot": 544.16,
+      "kind": "put",
+      "long_strike": 539.0,
+      "max_loss": 1661.23,
+      "modeled_credit": 0.8469,
+      "pnl": 338.77,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 544.0,
+      "signal_lookback_end": "2024-07-09",
+      "spot": 548.24,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.040988,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-07-18",
+      "equity_after": 96440.93,
+      "equity_before": 98157.66,
+      "exit_date": "2024-07-25",
+      "exit_spot": 525.92,
+      "kind": "put",
+      "long_strike": 530.0,
+      "max_loss": 1716.73,
+      "modeled_credit": 0.7082,
+      "pnl": -1716.73,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 535.0,
+      "signal_lookback_end": "2024-07-17",
+      "spot": 539.99,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.018931,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-07-26",
+      "equity_after": 96779.21,
+      "equity_before": 96440.93,
+      "exit_date": "2024-08-02",
+      "exit_spot": 520.57,
+      "kind": "call",
+      "long_strike": 544.0,
+      "max_loss": 1661.71,
+      "modeled_credit": 0.8457,
+      "pnl": 338.29,
+      "qty": 4,
+      "realized_volatility_20d": 0.136026,
+      "short_strike": 539.0,
+      "signal_lookback_end": "2024-07-25",
+      "spot": 531.73,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.014596,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-08-05",
+      "equity_after": 95131.47,
+      "equity_before": 96779.21,
+      "exit_date": "2024-08-12",
+      "exit_spot": 520.93,
+      "kind": "call",
+      "long_strike": 519.0,
+      "max_loss": 1647.74,
+      "modeled_credit": 0.8806,
+      "pnl": -1647.74,
+      "qty": 4,
+      "realized_volatility_20d": 0.169108,
+      "short_strike": 514.0,
+      "signal_lookback_end": "2024-08-02",
+      "spot": 505.41,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.040212,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-08-13",
+      "equity_after": 93613.49,
+      "equity_before": 95131.47,
+      "exit_date": "2024-08-20",
+      "exit_spot": 545.71,
+      "kind": "call",
+      "long_strike": 546.0,
+      "max_loss": 1633.98,
+      "modeled_credit": 0.9151,
+      "pnl": -1517.98,
+      "qty": 4,
+      "realized_volatility_20d": 0.213161,
+      "short_strike": 541.0,
+      "signal_lookback_end": "2024-08-12",
+      "spot": 529.43,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.055842,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-08-21",
+      "equity_after": 94027.79,
+      "equity_before": 93613.49,
+      "exit_date": "2024-08-28",
+      "exit_spot": 545.41,
+      "kind": "put",
+      "long_strike": 533.0,
+      "max_loss": 1585.7,
+      "modeled_credit": 1.0357,
+      "pnl": 414.3,
+      "qty": 4,
+      "realized_volatility_20d": 0.207915,
+      "short_strike": 538.0,
+      "signal_lookback_end": "2024-08-20",
+      "spot": 547.65,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.032232,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-08-29",
+      "equity_after": 94422.15,
+      "equity_before": 94027.79,
+      "exit_date": "2024-09-05",
+      "exit_spot": 536.71,
+      "kind": "put",
+      "long_strike": 531.0,
+      "max_loss": 1605.64,
+      "modeled_credit": 0.9859,
+      "pnl": 394.36,
+      "qty": 4,
+      "realized_volatility_20d": 0.19571,
+      "short_strike": 536.0,
+      "signal_lookback_end": "2024-08-28",
+      "spot": 545.37,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.027931,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-09-06",
+      "equity_after": 94790.72,
+      "equity_before": 94422.15,
+      "exit_date": "2024-09-13",
+      "exit_spot": 548.87,
+      "kind": "put",
+      "long_strike": 517.0,
+      "max_loss": 1631.43,
+      "modeled_credit": 0.9214,
+      "pnl": 368.57,
+      "qty": 4,
+      "realized_volatility_20d": 0.137359,
+      "short_strike": 522.0,
+      "signal_lookback_end": "2024-09-05",
+      "spot": 527.94,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.03548,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-09-16",
+      "equity_after": 95145.9,
+      "equity_before": 94790.72,
+      "exit_date": "2024-09-23",
+      "exit_spot": 558.11,
+      "kind": "put",
+      "long_strike": 538.0,
+      "max_loss": 1644.82,
+      "modeled_credit": 0.888,
+      "pnl": 355.18,
+      "qty": 4,
+      "realized_volatility_20d": 0.141639,
+      "short_strike": 543.0,
+      "signal_lookback_end": "2024-09-13",
+      "spot": 549.83,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.013835,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-09-24",
+      "equity_after": 95518.7,
+      "equity_before": 95145.9,
+      "exit_date": "2024-10-01",
+      "exit_spot": 557.14,
+      "kind": "put",
+      "long_strike": 548.0,
+      "max_loss": 1627.19,
+      "modeled_credit": 0.932,
+      "pnl": 372.81,
+      "qty": 4,
+      "realized_volatility_20d": 0.142829,
+      "short_strike": 553.0,
+      "signal_lookback_end": "2024-09-23",
+      "spot": 559.72,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.018839,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-10-02",
+      "equity_after": 95875.73,
+      "equity_before": 95518.7,
+      "exit_date": "2024-10-09",
+      "exit_spot": 565.43,
+      "kind": "put",
+      "long_strike": 547.0,
+      "max_loss": 1642.98,
+      "modeled_credit": 0.8926,
+      "pnl": 357.02,
+      "qty": 4,
+      "realized_volatility_20d": 0.118689,
+      "short_strike": 552.0,
+      "signal_lookback_end": "2024-10-01",
+      "spot": 557.35,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.035441,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-10-10",
+      "equity_after": 96206.2,
+      "equity_before": 95875.73,
+      "exit_date": "2024-10-17",
+      "exit_spot": 570.57,
+      "kind": "put",
+      "long_strike": 555.0,
+      "max_loss": 1669.53,
+      "modeled_credit": 0.8262,
+      "pnl": 330.47,
+      "qty": 4,
+      "realized_volatility_20d": 0.100279,
+      "short_strike": 560.0,
+      "signal_lookback_end": "2024-10-09",
+      "spot": 564.58,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.035377,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-10-18",
+      "equity_after": 96259.06,
+      "equity_before": 96206.2,
+      "exit_date": "2024-10-25",
+      "exit_spot": 567.33,
+      "kind": "put",
+      "long_strike": 563.0,
+      "max_loss": 1679.14,
+      "modeled_credit": 0.8021,
+      "pnl": 52.86,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 568.0,
+      "signal_lookback_end": "2024-10-17",
+      "spot": 572.81,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.025154,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-10-28",
+      "equity_after": 94562.04,
+      "equity_before": 96259.06,
+      "exit_date": "2024-11-04",
+      "exit_spot": 558.28,
+      "kind": "put",
+      "long_strike": 559.0,
+      "max_loss": 1697.02,
+      "modeled_credit": 0.7574,
+      "pnl": -1697.02,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 564.0,
+      "signal_lookback_end": "2024-10-25",
+      "spot": 569.05,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.008658,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-11-05",
+      "equity_after": 92878.48,
+      "equity_before": 94562.04,
+      "exit_date": "2024-11-12",
+      "exit_spot": 584.87,
+      "kind": "call",
+      "long_strike": 576.0,
+      "max_loss": 1683.56,
+      "modeled_credit": 0.7911,
+      "pnl": -1683.56,
+      "qty": 4,
+      "realized_volatility_20d": 0.103962,
+      "short_strike": 571.0,
+      "signal_lookback_end": "2024-11-04",
+      "spot": 565.06,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.005965,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-11-13",
+      "equity_after": 93232.95,
+      "equity_before": 92878.48,
+      "exit_date": "2024-11-20",
+      "exit_spot": 578.58,
+      "kind": "put",
+      "long_strike": 573.0,
+      "max_loss": 1645.53,
+      "modeled_credit": 0.8862,
+      "pnl": 354.47,
+      "qty": 4,
+      "realized_volatility_20d": 0.137986,
+      "short_strike": 578.0,
+      "signal_lookback_end": "2024-11-12",
+      "spot": 585.17,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.025152,
+      "width": 5.0
+    },
+    {
+      "dte": 8,
+      "entry_date": "2024-11-21",
+      "equity_after": 93614.19,
+      "equity_before": 93232.95,
+      "exit_date": "2024-11-29",
+      "exit_spot": 590.33,
+      "kind": "put",
+      "long_strike": 569.0,
+      "max_loss": 1618.76,
+      "modeled_credit": 0.9531,
+      "pnl": 381.24,
+      "qty": 4,
+      "realized_volatility_20d": 0.145294,
+      "short_strike": 574.0,
+      "signal_lookback_end": "2024-11-20",
+      "spot": 581.69,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.019452,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-12-02",
+      "equity_after": 93948.51,
+      "equity_before": 93614.19,
+      "exit_date": "2024-12-09",
+      "exit_spot": 592.45,
+      "kind": "put",
+      "long_strike": 580.0,
+      "max_loss": 1665.68,
+      "modeled_credit": 0.8358,
+      "pnl": 334.32,
+      "qty": 4,
+      "realized_volatility_20d": 0.122022,
+      "short_strike": 585.0,
+      "signal_lookback_end": "2024-11-29",
+      "spot": 591.49,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.055084,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-12-10",
+      "equity_after": 94287.51,
+      "equity_before": 93948.51,
+      "exit_date": "2024-12-17",
+      "exit_spot": 592.05,
+      "kind": "put",
+      "long_strike": 581.0,
+      "max_loss": 1661.01,
+      "modeled_credit": 0.8475,
+      "pnl": 338.99,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 586.0,
+      "signal_lookback_end": "2024-12-09",
+      "spot": 590.74,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.009749,
+      "width": 5.0
+    },
+    {
+      "dte": 8,
+      "entry_date": "2024-12-18",
+      "equity_after": 94592.6,
+      "equity_before": 94287.51,
+      "exit_date": "2024-12-26",
+      "exit_spot": 591.02,
+      "kind": "put",
+      "long_strike": 564.0,
+      "max_loss": 1694.9,
+      "modeled_credit": 0.7627,
+      "pnl": 305.1,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 569.0,
+      "signal_lookback_end": "2024-12-17",
+      "spot": 574.56,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.023812,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2024-12-27",
+      "equity_after": 94964.4,
+      "equity_before": 94592.6,
+      "exit_date": "2025-01-03",
+      "exit_spot": 581.95,
+      "kind": "put",
+      "long_strike": 572.0,
+      "max_loss": 1628.21,
+      "modeled_credit": 0.9295,
+      "pnl": 371.79,
+      "qty": 4,
+      "realized_volatility_20d": 0.154285,
+      "short_strike": 577.0,
+      "signal_lookback_end": "2024-12-26",
+      "spot": 584.95,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.007535,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-01-06",
+      "equity_after": 95339.26,
+      "equity_before": 94964.4,
+      "exit_date": "2025-01-13",
+      "exit_spot": 571.6,
+      "kind": "call",
+      "long_strike": 600.0,
+      "max_loss": 1625.14,
+      "modeled_credit": 0.9372,
+      "pnl": 374.86,
+      "qty": 4,
+      "realized_volatility_20d": 0.16759,
+      "short_strike": 595.0,
+      "signal_lookback_end": "2025-01-03",
+      "spot": 585.37,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.021028,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-01-14",
+      "equity_after": 93689.55,
+      "equity_before": 95339.26,
+      "exit_date": "2025-01-21",
+      "exit_spot": 592.74,
+      "kind": "call",
+      "long_strike": 588.0,
+      "max_loss": 1649.71,
+      "modeled_credit": 0.8757,
+      "pnl": -1649.71,
+      "qty": 4,
+      "realized_volatility_20d": 0.176726,
+      "short_strike": 583.0,
+      "signal_lookback_end": "2025-01-13",
+      "spot": 572.37,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.034786,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-01-22",
+      "equity_after": 94078.74,
+      "equity_before": 93689.55,
+      "exit_date": "2025-01-29",
+      "exit_spot": 591.66,
+      "kind": "put",
+      "long_strike": 583.0,
+      "max_loss": 1610.81,
+      "modeled_credit": 0.973,
+      "pnl": 389.19,
+      "qty": 4,
+      "realized_volatility_20d": 0.159331,
+      "short_strike": 588.0,
+      "signal_lookback_end": "2025-01-21",
+      "spot": 596.1,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.032109,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-01-30",
+      "equity_after": 94428.73,
+      "equity_before": 94078.74,
+      "exit_date": "2025-02-06",
+      "exit_spot": 596.01,
+      "kind": "put",
+      "long_strike": 582.0,
+      "max_loss": 1650.01,
+      "modeled_credit": 0.875,
+      "pnl": 349.99,
+      "qty": 4,
+      "realized_volatility_20d": 0.140043,
+      "short_strike": 587.0,
+      "signal_lookback_end": "2025-01-29",
+      "spot": 594.57,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.023067,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-02-07",
+      "equity_after": 94784.9,
+      "equity_before": 94428.73,
+      "exit_date": "2025-02-14",
+      "exit_spot": 599.28,
+      "kind": "put",
+      "long_strike": 579.0,
+      "max_loss": 1643.83,
+      "modeled_credit": 0.8904,
+      "pnl": 356.17,
+      "qty": 4,
+      "realized_volatility_20d": 0.1305,
+      "short_strike": 584.0,
+      "signal_lookback_end": "2025-02-06",
+      "spot": 590.68,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.028685,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-02-18",
+      "equity_after": 93147.45,
+      "equity_before": 94784.9,
+      "exit_date": "2025-02-25",
+      "exit_spot": 584.28,
+      "kind": "put",
+      "long_strike": 591.0,
+      "max_loss": 1637.45,
+      "modeled_credit": 0.9064,
+      "pnl": -1637.45,
+      "qty": 4,
+      "realized_volatility_20d": 0.107562,
+      "short_strike": 596.0,
+      "signal_lookback_end": "2025-02-14",
+      "spot": 601.04,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.019964,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-02-26",
+      "equity_after": 93452.34,
+      "equity_before": 93147.45,
+      "exit_date": "2025-03-05",
+      "exit_spot": 573.18,
+      "kind": "call",
+      "long_strike": 596.0,
+      "max_loss": 1695.1,
+      "modeled_credit": 0.7622,
+      "pnl": 304.9,
+      "qty": 4,
+      "realized_volatility_20d": 0.105425,
+      "short_strike": 591.0,
+      "signal_lookback_end": "2025-02-25",
+      "spot": 584.46,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.01686,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-03-06",
+      "equity_after": 93784.33,
+      "equity_before": 93452.34,
+      "exit_date": "2025-03-13",
+      "exit_spot": 542.29,
+      "kind": "call",
+      "long_strike": 577.0,
+      "max_loss": 1668.01,
+      "modeled_credit": 0.83,
+      "pnl": 331.99,
+      "qty": 4,
+      "realized_volatility_20d": 0.149466,
+      "short_strike": 572.0,
+      "signal_lookback_end": "2025-03-05",
+      "spot": 563.06,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.034953,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-03-14",
+      "equity_after": 94148.25,
+      "equity_before": 93784.33,
+      "exit_date": "2025-03-21",
+      "exit_spot": 556.32,
+      "kind": "call",
+      "long_strike": 568.0,
+      "max_loss": 1636.09,
+      "modeled_credit": 0.9098,
+      "pnl": 363.91,
+      "qty": 4,
+      "realized_volatility_20d": 0.174872,
+      "short_strike": 563.0,
+      "signal_lookback_end": "2025-03-13",
+      "spot": 553.28,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.095279,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-03-24",
+      "equity_after": 94541.37,
+      "equity_before": 94148.25,
+      "exit_date": "2025-03-31",
+      "exit_spot": 551.47,
+      "kind": "call",
+      "long_strike": 582.0,
+      "max_loss": 1606.88,
+      "modeled_credit": 0.9828,
+      "pnl": 393.12,
+      "qty": 4,
+      "realized_volatility_20d": 0.201751,
+      "short_strike": 577.0,
+      "signal_lookback_end": "2025-03-21",
+      "spot": 566.03,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.052492,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-04-01",
+      "equity_after": 94903.74,
+      "equity_before": 94541.37,
+      "exit_date": "2025-04-08",
+      "exit_spot": 489.69,
+      "kind": "call",
+      "long_strike": 570.0,
+      "max_loss": 1637.63,
+      "modeled_credit": 0.9059,
+      "pnl": 362.37,
+      "qty": 4,
+      "realized_volatility_20d": 0.204129,
+      "short_strike": 565.0,
+      "signal_lookback_end": "2025-03-31",
+      "spot": 553.29,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.02763,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-04-09",
+      "equity_after": 95295.4,
+      "equity_before": 94903.74,
+      "exit_date": "2025-04-16",
+      "exit_spot": 518.41,
+      "kind": "call",
+      "long_strike": 558.0,
+      "max_loss": 1608.34,
+      "modeled_credit": 0.9792,
+      "pnl": 391.66,
+      "qty": 4,
+      "realized_volatility_20d": 0.323083,
+      "short_strike": 553.0,
+      "signal_lookback_end": "2025-04-08",
+      "spot": 535.4,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.108828,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-04-17",
+      "equity_after": 95696.37,
+      "equity_before": 95295.4,
+      "exit_date": "2025-04-24",
+      "exit_spot": 538.83,
+      "kind": "call",
+      "long_strike": 550.0,
+      "max_loss": 1599.03,
+      "modeled_credit": 1.0024,
+      "pnl": 400.97,
+      "qty": 4,
+      "realized_volatility_20d": 0.488913,
+      "short_strike": 545.0,
+      "signal_lookback_end": "2025-04-16",
+      "spot": 519.01,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.067843,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-04-25",
+      "equity_after": 96104.52,
+      "equity_before": 95696.37,
+      "exit_date": "2025-05-02",
+      "exit_spot": 558.67,
+      "kind": "call",
+      "long_strike": 576.0,
+      "max_loss": 1591.85,
+      "modeled_credit": 1.0204,
+      "pnl": 408.15,
+      "qty": 4,
+      "realized_volatility_20d": 0.511294,
+      "short_strike": 571.0,
+      "signal_lookback_end": "2025-04-24",
+      "spot": 542.89,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.036324,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-05-05",
+      "equity_after": 96567.08,
+      "equity_before": 96104.52,
+      "exit_date": "2025-05-12",
+      "exit_spot": 574.82,
+      "kind": "put",
+      "long_strike": 531.0,
+      "max_loss": 1537.44,
+      "modeled_credit": 1.1564,
+      "pnl": 462.56,
+      "qty": 4,
+      "realized_volatility_20d": 0.407334,
+      "short_strike": 536.0,
+      "signal_lookback_end": "2025-05-02",
+      "spot": 555.72,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.119826,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-05-13",
+      "equity_after": 96977.91,
+      "equity_before": 96567.08,
+      "exit_date": "2025-05-20",
+      "exit_spot": 584.63,
+      "kind": "put",
+      "long_strike": 562.0,
+      "max_loss": 1589.17,
+      "modeled_credit": 1.0271,
+      "pnl": 410.83,
+      "qty": 4,
+      "realized_volatility_20d": 0.22599,
+      "short_strike": 567.0,
+      "signal_lookback_end": "2025-05-12",
+      "spot": 578.59,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.081546,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-05-21",
+      "equity_after": 97332.25,
+      "equity_before": 96977.91,
+      "exit_date": "2025-05-28",
+      "exit_spot": 579.62,
+      "kind": "put",
+      "long_strike": 562.0,
+      "max_loss": 1645.66,
+      "modeled_credit": 0.8859,
+      "pnl": 354.34,
+      "qty": 4,
+      "realized_volatility_20d": 0.149741,
+      "short_strike": 567.0,
+      "signal_lookback_end": "2025-05-20",
+      "spot": 574.84,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.107589,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-05-29",
+      "equity_after": 97732.06,
+      "equity_before": 97332.25,
+      "exit_date": "2025-06-05",
+      "exit_spot": 584.82,
+      "kind": "put",
+      "long_strike": 568.0,
+      "max_loss": 1600.18,
+      "modeled_credit": 0.9995,
+      "pnl": 399.82,
+      "qty": 4,
+      "realized_volatility_20d": 0.176502,
+      "short_strike": 573.0,
+      "signal_lookback_end": "2025-05-28",
+      "spot": 581.74,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.060973,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-06-06",
+      "equity_after": 98111.58,
+      "equity_before": 97732.06,
+      "exit_date": "2025-06-13",
+      "exit_spot": 588.47,
+      "kind": "put",
+      "long_strike": 577.0,
+      "max_loss": 1620.48,
+      "modeled_credit": 0.9488,
+      "pnl": 379.52,
+      "qty": 4,
+      "realized_volatility_20d": 0.165273,
+      "short_strike": 582.0,
+      "signal_lookback_end": "2025-06-05",
+      "spot": 590.64,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.049739,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-06-17",
+      "equity_after": 98496.09,
+      "equity_before": 98111.58,
+      "exit_date": "2025-06-24",
+      "exit_spot": 600.07,
+      "kind": "put",
+      "long_strike": 578.0,
+      "max_loss": 1615.49,
+      "modeled_credit": 0.9613,
+      "pnl": 384.51,
+      "qty": 4,
+      "realized_volatility_20d": 0.132972,
+      "short_strike": 583.0,
+      "signal_lookback_end": "2025-06-16",
+      "spot": 589.28,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.013144,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-06-25",
+      "equity_after": 98814.69,
+      "equity_before": 98496.09,
+      "exit_date": "2025-07-02",
+      "exit_spot": 613.6,
+      "kind": "put",
+      "long_strike": 590.0,
+      "max_loss": 1681.4,
+      "modeled_credit": 0.7965,
+      "pnl": 318.6,
+      "qty": 4,
+      "realized_volatility_20d": 0.104178,
+      "short_strike": 595.0,
+      "signal_lookback_end": "2025-06-24",
+      "spot": 600.52,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.02958,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-07-03",
+      "equity_after": 99134.17,
+      "equity_before": 98814.69,
+      "exit_date": "2025-07-10",
+      "exit_spot": 619.07,
+      "kind": "put",
+      "long_strike": 608.0,
+      "max_loss": 1680.52,
+      "modeled_credit": 0.7987,
+      "pnl": 319.48,
+      "qty": 4,
+      "realized_volatility_20d": 0.101623,
+      "short_strike": 613.0,
+      "signal_lookback_end": "2025-07-02",
+      "spot": 618.53,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.044106,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-07-11",
+      "equity_after": 99437.52,
+      "equity_before": 99134.17,
+      "exit_date": "2025-07-18",
+      "exit_spot": 620.68,
+      "kind": "put",
+      "long_strike": 606.0,
+      "max_loss": 1696.65,
+      "modeled_credit": 0.7584,
+      "pnl": 303.35,
+      "qty": 4,
+      "realized_volatility_20d": 0.101484,
+      "short_strike": 611.0,
+      "signal_lookback_end": "2025-07-10",
+      "spot": 616.78,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.043576,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-07-21",
+      "equity_after": 99794.81,
+      "equity_before": 99437.52,
+      "exit_date": "2025-07-28",
+      "exit_spot": 629.94,
+      "kind": "put",
+      "long_strike": 612.0,
+      "max_loss": 1642.72,
+      "modeled_credit": 0.8932,
+      "pnl": 357.28,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 617.0,
+      "signal_lookback_end": "2025-07-18",
+      "spot": 621.81,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.056225,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-07-29",
+      "equity_after": 99372.78,
+      "equity_before": 99794.81,
+      "exit_date": "2025-08-05",
+      "exit_spot": 621.11,
+      "kind": "put",
+      "long_strike": 618.0,
+      "max_loss": 1666.02,
+      "modeled_credit": 0.8349,
+      "pnl": -422.02,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 623.0,
+      "signal_lookback_end": "2025-07-28",
+      "spot": 628.27,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.030948,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-08-06",
+      "equity_after": 99677.85,
+      "equity_before": 99372.78,
+      "exit_date": "2025-08-13",
+      "exit_spot": 637.82,
+      "kind": "put",
+      "long_strike": 615.0,
+      "max_loss": 1694.94,
+      "modeled_credit": 0.7627,
+      "pnl": 305.06,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 620.0,
+      "signal_lookback_end": "2025-08-05",
+      "spot": 625.74,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.006384,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-08-14",
+      "equity_after": 98676.99,
+      "equity_before": 99677.85,
+      "exit_date": "2025-08-21",
+      "exit_spot": 628.63,
+      "kind": "put",
+      "long_strike": 627.0,
+      "max_loss": 1652.86,
+      "modeled_credit": 0.8679,
+      "pnl": -1000.86,
+      "qty": 4,
+      "realized_volatility_20d": 0.10803,
+      "short_strike": 632.0,
+      "signal_lookback_end": "2025-08-13",
+      "spot": 637.8,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.02697,
+      "width": 5.0
+    },
+    {
+      "dte": 8,
+      "entry_date": "2025-08-25",
+      "equity_after": 99021.99,
+      "equity_before": 98676.99,
+      "exit_date": "2025-09-02",
+      "exit_spot": 633.35,
+      "kind": "put",
+      "long_strike": 623.0,
+      "max_loss": 1655.0,
+      "modeled_credit": 0.8625,
+      "pnl": 345.0,
+      "qty": 4,
+      "realized_volatility_20d": 0.121438,
+      "short_strike": 628.0,
+      "signal_lookback_end": "2025-08-22",
+      "spot": 635.48,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.013128,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-09-03",
+      "equity_after": 99347.22,
+      "equity_before": 99021.99,
+      "exit_date": "2025-09-10",
+      "exit_spot": 645.1,
+      "kind": "put",
+      "long_strike": 626.0,
+      "max_loss": 1674.76,
+      "modeled_credit": 0.8131,
+      "pnl": 325.24,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 631.0,
+      "signal_lookback_end": "2025-09-02",
+      "spot": 636.52,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.019707,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-09-11",
+      "equity_after": 99694.21,
+      "equity_before": 99347.22,
+      "exit_date": "2025-09-18",
+      "exit_spot": 654.97,
+      "kind": "put",
+      "long_strike": 640.0,
+      "max_loss": 1653.02,
+      "modeled_credit": 0.8675,
+      "pnl": 346.98,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 645.0,
+      "signal_lookback_end": "2025-09-10",
+      "spot": 650.31,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.011414,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-09-19",
+      "equity_after": 100061.21,
+      "equity_before": 99694.21,
+      "exit_date": "2025-09-26",
+      "exit_spot": 656.31,
+      "kind": "put",
+      "long_strike": 648.0,
+      "max_loss": 1633.0,
+      "modeled_credit": 0.9175,
+      "pnl": 367.0,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 653.0,
+      "signal_lookback_end": "2025-09-18",
+      "spot": 658.06,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.041901,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-09-29",
+      "equity_after": 100421.75,
+      "equity_before": 100061.21,
+      "exit_date": "2025-10-06",
+      "exit_spot": 666.04,
+      "kind": "put",
+      "long_strike": 648.0,
+      "max_loss": 1639.46,
+      "modeled_credit": 0.9013,
+      "pnl": 360.54,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 653.0,
+      "signal_lookback_end": "2025-09-26",
+      "spot": 658.17,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.028812,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-10-07",
+      "equity_after": 100272.51,
+      "equity_before": 100421.75,
+      "exit_date": "2025-10-14",
+      "exit_spot": 656.78,
+      "kind": "put",
+      "long_strike": 653.0,
+      "max_loss": 1661.24,
+      "modeled_credit": 0.8469,
+      "pnl": -149.24,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 658.0,
+      "signal_lookback_end": "2025-10-06",
+      "spot": 663.61,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.035671,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-10-15",
+      "equity_after": 100636.34,
+      "equity_before": 100272.51,
+      "exit_date": "2025-10-22",
+      "exit_spot": 662.3,
+      "kind": "put",
+      "long_strike": 647.0,
+      "max_loss": 1636.17,
+      "modeled_credit": 0.9096,
+      "pnl": 363.83,
+      "qty": 4,
+      "realized_volatility_20d": 0.130707,
+      "short_strike": 652.0,
+      "signal_lookback_end": "2025-10-14",
+      "spot": 659.58,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.007177,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-10-23",
+      "equity_after": 101002.77,
+      "equity_before": 100636.34,
+      "exit_date": "2025-10-30",
+      "exit_spot": 674.48,
+      "kind": "put",
+      "long_strike": 653.0,
+      "max_loss": 1633.57,
+      "modeled_credit": 0.9161,
+      "pnl": 366.43,
+      "qty": 4,
+      "realized_volatility_20d": 0.135194,
+      "short_strike": 658.0,
+      "signal_lookback_end": "2025-10-22",
+      "spot": 665.98,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.015253,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-10-31",
+      "equity_after": 100357.62,
+      "equity_before": 101002.77,
+      "exit_date": "2025-11-07",
+      "exit_spot": 665.38,
+      "kind": "put",
+      "long_strike": 663.0,
+      "max_loss": 1597.14,
+      "modeled_credit": 1.0071,
+      "pnl": -645.14,
+      "qty": 4,
+      "realized_volatility_20d": 0.149231,
+      "short_strike": 668.0,
+      "signal_lookback_end": "2025-10-30",
+      "spot": 676.39,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.016273,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-11-10",
+      "equity_after": 98690.71,
+      "equity_before": 100357.62,
+      "exit_date": "2025-11-17",
+      "exit_spot": 660.22,
+      "kind": "put",
+      "long_strike": 664.0,
+      "max_loss": 1666.91,
+      "modeled_credit": 0.8327,
+      "pnl": -1666.91,
+      "qty": 4,
+      "realized_volatility_20d": 0.109486,
+      "short_strike": 669.0,
+      "signal_lookback_end": "2025-11-07",
+      "spot": 675.68,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.011846,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-11-18",
+      "equity_after": 97026.63,
+      "equity_before": 98690.71,
+      "exit_date": "2025-11-25",
+      "exit_spot": 669.42,
+      "kind": "call",
+      "long_strike": 669.0,
+      "max_loss": 1664.08,
+      "modeled_credit": 0.8398,
+      "pnl": -1664.08,
+      "qty": 4,
+      "realized_volatility_20d": 0.133074,
+      "short_strike": 664.0,
+      "signal_lookback_end": "2025-11-17",
+      "spot": 654.7,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.008247,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-11-26",
+      "equity_after": 97380.96,
+      "equity_before": 97026.63,
+      "exit_date": "2025-12-03",
+      "exit_spot": 678.16,
+      "kind": "call",
+      "long_strike": 690.0,
+      "max_loss": 1645.67,
+      "modeled_credit": 0.8858,
+      "pnl": 354.33,
+      "qty": 4,
+      "realized_volatility_20d": 0.154609,
+      "short_strike": 685.0,
+      "signal_lookback_end": "2025-11-25",
+      "spot": 674.02,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.017927,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-12-04",
+      "equity_after": 97762.07,
+      "equity_before": 97380.96,
+      "exit_date": "2025-12-11",
+      "exit_spot": 683.46,
+      "kind": "put",
+      "long_strike": 665.0,
+      "max_loss": 1618.89,
+      "modeled_credit": 0.9528,
+      "pnl": 381.11,
+      "qty": 4,
+      "realized_volatility_20d": 0.147703,
+      "short_strike": 670.0,
+      "signal_lookback_end": "2025-12-03",
+      "spot": 678.84,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.009332,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-12-12",
+      "equity_after": 98098.32,
+      "equity_before": 97762.07,
+      "exit_date": "2025-12-19",
+      "exit_spot": 676.89,
+      "kind": "put",
+      "long_strike": 664.0,
+      "max_loss": 1663.76,
+      "modeled_credit": 0.8406,
+      "pnl": 336.24,
+      "qty": 4,
+      "realized_volatility_20d": 0.115798,
+      "short_strike": 669.0,
+      "signal_lookback_end": "2025-12-11",
+      "spot": 676.17,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.025416,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-12-22",
+      "equity_after": 98447.55,
+      "equity_before": 98098.32,
+      "exit_date": "2025-12-29",
+      "exit_spot": 684.31,
+      "kind": "put",
+      "long_strike": 670.0,
+      "max_loss": 1650.76,
+      "modeled_credit": 0.8731,
+      "pnl": 349.24,
+      "qty": 4,
+      "realized_volatility_20d": 0.105085,
+      "short_strike": 675.0,
+      "signal_lookback_end": "2025-12-19",
+      "spot": 681.06,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.035475,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2025-12-30",
+      "equity_after": 98818.73,
+      "equity_before": 98447.55,
+      "exit_date": "2026-01-06",
+      "exit_spot": 688.12,
+      "kind": "put",
+      "long_strike": 673.0,
+      "max_loss": 1628.83,
+      "modeled_credit": 0.9279,
+      "pnl": 371.17,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 678.0,
+      "signal_lookback_end": "2025-12-29",
+      "spot": 683.27,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.014349,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-01-07",
+      "equity_after": 99152.91,
+      "equity_before": 98818.73,
+      "exit_date": "2026-01-14",
+      "exit_spot": 686.94,
+      "kind": "put",
+      "long_strike": 675.0,
+      "max_loss": 1665.81,
+      "modeled_credit": 0.8355,
+      "pnl": 334.19,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 680.0,
+      "signal_lookback_end": "2026-01-06",
+      "spot": 685.96,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.014881,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-01-15",
+      "equity_after": 99514.83,
+      "equity_before": 99152.91,
+      "exit_date": "2026-01-22",
+      "exit_spot": 685.29,
+      "kind": "put",
+      "long_strike": 678.0,
+      "max_loss": 1638.08,
+      "modeled_credit": 0.9048,
+      "pnl": 361.92,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 683.0,
+      "signal_lookback_end": "2026-01-14",
+      "spot": 688.49,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.020334,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-01-28",
+      "equity_after": 98827.1,
+      "equity_before": 99514.83,
+      "exit_date": "2026-02-04",
+      "exit_spot": 682.44,
+      "kind": "put",
+      "long_strike": 680.0,
+      "max_loss": 1663.73,
+      "modeled_credit": 0.8407,
+      "pnl": -687.73,
+      "qty": 4,
+      "realized_volatility_20d": 0.107806,
+      "short_strike": 685.0,
+      "signal_lookback_end": "2026-01-27",
+      "spot": 691.68,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.010975,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-02-05",
+      "equity_after": 99176.54,
+      "equity_before": 98827.1,
+      "exit_date": "2026-02-12",
+      "exit_spot": 677.56,
+      "kind": "call",
+      "long_strike": 686.0,
+      "max_loss": 1650.56,
+      "modeled_credit": 0.8736,
+      "pnl": 349.44,
+      "qty": 4,
+      "realized_volatility_20d": 0.107412,
+      "short_strike": 681.0,
+      "signal_lookback_end": "2026-02-04",
+      "spot": 673.83,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.005131,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-02-13",
+      "equity_after": 99546.34,
+      "equity_before": 99176.54,
+      "exit_date": "2026-02-20",
+      "exit_spot": 685.76,
+      "kind": "call",
+      "long_strike": 693.0,
+      "max_loss": 1630.2,
+      "modeled_credit": 0.9245,
+      "pnl": 369.8,
+      "qty": 4,
+      "realized_volatility_20d": 0.146992,
+      "short_strike": 688.0,
+      "signal_lookback_end": "2026-02-12",
+      "spot": 677.98,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.015875,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-02-24",
+      "equity_after": 99923.05,
+      "equity_before": 99546.34,
+      "exit_date": "2026-03-03",
+      "exit_spot": 676.66,
+      "kind": "call",
+      "long_strike": 697.0,
+      "max_loss": 1623.29,
+      "modeled_credit": 0.9418,
+      "pnl": 376.71,
+      "qty": 4,
+      "realized_volatility_20d": 0.126396,
+      "short_strike": 692.0,
+      "signal_lookback_end": "2026-02-23",
+      "spot": 683.7,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.014962,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-03-04",
+      "equity_after": 100269.31,
+      "equity_before": 99923.05,
+      "exit_date": "2026-03-11",
+      "exit_spot": 672.73,
+      "kind": "call",
+      "long_strike": 696.0,
+      "max_loss": 1653.74,
+      "modeled_credit": 0.8657,
+      "pnl": 346.26,
+      "qty": 4,
+      "realized_volatility_20d": 0.133057,
+      "short_strike": 691.0,
+      "signal_lookback_end": "2026-03-03",
+      "spot": 681.48,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.01327,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-03-12",
+      "equity_after": 100636.21,
+      "equity_before": 100269.31,
+      "exit_date": "2026-03-19",
+      "exit_spot": 656.35,
+      "kind": "call",
+      "long_strike": 675.0,
+      "max_loss": 1633.1,
+      "modeled_credit": 0.9172,
+      "pnl": 366.9,
+      "qty": 4,
+      "realized_volatility_20d": 0.117768,
+      "short_strike": 670.0,
+      "signal_lookback_end": "2026-03-11",
+      "spot": 662.5,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.022365,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-03-20",
+      "equity_after": 100995.45,
+      "equity_before": 100636.21,
+      "exit_date": "2026-03-27",
+      "exit_spot": 632.41,
+      "kind": "call",
+      "long_strike": 660.0,
+      "max_loss": 1640.76,
+      "modeled_credit": 0.8981,
+      "pnl": 359.24,
+      "qty": 4,
+      "realized_volatility_20d": 0.127591,
+      "short_strike": 655.0,
+      "signal_lookback_end": "2026-03-19",
+      "spot": 646.81,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.042887,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-03-30",
+      "equity_after": 99364.0,
+      "equity_before": 100995.45,
+      "exit_date": "2026-04-06",
+      "exit_spot": 657.19,
+      "kind": "call",
+      "long_strike": 645.0,
+      "max_loss": 1631.45,
+      "modeled_credit": 0.9214,
+      "pnl": -1631.45,
+      "qty": 4,
+      "realized_volatility_20d": 0.152579,
+      "short_strike": 640.0,
+      "signal_lookback_end": "2026-03-27",
+      "spot": 630.4,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.07365,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-04-07",
+      "equity_after": 97735.93,
+      "equity_before": 99364.0,
+      "exit_date": "2026-04-14",
+      "exit_spot": 692.58,
+      "kind": "call",
+      "long_strike": 675.0,
+      "max_loss": 1628.07,
+      "modeled_credit": 0.9298,
+      "pnl": -1628.07,
+      "qty": 4,
+      "realized_volatility_20d": 0.183892,
+      "short_strike": 670.0,
+      "signal_lookback_end": "2026-04-06",
+      "spot": 657.54,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.025923,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-04-15",
+      "equity_after": 98166.59,
+      "equity_before": 97735.93,
+      "exit_date": "2026-04-22",
+      "exit_spot": 709.37,
+      "kind": "put",
+      "long_strike": 681.0,
+      "max_loss": 1569.34,
+      "modeled_credit": 1.0767,
+      "pnl": 430.66,
+      "qty": 4,
+      "realized_volatility_20d": 0.201692,
+      "short_strike": 686.0,
+      "signal_lookback_end": "2026-04-14",
+      "spot": 697.95,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.038086,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-04-23",
+      "equity_after": 98574.1,
+      "equity_before": 98166.59,
+      "exit_date": "2026-04-30",
+      "exit_spot": 716.56,
+      "kind": "put",
+      "long_strike": 690.0,
+      "max_loss": 1592.49,
+      "modeled_credit": 1.0188,
+      "pnl": 407.51,
+      "qty": 4,
+      "realized_volatility_20d": 0.185222,
+      "short_strike": 695.0,
+      "signal_lookback_end": "2026-04-22",
+      "spot": 706.59,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.082925,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-05-01",
+      "equity_after": 98939.02,
+      "equity_before": 98574.1,
+      "exit_date": "2026-05-08",
+      "exit_spot": 735.65,
+      "kind": "put",
+      "long_strike": 706.0,
+      "max_loss": 1635.07,
+      "modeled_credit": 0.9123,
+      "pnl": 364.93,
+      "qty": 4,
+      "realized_volatility_20d": 0.121471,
+      "short_strike": 711.0,
+      "signal_lookback_end": "2026-04-30",
+      "spot": 718.64,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.095523,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-05-11",
+      "equity_after": 99308.75,
+      "equity_before": 98939.02,
+      "exit_date": "2026-05-18",
+      "exit_spot": 736.5,
+      "kind": "put",
+      "long_strike": 726.0,
+      "max_loss": 1630.27,
+      "modeled_credit": 0.9243,
+      "pnl": 369.73,
+      "qty": 4,
+      "realized_volatility_20d": 0.104577,
+      "short_strike": 731.0,
+      "signal_lookback_end": "2026-05-08",
+      "spot": 737.3,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.075134,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-05-19",
+      "equity_after": 99642.0,
+      "equity_before": 99308.75,
+      "exit_date": "2026-05-26",
+      "exit_spot": 748.53,
+      "kind": "put",
+      "long_strike": 720.0,
+      "max_loss": 1666.75,
+      "modeled_credit": 0.8331,
+      "pnl": 333.25,
+      "qty": 4,
+      "realized_volatility_20d": 0.104017,
+      "short_strike": 725.0,
+      "signal_lookback_end": "2026-05-18",
+      "spot": 731.91,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.048996,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-05-27",
+      "equity_after": 99987.1,
+      "equity_before": 99642.0,
+      "exit_date": "2026-06-03",
+      "exit_spot": 752.24,
+      "kind": "put",
+      "long_strike": 737.0,
+      "max_loss": 1654.9,
+      "modeled_credit": 0.8627,
+      "pnl": 345.1,
+      "qty": 4,
+      "realized_volatility_20d": 0.101717,
+      "short_strike": 742.0,
+      "signal_lookback_end": "2026-05-26",
+      "spot": 748.66,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.05449,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-06-04",
+      "equity_after": 98360.23,
+      "equity_before": 99987.1,
+      "exit_date": "2026-06-11",
+      "exit_spot": 735.77,
+      "kind": "put",
+      "long_strike": 744.0,
+      "max_loss": 1626.87,
+      "modeled_credit": 0.9328,
+      "pnl": -1626.87,
+      "qty": 4,
+      "realized_volatility_20d": 0.1,
+      "short_strike": 749.0,
+      "signal_lookback_end": "2026-06-03",
+      "spot": 755.03,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.027819,
+      "width": 5.0
+    },
+    {
+      "dte": 10,
+      "entry_date": "2026-06-12",
+      "equity_after": 98737.68,
+      "equity_before": 98360.23,
+      "exit_date": "2026-06-22",
+      "exit_spot": 744.27,
+      "kind": "call",
+      "long_strike": 759.0,
+      "max_loss": 1622.55,
+      "modeled_credit": 0.9436,
+      "pnl": 377.45,
+      "qty": 4,
+      "realized_volatility_20d": 0.152609,
+      "short_strike": 754.0,
+      "signal_lookback_end": "2026-06-11",
+      "spot": 739.76,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.013951,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-06-24",
+      "equity_after": 99128.46,
+      "equity_before": 98737.68,
+      "exit_date": "2026-07-01",
+      "exit_spot": 745.665,
+      "kind": "call",
+      "long_strike": 751.0,
+      "max_loss": 1609.22,
+      "modeled_credit": 0.977,
+      "pnl": 390.78,
+      "qty": 4,
+      "realized_volatility_20d": 0.173731,
+      "short_strike": 746.0,
+      "signal_lookback_end": "2026-06-23",
+      "spot": 733.32,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.019919,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-07-02",
+      "equity_after": 99508.93,
+      "equity_before": 99128.46,
+      "exit_date": "2026-07-09",
+      "exit_spot": 751.55,
+      "kind": "call",
+      "long_strike": 764.0,
+      "max_loss": 1619.53,
+      "modeled_credit": 0.9512,
+      "pnl": 380.47,
+      "qty": 4,
+      "realized_volatility_20d": 0.183974,
+      "short_strike": 759.0,
+      "signal_lookback_end": "2026-07-01",
+      "spot": 744.86,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.008741,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-07-10",
+      "equity_after": 99209.15,
+      "equity_before": 99508.93,
+      "exit_date": "2026-07-17",
+      "exit_spot": 743.28,
+      "kind": "put",
+      "long_strike": 740.0,
+      "max_loss": 1611.78,
+      "modeled_credit": 0.9705,
+      "pnl": -299.78,
+      "qty": 4,
+      "realized_volatility_20d": 0.14811,
+      "short_strike": 745.0,
+      "signal_lookback_end": "2026-07-09",
+      "spot": 754.94,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.038454,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-07-22",
+      "equity_after": 97580.99,
+      "equity_before": 99209.15,
+      "exit_date": "2026-07-29",
+      "exit_spot": 729.57,
+      "kind": "put",
+      "long_strike": 736.0,
+      "max_loss": 1628.16,
+      "modeled_credit": 0.9296,
+      "pnl": -1628.16,
+      "qty": 4,
+      "realized_volatility_20d": 0.105839,
+      "short_strike": 741.0,
+      "signal_lookback_end": "2026-07-21",
+      "spot": 747.49,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.019813,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-07-30",
+      "equity_after": 95929.31,
+      "equity_before": 97580.99,
+      "exit_date": "2026-08-06",
+      "exit_spot": 768.64,
+      "kind": "call",
+      "long_strike": 755.0,
+      "max_loss": 1651.68,
+      "modeled_credit": 0.8708,
+      "pnl": -1651.68,
+      "qty": 4,
+      "realized_volatility_20d": 0.109813,
+      "short_strike": 750.0,
+      "signal_lookback_end": "2026-07-29",
+      "spot": 741.63,
+      "stance": "BEARISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": -0.021585,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-08-07",
+      "equity_after": 96311.72,
+      "equity_before": 95929.31,
+      "exit_date": "2026-08-14",
+      "exit_spot": 776.3,
+      "kind": "put",
+      "long_strike": 758.0,
+      "max_loss": 1617.59,
+      "modeled_credit": 0.956,
+      "pnl": 382.41,
+      "qty": 4,
+      "realized_volatility_20d": 0.145465,
+      "short_strike": 763.0,
+      "signal_lookback_end": "2026-08-06",
+      "spot": 773.16,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.018147,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-08-17",
+      "equity_after": 96501.75,
+      "equity_before": 96311.72,
+      "exit_date": "2026-08-24",
+      "exit_spot": 763.46,
+      "kind": "put",
+      "long_strike": 759.0,
+      "max_loss": 1593.97,
+      "modeled_credit": 1.0151,
+      "pnl": 190.03,
+      "qty": 4,
+      "realized_volatility_20d": 0.135124,
+      "short_strike": 764.0,
+      "signal_lookback_end": "2026-08-14",
+      "spot": 772.62,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.046015,
+      "width": 5.0
+    },
+    {
+      "dte": 7,
+      "entry_date": "2026-08-25",
+      "equity_after": 96895.7,
+      "equity_before": 96501.75,
+      "exit_date": "2026-09-01",
+      "exit_spot": 761.63,
+      "kind": "put",
+      "long_strike": 752.0,
+      "max_loss": 1606.06,
+      "modeled_credit": 0.9849,
+      "pnl": 393.94,
+      "qty": 4,
+      "realized_volatility_20d": 0.134756,
+      "short_strike": 757.0,
+      "signal_lookback_end": "2026-08-24",
+      "spot": 765.79,
+      "stance": "BULLISH",
+      "target_short_delta": 0.25,
+      "trailing_return_20d": 0.030596,
+      "width": 5.0
+    }
+  ]
+}
