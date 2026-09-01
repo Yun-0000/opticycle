@@ -2,81 +2,10 @@
   "account_id": "PA3V84C40PJQ",
   "end_equity": 100026.77,
   "http_status": 200,
-  "net_change": 100026.77,
+  "net_change": 26.77,
+  "observed_points": 3,
   "period": "1M",
   "points": [
-    {
-      "equity": 0.0,
-      "timestamp": 1785801600
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1785888000
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1785974400
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1786060800
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1786147200
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1786406400
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1786492800
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1786579200
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1786665600
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1786752000
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1787011200
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1787097600
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1787184000
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1787270400
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1787356800
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1787616000
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1787702400
-    },
-    {
-      "equity": 0.0,
-      "timestamp": 1787788800
-    },
     {
       "equity": 100000.0,
       "timestamp": 1787875200
@@ -90,8 +19,9 @@
       "timestamp": 1788220800
     }
   ],
-  "schema": "opticycle.portfolio-history.v1",
+  "schema": "opticycle.portfolio-history.v2",
   "source": "GET /v2/account/portfolio/history",
-  "start_equity": 0.0,
-  "timeframe": "1D"
+  "start_equity": 100000.0,
+  "timeframe": "1D",
+  "zero_placeholders_removed": 18
 }

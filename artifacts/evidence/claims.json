@@ -1,13 +1,13 @@
 {
-  "opticycle:v1:ERROR:el-8656e6e7ca964cd3b2ff1fe9d6ebc627:5433ba7f69fbf2a4e35983597d8712dafddadf47": {
+  "opticycle:v1:ERROR:el-f86d9111503b435faf32acfc59bc57c7:8e3de5d448414f725c66a25e1064fc35e6904151": {
     "caveat": null,
     "channel": "fault_injection",
-    "commit_sha": "5433ba7f69fbf2a4e35983597d8712dafddadf47",
+    "commit_sha": "8e3de5d448414f725c66a25e1064fc35e6904151",
     "incomplete": [],
     "live_fill": false,
     "live_mleg_submit": false,
     "outcome": "ERROR",
-    "record_id": "el-8656e6e7ca964cd3b2ff1fe9d6ebc627"
+    "record_id": "el-f86d9111503b435faf32acfc59bc57c7"
   },
   "opticycle:v1:FILLED:el-ac177b1c1b344c7587fac4851939f3c2:c163d63a8a34f679d5a7ad4bc47535cd6ee7cc66": {
     "caveat": "live_paper broker fill; submitted credit limit had debit sign; not price-bound MATCHED; account id omitted",
@@ -29,6 +29,16 @@
     "outcome": "FILLED",
     "record_id": "el-c40cea16e4f2477d89f451de8e1901b4"
   },
+  "opticycle:v1:MATCHED:el-18fc0ecf10da4bc28f0896261b78e591:8e3de5d448414f725c66a25e1064fc35e6904151": {
+    "caveat": null,
+    "channel": "replay",
+    "commit_sha": "8e3de5d448414f725c66a25e1064fc35e6904151",
+    "incomplete": [],
+    "live_fill": false,
+    "live_mleg_submit": false,
+    "outcome": "MATCHED",
+    "record_id": "el-18fc0ecf10da4bc28f0896261b78e591"
+  },
   "opticycle:v1:MATCHED:el-77530598c0e7b7aca7f8cfa5bed34430:6a9ad3a6774dbdfafae5d716365012854601580d": {
     "caveat": "live_paper price-bound MATCHED; Alpaca-negative credit limit; filled <= submitted; ThesisAgent model_called=true; account id omitted",
     "channel": "live_paper",
@@ -38,26 +48,6 @@
     "live_mleg_submit": true,
     "outcome": "MATCHED",
     "record_id": "el-77530598c0e7b7aca7f8cfa5bed34430"
-  },
-  "opticycle:v1:MATCHED:el-b31707d8a84741fe9e48ea39d187b0a2:5433ba7f69fbf2a4e35983597d8712dafddadf47": {
-    "caveat": null,
-    "channel": "replay",
-    "commit_sha": "5433ba7f69fbf2a4e35983597d8712dafddadf47",
-    "incomplete": [],
-    "live_fill": false,
-    "live_mleg_submit": false,
-    "outcome": "MATCHED",
-    "record_id": "el-b31707d8a84741fe9e48ea39d187b0a2"
-  },
-  "opticycle:v1:NO_TRADE:el-4efd78ad33bb4e6984ea6b173a123060:5433ba7f69fbf2a4e35983597d8712dafddadf47": {
-    "caveat": null,
-    "channel": "replay",
-    "commit_sha": "5433ba7f69fbf2a4e35983597d8712dafddadf47",
-    "incomplete": [],
-    "live_fill": false,
-    "live_mleg_submit": false,
-    "outcome": "NO_TRADE",
-    "record_id": "el-4efd78ad33bb4e6984ea6b173a123060"
   },
   "opticycle:v1:NO_TRADE:el-618c39ea9b7f471a83573e72bd17d6b6:883ddf43b3ba318224bb70060e7870f6b3c03dc2": {
     "caveat": "live Alpaca observation; SPY quote stale after the regular session; genuine NO_TRADE; ThesisAgent not called (freshness fail-closed); not fill evidence",
@@ -79,14 +69,24 @@
     "outcome": "NO_TRADE",
     "record_id": "el-6b67a01c2bdd448388e813633f90e890"
   },
-  "opticycle:v1:VETO:el-4834444ec6334c88bac80a791c7b5750:5433ba7f69fbf2a4e35983597d8712dafddadf47": {
+  "opticycle:v1:NO_TRADE:el-e5e4e7d347eb484ebf1a71142b6401ff:8e3de5d448414f725c66a25e1064fc35e6904151": {
     "caveat": null,
     "channel": "replay",
-    "commit_sha": "5433ba7f69fbf2a4e35983597d8712dafddadf47",
+    "commit_sha": "8e3de5d448414f725c66a25e1064fc35e6904151",
+    "incomplete": [],
+    "live_fill": false,
+    "live_mleg_submit": false,
+    "outcome": "NO_TRADE",
+    "record_id": "el-e5e4e7d347eb484ebf1a71142b6401ff"
+  },
+  "opticycle:v1:VETO:el-1961fcf3ac99418a97508911ca13f1ff:8e3de5d448414f725c66a25e1064fc35e6904151": {
+    "caveat": null,
+    "channel": "replay",
+    "commit_sha": "8e3de5d448414f725c66a25e1064fc35e6904151",
     "incomplete": [],
     "live_fill": false,
     "live_mleg_submit": false,
     "outcome": "VETO",
-    "record_id": "el-4834444ec6334c88bac80a791c7b5750"
+    "record_id": "el-1961fcf3ac99418a97508911ca13f1ff"
   }
 }
