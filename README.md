@@ -23,6 +23,8 @@ flowchart LR
 
 ## 60-second proof: three broker receipts
 
+These receipts prove the live MCP/certificate/readback loop. They predate the current selector policy, which is now constrained to 3–10 DTE, $5 width, and 0.20–0.30 short-leg delta; they are not presented as current-policy trade samples.
+
 | Broker receipt | Exact order | Result | Proof |
 | --- | --- | --- | --- |
 | `abcb5385-0aa3-42cc-9b58-ef4200235c27` | SPY 793C/809C bear call · qty 1 | filled `-2.11` | Alpaca GET receipt; later closed via MCP |

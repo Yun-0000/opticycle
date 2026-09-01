@@ -66,6 +66,10 @@ def test_evidence_page_renders_from_sanitized_export_only() -> None:
     assert "private_raw" not in html
     assert "ALPACA_API_KEY" not in html
     assert "ALPACA_SECRET_KEY" not in html
+    assert "gpt-5" not in html.lower()
+    assert "HISTORICAL GOLDEN TRACE" in html
+    assert "Current entries require 3–10 DTE" in html
+    assert "gpt-5" not in PUBLIC_JSONL.read_text(encoding="utf-8").lower()
     hits = scan_public_text(html, source="index.html")
     assert hits == []
 

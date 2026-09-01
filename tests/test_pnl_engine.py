@@ -7,7 +7,13 @@ from types import SimpleNamespace
 import pytest
 
 from opticycle.pin_option import apply_risk_budget_qty, vertical_max_loss_per_contract
-from opticycle.position_manager import ExitAuthorization, manage_open_positions, open_contracts_and_risk
+from opticycle.position_manager import (
+    ExitAuthorization,
+    OpenVertical,
+    _exit_reason,
+    manage_open_positions,
+    open_contracts_and_risk,
+)
 from opticycle.protocol import EvidenceSnapshot, OptionContractQuote, OptionType
 from opticycle.risk import PortfolioSnapshot, payload_from_request
 from opticycle.settings import HackathonSettings
@@ -194,6 +200,27 @@ def test_autonomous_exit_is_mcp_mleg_and_reconciled(tmp_path) -> None:
     assert result["mcp_submit_count"] == 1
     assert result["second_submit"] is False
     assert result["reconciliation"]["status"] == "matched"
+
+
+@pytest.mark.parametrize(
+    ("expiration", "current_debit", "expected"),
+    [
+        (datetime(2026, 9, 10, tzinfo=timezone.utc).date(), Decimal("0.50"), "TAKE_PROFIT_50_PERCENT"),
+        (datetime(2026, 9, 10, tzinfo=timezone.utc).date(), Decimal("2.00"), "STOP_LOSS_2X_CREDIT"),
+        (datetime(2026, 9, 2, tzinfo=timezone.utc).date(), Decimal("1.00"), "DTE_FORCE_CLOSE"),
+    ],
+)
+def test_each_autonomous_exit_trigger_is_deterministic(expiration, current_debit, expected) -> None:
+    vertical = OpenVertical(
+        short_symbol=SHORT,
+        long_symbol=LONG,
+        qty=1,
+        expiration=expiration,
+        width=Decimal("5"),
+        entry_credit=Decimal("1.00"),
+    )
+    now = datetime(2026, 9, 1, 16, 0, tzinfo=timezone.utc)
+    assert _exit_reason(vertical, current_debit, HackathonSettings(), now) == expected
 
 
 def test_exit_authorization_rejects_payload_mutation() -> None:

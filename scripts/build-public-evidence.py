@@ -24,6 +24,7 @@ from opticycle.evidence_public import (  # noqa: E402
     PUBLIC_JSONL,
     build_manifest,
     load_jsonl,
+    redact_public_model_metadata,
     render_evidence_page,
 )
 from opticycle.ledger import EvidenceLedger, canonical_dumps, current_commit_sha  # noqa: E402
@@ -125,7 +126,7 @@ def main() -> int:
     if not no_trade:
         print("missing Gate 9 artifacts/evidence/no_trade.public.jsonl", file=sys.stderr)
         return 1
-    extras = _replay_records(sha)
+    extras = [redact_public_model_metadata(row) for row in _replay_records(sha)]
     genuine = load_jsonl(GENUINE_NO_TRADE_JSONL)
     combined: list[dict] = []
     seen: set[str] = set()
@@ -134,7 +135,7 @@ def main() -> int:
         if record_id in seen:
             continue
         seen.add(record_id)
-        combined.append(row)
+        combined.append(redact_public_model_metadata(row))
     PUBLIC_JSONL.parent.mkdir(parents=True, exist_ok=True)
     # Keep Gate 9 no_trade.public.jsonl byte-stable; public.jsonl holds extras only.
     PUBLIC_JSONL.write_text("".join(canonical_dumps(row) + "\n" for row in extras), encoding="utf-8")

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -84,6 +85,24 @@ UPSTREAM_NAME_TOKENS = (
 
 DESIGNATED_ACCOUNT_ID = "PA3V84C40PJQ"
 
+PUBLIC_MODEL_RE = re.compile(r"\bgpt-[A-Za-z0-9._-]+\b", re.IGNORECASE)
+
+
+def redact_public_model_metadata(value: Any) -> Any:
+    """Keep model execution proof while omitting account-specific model metadata."""
+    if isinstance(value, Mapping):
+        return {
+            key: "[REDACTED]" if str(key).lower() == "model" else redact_public_model_metadata(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [redact_public_model_metadata(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(redact_public_model_metadata(item) for item in value)
+    if isinstance(value, str):
+        return PUBLIC_MODEL_RE.sub("[REDACTED]", value)
+    return value
+
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.is_file():
@@ -121,7 +140,7 @@ def load_gate11_status() -> dict[str, Any]:
     merged.update(loaded)
     merged["injected_no_trade_promoted"] = False
     merged["live_fill_claimed"] = bool(merged.get("live_fill_claimed"))
-    return merged
+    return redact_public_model_metadata(merged)
 
 
 def load_public_records() -> list[dict[str, Any]]:
@@ -593,18 +612,19 @@ def render_evidence_page(
   </style>
 </head>
 <body>
-  <div class="eyebrow">OPTICYCLE / GOLDEN TRADE / SANITIZED PAPER EVIDENCE</div>
+  <div class="eyebrow">OPTICYCLE / HISTORICAL GOLDEN TRACE / SANITIZED PAPER EVIDENCE</div>
   <h1>One order.<br/>Seven proofs.</h1>
   <p class="lede">Paper account <strong>{DESIGNATED_ACCOUNT_ID}</strong>. The judge path starts with the only live, price-bound MATCHED fill, then resolves every step to the ledger and independent Alpaca broker readback.</p>
   {golden_trace}
   <div class="facts">
     <div class="fact"><small>Golden client order</small><strong>{SIGNED_CLIENT_ORDER_ID}</strong></div>
-    <div class="fact"><small>SPY bull put · expiry 2026-10-16</small><strong>Sell SPY 740P / Buy SPY 724P · qty 1</strong></div>
+    <div class="fact"><small>Historical execution proof · expiry 2026-10-16</small><strong>Sell SPY 740P / Buy SPY 724P · qty 1</strong></div>
     <div class="fact"><small>Price integrity</small><strong>Limit -2.26 / Fill -2.26</strong></div>
     <div class="fact"><small>Official transport</small><strong>Alpaca MCP 2.3.0 · MLEG only</strong></div>
     <div class="fact"><small>Timeout invariant</small><strong>mcp_submit_count=1 · second_submit=false</strong></div>
     <div class="fact"><small>After-fill equity</small><strong>100049.62</strong></div>
   </div>
+  <p class="muted">This receipt predates the tightened selector policy. Current entries require 3–10 DTE, exact $5 width, and 0.20–0.30 short-leg delta.</p>
   <section class="equity">
     <div class="eyebrow">ALPACA / GET /V2/ACCOUNT/PORTFOLIO/HISTORY</div>
     <h2>Paper equity curve</h2>
@@ -665,7 +685,7 @@ def write_evidence_artifacts(records: list[dict[str, Any]], *, dest_dir: Path | 
     public_path = dest / "public.jsonl"
     manifest_path = dest / "manifest.json"
     page_path = dest / "index.html"
-    sanitized = [sanitize(row) for row in records]
+    sanitized = [redact_public_model_metadata(sanitize(row)) for row in records]
     for row in sanitized:
         row["ledger_class"] = "public_sanitized"
     public_path.write_text("".join(canonical_dumps(row) + "\n" for row in sanitized), encoding="utf-8")
