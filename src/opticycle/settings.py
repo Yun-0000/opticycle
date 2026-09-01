@@ -38,13 +38,14 @@ class HackathonSettings(BaseSettings):
     agent_mode: Literal["llm"] = "llm"
     strategy: Literal["vertical_spread"] = "vertical_spread"
     paper_only: bool = True
-    risk_per_trade_pct: float = Field(default=0.015, gt=0, le=0.08)
-    max_total_risk_pct: float = Field(default=0.06, gt=0, le=0.20)
+    risk_per_trade_pct: float = Field(default=0.02, gt=0, le=0.08)
+    max_total_risk_pct: float = Field(default=0.08, gt=0, le=0.20)
     max_position_pct: float = Field(default=0.08, gt=0, le=0.25)
     max_daily_trades: int = Field(default=2, ge=1, le=50)
     max_open_positions: int = Field(default=8, ge=1, le=40)
-    max_new_contracts_per_day: int = Field(default=2, ge=1, le=20)
-    max_open_contracts: int = Field(default=4, ge=1, le=40)
+    max_new_verticals_per_day: int = Field(default=2, ge=1, le=20)
+    max_open_verticals: int = Field(default=4, ge=1, le=40)
+    max_contracts_per_vertical: int = Field(default=4, ge=1, le=20)
     min_dte: int = Field(default=3, ge=1, le=45)
     max_dte: int = Field(default=10, ge=1, le=60)
     short_delta_min: float = Field(default=0.20, ge=0.01, le=0.49)

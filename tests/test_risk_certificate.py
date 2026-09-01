@@ -343,6 +343,35 @@ def test_credit_spread_max_loss_matches_independent_formula() -> None:
     assert cert.veto is False
 
 
+def test_risk_certificate_counts_a_qty_four_mleg_as_one_vertical() -> None:
+    settings = _settings()
+    settings.risk_per_trade_pct = 0.08
+    engine = RiskEngine(settings)
+    payload = _payload(_bull_put_legs(), qty=4)
+    evidence = _evidence(_bull_put_quotes())
+
+    approved = engine.issue(
+        payload,
+        _portfolio(verticals_opened_today=1, open_verticals=3),
+        evidence,
+    )
+    assert approved.approval is True
+
+    daily_cap = engine.issue(
+        payload,
+        _portfolio(verticals_opened_today=2, open_verticals=3),
+        evidence,
+    )
+    assert "daily new-vertical limit exceeded" in daily_cap.reasons
+
+    open_cap = engine.issue(
+        payload,
+        _portfolio(verticals_opened_today=1, open_verticals=4),
+        evidence,
+    )
+    assert "open-vertical limit exceeded" in open_cap.reasons
+
+
 def test_debit_spread_max_loss_matches_independent_formula_and_is_vetoed() -> None:
     engine = RiskEngine(_settings())
     legs = _debit_call_legs()

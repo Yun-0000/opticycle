@@ -26,7 +26,7 @@ from opticycle.protocol import (
     ensure_utc,
 )
 from opticycle.risk import PortfolioSnapshot
-from opticycle.position_manager import open_contracts_and_risk
+from opticycle.position_manager import open_verticals_and_risk
 from opticycle.settings import HackathonSettings
 
 MAX_QUOTE_AGE_SECONDS = Decimal("120")
@@ -851,8 +851,8 @@ def observe_live(
 
     net_delta, net_gamma, net_theta, net_vega = _portfolio_greeks(position_list, chain_quotes)
     position_records = [_position_record(item) for item in position_list]
-    open_contracts, open_risk = open_contracts_and_risk(position_records)
-    opening_orders_today, contracts_opened_today = _opening_activity_today(
+    open_verticals, open_risk = open_verticals_and_risk(position_records)
+    verticals_opened_today, _contracts_opened_today = _opening_activity_today(
         [*open_list, *fill_list], clock_now
     )
     portfolio = PortfolioSnapshot(
@@ -862,10 +862,10 @@ def observe_live(
         account_id=account_id,
         paper=True,
         options_approved=True,
-        trades_today=opening_orders_today,
+        trades_today=verticals_opened_today,
         open_positions=len(position_list),
-        contracts_opened_today=contracts_opened_today,
-        open_contracts=open_contracts,
+        verticals_opened_today=verticals_opened_today,
+        open_verticals=open_verticals,
         net_delta=net_delta,
         net_vega=net_vega,
         net_gamma=net_gamma,
@@ -873,9 +873,6 @@ def observe_live(
         open_risk=float(open_risk),
         positions=position_records,
     )
-    if open_list:
-        portfolio.trades_today = max(portfolio.trades_today, len(open_list))
-
     clock_open = bool(getattr(clock, "is_open", False))
     bar_closes: list[Decimal] = []
     if not bars.empty and "close" in bars.columns:

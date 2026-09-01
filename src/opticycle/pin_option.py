@@ -232,11 +232,11 @@ def apply_risk_budget_qty(
     portfolio: Any,
     settings: HackathonSettings,
 ) -> int:
-    """Size one vertical from equity risk, aggregate-risk, and contract caps."""
+    """Size one vertical from equity risk; vertical-count limits never consume quantity."""
     equity = Decimal(str(getattr(portfolio, "equity", 0) or 0))
     existing_risk = Decimal(str(getattr(portfolio, "open_risk", 0) or 0))
-    opened_today = int(getattr(portfolio, "contracts_opened_today", 0) or 0)
-    open_contracts = int(getattr(portfolio, "open_contracts", 0) or 0)
+    opened_today = int(getattr(portfolio, "verticals_opened_today", 0) or 0)
+    open_verticals = int(getattr(portfolio, "open_verticals", 0) or 0)
     if equity <= 0:
         raise ExecutionRejected("NO_TRADE: account equity missing for risk sizing")
     per_contract = vertical_max_loss_per_contract(request)
@@ -247,12 +247,14 @@ def apply_risk_budget_qty(
     )
     risk_budget = min(trade_budget, position_hard_cap, aggregate_remaining)
     risk_qty = int((risk_budget / per_contract).to_integral_value(rounding=ROUND_FLOOR))
-    daily_capacity = max(settings.max_new_contracts_per_day - opened_today, 0)
-    open_capacity = max(settings.max_open_contracts - open_contracts, 0)
-    qty = min(risk_qty, daily_capacity, open_capacity)
+    if opened_today >= settings.max_new_verticals_per_day:
+        raise ExecutionRejected("NO_TRADE: daily new-vertical capacity is exhausted")
+    if open_verticals >= settings.max_open_verticals:
+        raise ExecutionRejected("NO_TRADE: open-vertical capacity is exhausted")
+    qty = min(risk_qty, settings.max_contracts_per_vertical)
     if qty <= 0:
         raise ExecutionRejected(
-            "NO_TRADE: risk budget or daily/open contract capacity is exhausted"
+            "NO_TRADE: risk budget or daily/open vertical capacity is exhausted"
         )
     request.qty = qty
     request.metadata.update(
@@ -262,8 +264,9 @@ def apply_risk_budget_qty(
             "max_total_risk_pct": str(settings.max_total_risk_pct),
             "per_contract_max_loss": str(per_contract),
             "risk_budget": str(risk_budget.quantize(Decimal("0.01"))),
-            "opened_today_before": opened_today,
-            "open_contracts_before": open_contracts,
+            "verticals_opened_today_before": opened_today,
+            "open_verticals_before": open_verticals,
+            "max_contracts_per_vertical": settings.max_contracts_per_vertical,
         }
     )
     return qty

@@ -165,6 +165,16 @@ def open_contracts_and_risk(positions: list[Any]) -> tuple[int, Decimal]:
     return contracts, _money(risk)
 
 
+def open_verticals_and_risk(positions: list[Any]) -> tuple[int, Decimal]:
+    """Return independent spread count and quantity-scaled aggregate max risk."""
+    pairs = pair_open_verticals(positions)
+    risk = Decimal("0")
+    for item in pairs:
+        credit = item.entry_credit or Decimal("0")
+        risk += max(item.width - credit, Decimal("0")) * Decimal("100") * item.qty
+    return len(pairs), _money(risk)
+
+
 def _current_debit(vertical: OpenVertical, evidence: EvidenceSnapshot) -> tuple[Decimal | None, Decimal | None]:
     quotes = quotes_by_symbol(evidence)
     short = quotes.get(vertical.short_symbol)

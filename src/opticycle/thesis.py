@@ -66,6 +66,7 @@ FORBIDDEN_OUTPUT_KEYS = frozenset(
     }
 )
 ALLOWED_REASON_CODES = {item.value for item in ThesisReasonCode}
+DIRECTIONAL_CITATION_NAMES = ("bar_return", "bar_trend")
 
 
 class ThesisDisabled(RuntimeError):
@@ -318,6 +319,10 @@ def summarize_features(evidence: EvidenceSnapshot) -> FeatureSummary:
         implied = ThesisStance.BEARISH
         bound = STANCE_CREDIT_TYPE[implied]
 
+    cited.append(_cite("is_fresh", "true" if bool(evidence.is_fresh) and not stale else "false"))
+    cited.append(_cite("implied_stance", implied.value))
+    cited.append(_cite("bound_credit_type", bound or "none"))
+
     spot_for_bucket = last or evidence.spot_price
     bucket_floor = (int(spot_for_bucket) // 5) * 5
     return FeatureSummary(
@@ -347,7 +352,12 @@ def summarize_features(evidence: EvidenceSnapshot) -> FeatureSummary:
     )
 
 
-def features_to_prompt(features: FeatureSummary) -> str:
+def features_to_prompt(features: FeatureSummary, *, validation_feedback: str = "") -> str:
+    directional = [
+        item
+        for item in features.evidence_refs
+        if _citation_name(item) in DIRECTIONAL_CITATION_NAMES
+    ]
     payload = {
         "underlying": features.underlying,
         "observation_timestamp": features.observation_timestamp.isoformat(),
@@ -375,6 +385,7 @@ def features_to_prompt(features: FeatureSummary) -> str:
         "next_event": features.next_event,
         "hours_to_event": str(features.hours_to_event) if features.hours_to_event is not None else None,
         "cited_features": list(features.evidence_refs),
+        "required_directional_citations": directional,
         "missing_features": list(features.missing_features),
         "required_output_fields": [
             "stance",
@@ -401,8 +412,18 @@ def features_to_prompt(features: FeatureSummary) -> str:
         "credit_binding": (
             "Bind after you choose: BULLISH=bull_put credit; BEARISH=bear_call credit; debit disabled"
         ),
-        "citation_rule": "evidence must be feature name=value citations from cited_features",
+        "citation_rule": (
+            "Set evidence to a JSON list of exact strings copied verbatim from cited_features. "
+            "For BULLISH or BEARISH include every string in required_directional_citations. "
+            "Do not paraphrase, add commentary, or invent a name=value pair."
+        ),
+        "citation_example": {"evidence": directional},
     }
+    if validation_feedback:
+        payload["validation_feedback"] = (
+            f"Previous output failed deterministic validation: {validation_feedback}. "
+            "Return a fresh full JSON object and follow citation_rule exactly."
+        )
     text = json.dumps(payload, sort_keys=True)
     if OCC_SYMBOL_RE.search(text):
         raise ValueError("feature prompt must not include OCC symbols")
@@ -425,6 +446,31 @@ def _contains_occ(value: Any) -> bool:
     if isinstance(value, (list, tuple, dict)):
         return any(_contains_occ(item) for item in (value.values() if isinstance(value, dict) else value))
     return False
+
+
+def _canonicalize_evidence_refs(
+    raw_refs: tuple[str, ...], features: FeatureSummary
+) -> tuple[str, ...] | None:
+    """Bind name-only model citations to the exact observed name=value strings."""
+    allowed = tuple(features.evidence_refs)
+    exact = set(allowed)
+    by_name = {_citation_name(item): item for item in allowed}
+    canonical: list[str] = []
+    for raw in raw_refs:
+        item = str(raw).strip().strip("`")
+        if item in exact:
+            resolved = item
+        elif "=" not in item and item in by_name:
+            resolved = by_name[item]
+        else:
+            name, separator, value = item.partition("=")
+            candidate = f"{name.strip()}={value.strip()}" if separator else ""
+            if candidate not in exact:
+                return None
+            resolved = candidate
+        if resolved not in canonical:
+            canonical.append(resolved)
+    return tuple(canonical)
 
 
 def validate_thesis_output(
@@ -466,7 +512,10 @@ def validate_thesis_output(
         return None, ThesisReasonCode.SCHEMA_ERROR.value
     if confidence < MIN_CONFIDENCE and stance != ThesisStance.NO_TRADE:
         return None, ThesisReasonCode.LOW_CONFIDENCE.value
-    evidence_refs = _as_tuple(raw["evidence"])
+    raw_evidence_refs = _as_tuple(raw["evidence"])
+    evidence_refs = _canonicalize_evidence_refs(raw_evidence_refs, features)
+    if evidence_refs is None:
+        return None, ThesisReasonCode.EVIDENCE_CONFLICT.value
     if stance in {ThesisStance.BULLISH, ThesisStance.BEARISH} and not evidence_refs:
         return None, ThesisReasonCode.EMPTY_DIRECTION.value
     allowed = set(features.evidence_refs)
@@ -600,6 +649,7 @@ class ThesisAgent:
             if attempt == MAX_REGENERATIONS:
                 break
             regenerations += 1
+            prompt = features_to_prompt(features, validation_feedback=reason)
         code = ThesisReasonCode(last_reason) if last_reason in ALLOWED_REASON_CODES else ThesisReasonCode.INVALID_OUTPUT
         return _closed_thesis(
             features,

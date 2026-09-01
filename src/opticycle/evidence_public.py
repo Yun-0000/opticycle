@@ -41,6 +41,7 @@ MANIFEST_PATH = EVIDENCE_DIR / "manifest.json"
 PAGE_PATH = EVIDENCE_DIR / "index.html"
 GATE11_STATUS_PATH = EVIDENCE_DIR / "gate11_status.json"
 PAPER_FILL_INGEST_PATH = EVIDENCE_DIR / "paper_fill_ingest.json"
+WALK_FORWARD_JSON_PATH = EVIDENCE_DIR / "walk-forward-backtest.json"
 
 NO_TRADE_CAVEAT = (
     "live-path + injected missing quote; NOT an Alpaca true quote-miss; "
@@ -155,6 +156,30 @@ def load_public_records() -> list[dict[str, Any]]:
                 seen.add(record_id)
             combined.append(row)
     return combined
+
+
+def modeled_walk_forward_section() -> str:
+    """Render research context separately from broker P&L when available."""
+    if not WALK_FORWARD_JSON_PATH.is_file():
+        return ""
+    loaded = json.loads(WALK_FORWARD_JSON_PATH.read_text(encoding="utf-8"))
+    if not isinstance(loaded, Mapping):
+        return ""
+    metrics = loaded.get("metrics") or {}
+    date_range = loaded.get("date_range") or {}
+    return f"""
+  <section class="equity modeled">
+    <div class="eyebrow">RESEARCH CONTEXT / ALPACA IEX DAILY / BLACK-SCHOLES</div>
+    <h2>Modeled walk-forward — not broker P&amp;L</h2>
+    <div class="facts">
+      <div class="fact"><small>Modeled return</small><strong>{float(metrics.get('total_return_pct') or 0):+.2f}%</strong></div>
+      <div class="fact"><small>Sequential trades</small><strong>{int(metrics.get('trades') or 0)}</strong></div>
+      <div class="fact"><small>Max drawdown</small><strong>{float(metrics.get('max_drawdown_pct') or 0):.2f}%</strong></div>
+    </div>
+    <img src="walk-forward-backtest.png" alt="Modeled SPY vertical walk-forward compared with SPY close benchmark"/>
+    <p class="muted">Rolling-origin, prior observations only; 3–10 DTE policy represented by a 7-day target, exact $5 width, 0.25 absolute short delta, IEX stock bars, and Black-Scholes option prices. Range {html.escape(str(date_range.get('start') or ''))} to {html.escape(str(date_range.get('end') or ''))}. This is research context, not historical option fills or broker performance. <a href="walk-forward-backtest.html">Open the one-page method and limitations</a>.</p>
+  </section>
+"""
 
 
 def slot_value(record: Mapping[str, Any], field: str) -> Any:
@@ -563,6 +588,7 @@ def render_evidence_page(
         "an LLM stance, and an exact-payload deterministic certificate all agree; "
         "otherwise record NO_TRADE or HALT."
     )
+    walk_forward = modeled_walk_forward_section()
     embedded = html.escape(canonical_dumps({"records": page_records, "manifest": manifest, "gate11": gate11}))
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -631,6 +657,7 @@ def render_evidence_page(
     <img src="equity-curve.png" alt="Paper account equity curve generated from Alpaca portfolio history"/>
     <p class="muted">Machine-readable source: <a href="portfolio_history.json">portfolio_history.json</a></p>
   </section>
+  {walk_forward}
   <h2>Closed-trade results</h2>
   <table class="result">
     <thead><tr><th>Spread</th><th>Broker entry</th><th>MCP exit</th><th>Approx. realized P&amp;L</th></tr></thead>

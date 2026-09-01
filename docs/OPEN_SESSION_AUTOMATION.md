@@ -8,9 +8,9 @@ Runs the remaining first-place live work during a regular US equity session. Pap
 2. Observes live SPY quotes and calls ThesisAgent (`gpt-5.6-luna` by default).
 3. With `--submit`, manages triggered exits first, then may place one certified paper MLEG if the thesis is accepted. Credit limits stay Alpaca-signed (negative).
 4. Records `arguments_hash` and `raw_result_hash` from MCP when a submit happens.
-5. Enforces two new contracts per day, four contracts open, and deterministic profit/loss/expiry/event exits.
+5. Enforces two new verticals per day, four verticals open, up to four risk-budgeted contracts per vertical, and deterministic profit/loss/expiry/event exits.
 
-The lock (`data/open_session_lock.json`, gitignored) is an audit counter, not a fallback gate. Live broker orders/positions remain the source of truth for daily and open-contract caps.
+The lock (`data/open_session_lock.json`, gitignored) is an audit counter, not a fallback gate. Live broker orders/positions remain the source of truth for daily and open-vertical caps.
 
 ```bash
 # observe + ThesisAgent only

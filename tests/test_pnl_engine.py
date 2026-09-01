@@ -13,6 +13,7 @@ from opticycle.position_manager import (
     _exit_reason,
     manage_open_positions,
     open_contracts_and_risk,
+    open_verticals_and_risk,
 )
 from opticycle.protocol import EvidenceSnapshot, OptionContractQuote, OptionType
 from opticycle.risk import PortfolioSnapshot, payload_from_request
@@ -58,28 +59,34 @@ def test_equity_risk_budget_sizes_and_caps_contracts() -> None:
     request = _request()
     assert vertical_max_loss_per_contract(request) == Decimal("400.00")
     qty = apply_risk_budget_qty(request, _portfolio(), HackathonSettings())
-    assert qty == 2
-    assert request.qty == 2
-    assert request.metadata["risk_budget"] == "1500.00"
+    assert qty == 4
+    assert request.qty == 4
+    assert request.metadata["risk_budget"] == "2000.00"
 
 
 def test_sizing_respects_open_and_aggregate_capacity() -> None:
     request = _request()
     assert apply_risk_budget_qty(
         request,
-        _portfolio(open_contracts=3),
+        _portfolio(open_verticals=3),
         HackathonSettings(),
-    ) == 1
+    ) == 4
     with pytest.raises(ExecutionRejected, match="exhausted"):
         apply_risk_budget_qty(
             _request(),
-            _portfolio(open_risk=5800),
+            _portfolio(open_risk=7800),
             HackathonSettings(),
         )
     with pytest.raises(ExecutionRejected, match="exhausted"):
         apply_risk_budget_qty(
             _request(),
-            _portfolio(contracts_opened_today=2),
+            _portfolio(verticals_opened_today=2),
+            HackathonSettings(),
+        )
+    with pytest.raises(ExecutionRejected, match="exhausted"):
+        apply_risk_budget_qty(
+            _request(),
+            _portfolio(open_verticals=4),
             HackathonSettings(),
         )
 
@@ -89,6 +96,17 @@ def _positions() -> list[dict[str, str]]:
         {"symbol": SHORT, "qty": "-1", "side": "short", "avg_entry_price": "2.00"},
         {"symbol": LONG, "qty": "1", "side": "long", "avg_entry_price": "1.00"},
     ]
+
+
+def test_four_contracts_are_one_open_vertical() -> None:
+    positions = [dict(item) for item in _positions()]
+    positions[0]["qty"] = "-4"
+    positions[1]["qty"] = "4"
+    contracts, contract_risk = open_contracts_and_risk(positions)
+    verticals, vertical_risk = open_verticals_and_risk(positions)
+    assert contracts == 4
+    assert verticals == 1
+    assert vertical_risk == contract_risk == Decimal("1600.00")
 
 
 def _evidence(now: datetime) -> EvidenceSnapshot:
@@ -186,6 +204,9 @@ def test_autonomous_exit_is_mcp_mleg_and_reconciled(tmp_path) -> None:
     contracts, risk = open_contracts_and_risk(_positions())
     assert contracts == 1
     assert risk == Decimal("400.00")
+    verticals, vertical_risk = open_verticals_and_risk(_positions())
+    assert verticals == 1
+    assert vertical_risk == risk
     result = manage_open_positions(
         settings=HackathonSettings(),
         positions=_positions(),

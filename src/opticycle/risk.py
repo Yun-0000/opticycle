@@ -60,8 +60,8 @@ class PortfolioSnapshot:
     options_approved: bool = False
     trades_today: int = 0
     open_positions: int = 0
-    contracts_opened_today: int = 0
-    open_contracts: int = 0
+    verticals_opened_today: int = 0
+    open_verticals: int = 0
     net_delta: float | None = None
     net_vega: float | None = None
     net_gamma: float | None = None
@@ -105,8 +105,8 @@ def account_canonical_dict(portfolio: PortfolioSnapshot) -> dict[str, Any]:
         "net_theta": _optional_greek_str(portfolio.net_theta),
         "net_vega": _optional_greek_str(portfolio.net_vega),
         "open_positions": int(portfolio.open_positions),
-        "contracts_opened_today": int(portfolio.contracts_opened_today),
-        "open_contracts": int(portfolio.open_contracts),
+        "verticals_opened_today": int(portfolio.verticals_opened_today),
+        "open_verticals": int(portfolio.open_verticals),
         "open_risk": format_decimal(Decimal(str(portfolio.open_risk)), 2),
         "options_approved": bool(portfolio.options_approved),
         "paper": bool(portfolio.paper),
@@ -579,14 +579,14 @@ class RiskEngine:
             reasons.append("daily trade limit reached")
         if int(portfolio.open_positions) >= limits.max_open_positions:
             reasons.append("open position limit reached")
-        if int(portfolio.contracts_opened_today) + int(payload.qty) > int(
-            self.settings.max_new_contracts_per_day
+        if int(portfolio.verticals_opened_today) + 1 > int(
+            self.settings.max_new_verticals_per_day
         ):
-            reasons.append("daily new-contract limit exceeded")
-        if int(portfolio.open_contracts) + int(payload.qty) > int(
-            self.settings.max_open_contracts
+            reasons.append("daily new-vertical limit exceeded")
+        if int(portfolio.open_verticals) + 1 > int(
+            self.settings.max_open_verticals
         ):
-            reasons.append("open-contract limit exceeded")
+            reasons.append("open-vertical limit exceeded")
 
         daily_loss = Decimal(str(portfolio.daily_loss))
         if daily_loss >= limits.max_daily_loss:
@@ -741,7 +741,8 @@ class RiskEngine:
 
         if not missing_quote and max_loss > 0:
             if equity > 0 and max_loss > equity * Decimal(str(self.settings.risk_per_trade_pct)):
-                reasons.append("trade max loss exceeds 1.5% equity budget")
+                pct = Decimal(str(self.settings.risk_per_trade_pct)) * Decimal("100")
+                reasons.append(f"trade max loss exceeds {pct.normalize()}% equity budget")
             if equity > 0 and concentration_pct > limits.max_concentration_pct:
                 reasons.append("concentration limit exceeded")
             if buying_power_impact > buying_power:

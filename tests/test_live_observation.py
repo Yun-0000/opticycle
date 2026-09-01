@@ -13,6 +13,7 @@ from opticycle.observe import (
     MAX_QUOTE_AGE_SECONDS,
     AlpacaReadClient,
     ObservationClosed,
+    _opening_activity_today,
     _portfolio_greeks,
     equity_data_feed,
     feed_denial_reason,
@@ -148,6 +149,23 @@ def test_portfolio_greeks_use_option_contract_multiplier() -> None:
     assert gamma == pytest.approx(2.0)
     assert theta == pytest.approx(-8.0)
     assert vega == pytest.approx(16.0)
+
+
+def test_opening_activity_counts_verticals_separately_from_contract_qty() -> None:
+    now = datetime.now(timezone.utc)
+    order = {
+        "id": "mleg-open-1",
+        "status": "filled",
+        "filled_at": now,
+        "qty": "4",
+        "legs": [
+            {"position_intent": "sell_to_open"},
+            {"position_intent": "buy_to_open"},
+        ],
+    }
+    verticals, contracts = _opening_activity_today([order], now)
+    assert verticals == 1
+    assert contracts == 4
 
 
 def test_live_observe_missing_account_is_halt() -> None:

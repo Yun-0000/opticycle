@@ -150,7 +150,16 @@ def test_feature_summary_has_no_occ_qty_or_price_selection() -> None:
     assert features.implied_stance == ThesisStance.BULLISH
     assert any(item.startswith("underlying_last=") for item in features.evidence_refs)
     assert any(item.startswith("bar_return=") for item in features.evidence_refs)
+    assert any(item.startswith("implied_stance=") for item in features.evidence_refs)
+    assert any(item.startswith("bound_credit_type=") for item in features.evidence_refs)
     assert features.bound_credit_type == "bull_put"
+    prompt_payload = json.loads(prompt)
+    assert set(prompt_payload["required_directional_citations"]) == {
+        item
+        for item in features.evidence_refs
+        if item.startswith(("bar_return=", "bar_trend="))
+    }
+    assert "copied verbatim" in prompt_payload["citation_rule"]
 
 
 def test_bullish_thesis_episode_maps_evidence_and_invalidation(tmp_path: Path) -> None:
@@ -376,6 +385,35 @@ def test_model_output_is_stance_even_if_it_disagrees_with_implied_stance() -> No
     assert thesis.accepted is True
     assert thesis.model_called is True
     assert thesis.bound_credit_type == "bear_call"
+
+
+def test_name_only_citations_bind_to_exact_observed_values() -> None:
+    features = summarize_features(_evidence(direction="bullish"))
+    payload = _valid_payload(features, "BULLISH")
+    payload["evidence"] = ["bar_return", "bar_trend", "quote_age_seconds"]
+    record, reason = validate_thesis_output(payload, features)
+    assert record is not None
+    assert reason == ThesisReasonCode.TREND_ALIGNED.value
+    assert set(record.evidence) == {
+        next(item for item in features.evidence_refs if item.startswith("bar_return=")),
+        next(item for item in features.evidence_refs if item.startswith("bar_trend=")),
+        next(item for item in features.evidence_refs if item.startswith("quote_age_seconds=")),
+    }
+
+
+def test_evidence_conflict_retry_prompt_contains_exact_citation_feedback() -> None:
+    evidence = _evidence(direction="bullish")
+    features = summarize_features(evidence)
+    invalid = _valid_payload(features, "BULLISH")
+    invalid["evidence"] = ["trend looked bullish"]
+    valid = _valid_payload(features, "BULLISH")
+    client = ScriptedLlm([invalid, valid])
+    thesis = ThesisAgent(client).evaluate(evidence)
+    assert thesis.accepted is True
+    assert thesis.regenerations == 1
+    retry = json.loads(client.calls[1])
+    assert "EVIDENCE_CONFLICT" in retry["validation_feedback"]
+    assert retry["required_directional_citations"]
 
 
 def test_no_llm_key_is_fail_closed_not_silent_deterministic_ai() -> None:
