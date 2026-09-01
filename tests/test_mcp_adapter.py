@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from trade.mcp.alpaca_mcp_executor import (
     PLACE_OPTION_ORDER,
     AlpacaMcpExecutor,
+    McpCallTimeout,
+    call_mcp_tool,
     parse_mcp_result,
 )
 from trade.orders import ExecutionRejected, OptionOrderRequest
@@ -94,3 +98,14 @@ def test_mcp_stdio_params_pin_uvx_server() -> None:
 def test_parse_mcp_error_result() -> None:
     with pytest.raises(RuntimeError):
         parse_mcp_result({"is_error": True, "message": "rejected"})
+
+
+class SlowMcpClient:
+    async def call_tool(self, name: str, arguments: dict) -> dict:
+        await asyncio.sleep(1)
+        return {"id": "too-late"}
+
+
+def test_call_mcp_tool_times_out_without_a_broker_result() -> None:
+    with pytest.raises(McpCallTimeout, match="GET-by-client_order_id"):
+        asyncio.run(call_mcp_tool(SlowMcpClient(), PLACE_OPTION_ORDER, {"order_class": "mleg"}, timeout=0.05))

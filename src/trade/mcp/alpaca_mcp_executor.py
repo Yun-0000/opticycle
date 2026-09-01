@@ -23,6 +23,11 @@ FASTMCP_UVX_SPEC = "fastmcp>=3.1.0,<4"
 PLACE_OPTION_ORDER = "place_option_order"
 PAPER_API_HOST = "https://paper-api.alpaca.markets"
 DESIGNATED_PAPER_ACCOUNT = "PA3V84C40PJQ"
+MCP_CALL_TIMEOUT_SEC = 45.0
+
+
+class McpCallTimeout(RuntimeError):
+    """call_tool did not return; the broker may already have accepted the MLEG."""
 
 
 class McpToolClient(Protocol):
@@ -154,6 +159,26 @@ def digest_canonical(value: Any) -> str:
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
+async def call_mcp_tool(
+    client: McpToolClient,
+    name: str,
+    arguments: dict[str, Any],
+    *,
+    timeout: float = MCP_CALL_TIMEOUT_SEC,
+) -> Any:
+    """Call an MCP tool with a bounded wait. Does not invent a broker result."""
+    try:
+        pending = client.call_tool(name, arguments)
+    except TypeError:
+        pending = client.call_tool(name, arguments=arguments)
+    try:
+        return await asyncio.wait_for(pending, timeout=timeout)
+    except (asyncio.TimeoutError, TimeoutError) as exc:
+        raise McpCallTimeout(
+            f"{name} exceeded {timeout:.0f}s; broker GET-by-client_order_id required"
+        ) from exc
+
+
 def _content_text(result: Any) -> str:
     chunks: list[str] = []
     for block in getattr(result, "content", None) or []:
@@ -219,6 +244,7 @@ class AlpacaMcpExecutor:
     server_spec: str = MCP_SERVER_SPEC
     dry_run: bool = False
     env: dict[str, str] | None = None
+    mcp_call_timeout_sec: float = MCP_CALL_TIMEOUT_SEC
 
     def __post_init__(self) -> None:
         if self.server_spec != MCP_SERVER_SPEC:
@@ -297,7 +323,35 @@ class AlpacaMcpExecutor:
                 submitted=False,
             )
         client = await self._client()
-        result = await client.call_tool(PLACE_OPTION_ORDER, arguments)
+        try:
+            result = await call_mcp_tool(
+                client,
+                PLACE_OPTION_ORDER,
+                arguments,
+                timeout=self.mcp_call_timeout_sec,
+            )
+        except McpCallTimeout:
+            timestamp = datetime.now(timezone.utc).isoformat()
+            return {
+                "backend": "mcp",
+                "server_spec": MCP_SERVER_SPEC,
+                "tool": PLACE_OPTION_ORDER,
+                "arguments": arguments,
+                "arguments_hash": digest_canonical(arguments),
+                "timestamp": timestamp,
+                "raw": {
+                    "mcp_call_timeout": True,
+                    "tool": PLACE_OPTION_ORDER,
+                    "note": (
+                        "place_option_order did not return after timeout; "
+                        "broker may already have accepted; GET-by-client_order_id required"
+                    ),
+                },
+                "raw_result_hash": "",
+                "dry_run": False,
+                "submitted": False,
+                "mcp_call_timeout": True,
+            }
         if result is None:
             raise RuntimeError("MCP tool returned no result")
         if isinstance(result, dict) and (result.get("isError") or result.get("is_error")):

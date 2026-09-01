@@ -132,6 +132,24 @@ def test_no_trade_public_jsonl_is_not_fill_evidence() -> None:
         assert field in row["episode"]
 
 
+def test_claim_table_labels_price_bound_matched_separately_from_unsigned_fills() -> None:
+    from opticycle.signed_credit_fill import SIGNED_CLIENT_ORDER_ID
+
+    html = PAGE_PATH.read_text(encoding="utf-8")
+    assert "live_paper price-bound MATCHED" in html
+    assert "live_paper broker fill — not price-bound MATCHED" in html
+    assert "replay MATCHED" in html
+    matched_row = next(
+        row for row in load_public_records() if row.get("client_order_id") == SIGNED_CLIENT_ORDER_ID
+    )
+    claim = str(matched_row["claim"])
+    start = html.find(claim)
+    assert start > 0
+    cell = html[start : html.find("</tr>", start)]
+    assert "live_paper price-bound MATCHED" in cell
+    assert "not price-bound MATCHED" not in cell
+
+
 def test_live_mleg_fill_claims_record_authorized_matched() -> None:
     from opticycle.evidence_public import is_live_fill_row, is_live_matched_fill
     from opticycle.signed_credit_fill import is_price_bound_matched_fill

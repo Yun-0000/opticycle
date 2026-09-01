@@ -395,7 +395,10 @@ def render_evidence_page(
         if mapped.get("caveat") == NO_TRADE_CAVEAT:
             claim_status = "injected-quote NO_TRADE — not fill evidence"
         elif mapped.get("live_fill"):
-            claim_status = "live_paper broker fill — not price-bound MATCHED"
+            if mapped.get("outcome") == "MATCHED":
+                claim_status = "live_paper price-bound MATCHED"
+            else:
+                claim_status = "live_paper broker fill — not price-bound MATCHED"
         elif mapped.get("caveat") == GENUINE_STALE_QUOTE_CAVEAT:
             claim_status = "genuine live NO_TRADE — stale quote; not fill evidence"
         elif mapped.get("channel") == "replay" and mapped.get("outcome") == "MATCHED":

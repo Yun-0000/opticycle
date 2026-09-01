@@ -36,6 +36,8 @@ from opticycle.observe import AlpacaReadClient, ObservationClosed  # noqa: E402
 from opticycle.protocol import OCC_SYMBOL_RE  # noqa: E402
 from trade.mcp.alpaca_mcp_executor import (  # noqa: E402
     PLACE_OPTION_ORDER,
+    McpCallTimeout,
+    call_mcp_tool,
     default_mcp_client_factory,
     digest_canonical,
     mcp_env_from_os,
@@ -133,15 +135,26 @@ def _strike(symbol: str) -> Decimal:
 
 async def _mcp_place(arguments: dict[str, Any]) -> dict[str, Any]:
     opened = default_mcp_client_factory(env=mcp_env_from_os())
-    if hasattr(opened, "__aenter__"):
-        session = await opened.__aenter__()
-        try:
-            raw = await session.call_tool(PLACE_OPTION_ORDER, arguments)
-        finally:
-            if hasattr(opened, "__aexit__"):
-                await opened.__aexit__(None, None, None)
-    else:
-        raw = await opened.call_tool(PLACE_OPTION_ORDER, arguments)
+    try:
+        if hasattr(opened, "__aenter__"):
+            session = await opened.__aenter__()
+            try:
+                raw = await call_mcp_tool(session, PLACE_OPTION_ORDER, arguments)
+            finally:
+                if hasattr(opened, "__aexit__"):
+                    await opened.__aexit__(None, None, None)
+        else:
+            raw = await call_mcp_tool(opened, PLACE_OPTION_ORDER, arguments)
+    except McpCallTimeout:
+        return {
+            "tool": PLACE_OPTION_ORDER,
+            "arguments": arguments,
+            "arguments_hash": digest_canonical(arguments),
+            "raw_result_hash": "",
+            "parsed": {"mcp_call_timeout": True},
+            "submitted": False,
+            "mcp_call_timeout": True,
+        }
     serialized = serialize_mcp_raw(raw)
     parsed = parse_mcp_result(raw)
     return {
@@ -250,6 +263,20 @@ def main(argv: list[str] | None = None) -> int:
             )
             continue
         parsed = result.get("parsed") or {}
+        broker_order_id = parsed.get("id") or parsed.get("order_id") or (parsed.get("order") or {}).get("id")
+        status = parsed.get("status") or (parsed.get("order") or {}).get("status")
+        if result.get("mcp_call_timeout") and not broker_order_id:
+            try:
+                fetched = client.fetch_order(client_order_id=str(arguments["client_order_id"]))
+            except Exception:
+                fetched = None
+            if fetched is not None:
+                broker_order_id = getattr(fetched, "id", None) or (
+                    fetched.get("id") if isinstance(fetched, dict) else None
+                )
+                status = getattr(fetched, "status", None) or (
+                    fetched.get("status") if isinstance(fetched, dict) else None
+                )
         report["submitted"].append(
             {
                 "short": short_sym,
@@ -259,8 +286,9 @@ def main(argv: list[str] | None = None) -> int:
                 "client_order_id": arguments["client_order_id"],
                 "raw_result_hash": result.get("raw_result_hash"),
                 "arguments_hash": result.get("arguments_hash"),
-                "broker_order_id": parsed.get("id") or parsed.get("order_id") or (parsed.get("order") or {}).get("id"),
-                "status": parsed.get("status") or (parsed.get("order") or {}).get("status"),
+                "broker_order_id": broker_order_id,
+                "status": status,
+                "mcp_call_timeout": bool(result.get("mcp_call_timeout")),
             }
         )
 
