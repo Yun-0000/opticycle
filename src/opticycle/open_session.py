@@ -86,6 +86,26 @@ def skip_reason(
     return None
 
 
+def broker_fault_reason(exc: BaseException) -> str:
+    """Fail-closed broker reason. Never includes HTML, account ids, or raw dumps."""
+    blob = str(exc)
+    lowered = blob.lower()
+    status = getattr(exc, "status_code", None)
+    if status is None:
+        status = getattr(exc, "code", None)
+    html = "<html" in lowered or "<!doctype html" in lowered
+    if (
+        status == 401
+        or "unauthorized" in lowered
+        or (html and "401" in lowered)
+        or "401 authorization required" in lowered
+    ):
+        return "paper broker unauthorized"
+    if status == 403 or "forbidden" in lowered:
+        return "paper broker forbidden"
+    return "paper broker unreachable"
+
+
 def _clock_open(client: Any) -> tuple[bool, dict[str, Any]]:
     clock = client.fetch_clock()
     is_open = bool(getattr(clock, "is_open", False))
@@ -154,7 +174,12 @@ def run_open_session(
             write_last(report, path=last_path)
             return report
 
-    is_open, clock = _clock_open(reader)
+    try:
+        is_open, clock = _clock_open(reader)
+    except Exception as exc:
+        report["blocked"] = broker_fault_reason(exc)
+        write_last(report, path=last_path)
+        return report
     report["clock"] = clock
     if not is_open:
         report["blocked"] = "regular session is closed"
@@ -162,7 +187,16 @@ def run_open_session(
         return report
 
     if not submit or (blocked and str(blocked).startswith("submit not enabled")):
-        observation = observe_live(settings, client=reader)
+        try:
+            observation = observe_live(settings, client=reader)
+        except ObservationClosed as exc:
+            report["blocked"] = exc.reason
+            write_last(report, path=last_path)
+            return report
+        except Exception as exc:
+            report["blocked"] = broker_fault_reason(exc)
+            write_last(report, path=last_path)
+            return report
         report["observation_outcome"] = observation.outcome.value
         report["observation_reason"] = observation.reason
         if observation.outcome != ObservationOutcome.OK or observation.evidence is None:
@@ -186,7 +220,12 @@ def run_open_session(
         write_last(report, path=last_path)
         return report
 
-    result = run_once(settings, dry_run=False, observer=reader, provenance="live_paper")
+    try:
+        result = run_once(settings, dry_run=False, observer=reader, provenance="live_paper")
+    except Exception as exc:
+        report["blocked"] = broker_fault_reason(exc)
+        write_last(report, path=last_path)
+        return report
     report["outcome"] = result.get("outcome")
     report["reason"] = result.get("reason")
     report["submitted"] = bool(result.get("submitted"))

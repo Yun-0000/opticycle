@@ -35,6 +35,36 @@ def test_skip_reason_one_submit_per_day(monkeypatch: pytest.MonkeyPatch) -> None
     assert "already submitted" in reason
 
 
+def test_unauthorized_clock_does_not_submit_or_leak_html(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    monkeypatch.setenv("ALPACA_API_KEY", "paper-key")
+    monkeypatch.setenv("ALPACA_SECRET_KEY", "paper-secret")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("ALPACA_LIVE_TRADE", "false")
+
+    class UnauthorizedClock:
+        def fetch_clock(self):
+            raise RuntimeError(
+                "<html>\n<head><title>401 Authorization Required</title></head>\n"
+                "<body><center><h1>401 Authorization Required</h1></center></body></html>"
+            )
+
+    last = tmp_path / "last.json"
+    report = run_open_session(
+        submit=True,
+        client=UnauthorizedClock(),
+        last_path=last,
+        lock_path=tmp_path / "lock.json",
+    )
+    assert report["submitted"] is False
+    assert report["closes_positions"] is False
+    assert report["blocked"] == "paper broker unauthorized"
+    dumped = last.read_text(encoding="utf-8")
+    assert "<html" not in dumped
+    assert "401 Authorization Required" not in dumped
+
+
 def test_closed_clock_does_not_submit(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     monkeypatch.setenv("ALPACA_API_KEY", "paper-key")
     monkeypatch.setenv("ALPACA_SECRET_KEY", "paper-secret")
