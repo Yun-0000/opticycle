@@ -2,7 +2,7 @@
   "account": {
     "buying_power": "394726.48",
     "cash": "100281.62",
-    "equity": "100031.62",
+    "equity": "100036.62",
     "id": "1a1ec740-417f-42d9-9b93-8ccb8ecf0cd1",
     "status": "ACTIVE"
   },
@@ -96,21 +96,21 @@
   "positions": [
     {
       "avg_entry_price": "4.54",
-      "current_price": "5",
+      "current_price": "4.93",
       "qty": "1",
       "side": "long",
       "symbol": "SPY261016P00724000",
-      "unrealized_pl": "46"
+      "unrealized_pl": "39"
     },
     {
       "avg_entry_price": "6.8",
-      "current_price": "7.5",
+      "current_price": "7.38",
       "qty": "-1",
       "side": "short",
       "symbol": "SPY261016P00740000",
-      "unrealized_pl": "-70"
+      "unrealized_pl": "-58"
     }
   ],
   "schema": "opticycle.alpaca-cli-readonly.v1",
-  "snapshot_hash": "76ccf6e04823548afe5c49239ba8d785da1ca4fe9e87bc1b0ed2660b8ffc4bd3"
+  "snapshot_hash": "d828ff4fda03cfef019b7b1a1da0c9eba94cb6653cea2f191721d8de5f3dd149"
 }

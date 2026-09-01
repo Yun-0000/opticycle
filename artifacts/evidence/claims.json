@@ -1,13 +1,13 @@
 {
-  "opticycle:v1:ERROR:el-5327c06e666c4b35a4da53651f51a5c3:5791e27dac3fcb942641f512c53c2580ca3b0b1a": {
+  "opticycle:v1:ERROR:el-8656e6e7ca964cd3b2ff1fe9d6ebc627:5433ba7f69fbf2a4e35983597d8712dafddadf47": {
     "caveat": null,
     "channel": "fault_injection",
-    "commit_sha": "5791e27dac3fcb942641f512c53c2580ca3b0b1a",
+    "commit_sha": "5433ba7f69fbf2a4e35983597d8712dafddadf47",
     "incomplete": [],
     "live_fill": false,
     "live_mleg_submit": false,
     "outcome": "ERROR",
-    "record_id": "el-5327c06e666c4b35a4da53651f51a5c3"
+    "record_id": "el-8656e6e7ca964cd3b2ff1fe9d6ebc627"
   },
   "opticycle:v1:FILLED:el-ac177b1c1b344c7587fac4851939f3c2:c163d63a8a34f679d5a7ad4bc47535cd6ee7cc66": {
     "caveat": "live_paper broker fill; submitted credit limit had debit sign; not price-bound MATCHED; account id omitted",
@@ -39,15 +39,25 @@
     "outcome": "MATCHED",
     "record_id": "el-77530598c0e7b7aca7f8cfa5bed34430"
   },
-  "opticycle:v1:MATCHED:el-8067188f749f4efc9e17aeca7cfe23eb:5791e27dac3fcb942641f512c53c2580ca3b0b1a": {
+  "opticycle:v1:MATCHED:el-b31707d8a84741fe9e48ea39d187b0a2:5433ba7f69fbf2a4e35983597d8712dafddadf47": {
     "caveat": null,
     "channel": "replay",
-    "commit_sha": "5791e27dac3fcb942641f512c53c2580ca3b0b1a",
+    "commit_sha": "5433ba7f69fbf2a4e35983597d8712dafddadf47",
     "incomplete": [],
     "live_fill": false,
     "live_mleg_submit": false,
     "outcome": "MATCHED",
-    "record_id": "el-8067188f749f4efc9e17aeca7cfe23eb"
+    "record_id": "el-b31707d8a84741fe9e48ea39d187b0a2"
+  },
+  "opticycle:v1:NO_TRADE:el-4efd78ad33bb4e6984ea6b173a123060:5433ba7f69fbf2a4e35983597d8712dafddadf47": {
+    "caveat": null,
+    "channel": "replay",
+    "commit_sha": "5433ba7f69fbf2a4e35983597d8712dafddadf47",
+    "incomplete": [],
+    "live_fill": false,
+    "live_mleg_submit": false,
+    "outcome": "NO_TRADE",
+    "record_id": "el-4efd78ad33bb4e6984ea6b173a123060"
   },
   "opticycle:v1:NO_TRADE:el-618c39ea9b7f471a83573e72bd17d6b6:883ddf43b3ba318224bb70060e7870f6b3c03dc2": {
     "caveat": "live Alpaca observation; SPY quote stale after the regular session; genuine NO_TRADE; ThesisAgent not called (freshness fail-closed); not fill evidence",
@@ -69,24 +79,14 @@
     "outcome": "NO_TRADE",
     "record_id": "el-6b67a01c2bdd448388e813633f90e890"
   },
-  "opticycle:v1:NO_TRADE:el-afcf1a2e8e984ce8ba3f830c3ef83f1a:5791e27dac3fcb942641f512c53c2580ca3b0b1a": {
+  "opticycle:v1:VETO:el-4834444ec6334c88bac80a791c7b5750:5433ba7f69fbf2a4e35983597d8712dafddadf47": {
     "caveat": null,
     "channel": "replay",
-    "commit_sha": "5791e27dac3fcb942641f512c53c2580ca3b0b1a",
-    "incomplete": [],
-    "live_fill": false,
-    "live_mleg_submit": false,
-    "outcome": "NO_TRADE",
-    "record_id": "el-afcf1a2e8e984ce8ba3f830c3ef83f1a"
-  },
-  "opticycle:v1:VETO:el-22311631dbf24b95ae564df66595877a:5791e27dac3fcb942641f512c53c2580ca3b0b1a": {
-    "caveat": null,
-    "channel": "replay",
-    "commit_sha": "5791e27dac3fcb942641f512c53c2580ca3b0b1a",
+    "commit_sha": "5433ba7f69fbf2a4e35983597d8712dafddadf47",
     "incomplete": [],
     "live_fill": false,
     "live_mleg_submit": false,
     "outcome": "VETO",
-    "record_id": "el-22311631dbf24b95ae564df66595877a"
+    "record_id": "el-4834444ec6334c88bac80a791c7b5750"
   }
 }
