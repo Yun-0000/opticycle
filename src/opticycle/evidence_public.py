@@ -14,6 +14,7 @@ import re
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from opticycle.broker_lookup import SIGNED_CLIENT_ORDER_ID
 from opticycle.ledger import (
     COMMIT_SHA_RE,
     EPISODE_FIELDS,
@@ -25,6 +26,9 @@ from opticycle.ledger import (
 from opticycle.live_matched_fills import (
     LIVE_MATCHED_CLIENT_IDS,
     is_authorized_live_matched,
+)
+from opticycle.signed_credit_fill import (
+    is_price_bound_matched_fill,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -189,9 +193,18 @@ LIVE_MATCHED_NOTE = (
     "not price-bound MATCHED; account id omitted"
 )
 
+SIGNED_MATCHED_NOTE = (
+    "live_paper price-bound MATCHED; Alpaca-negative credit limit; "
+    "filled <= submitted; ThesisAgent model_called=true; account id omitted"
+)
+
 
 def is_live_matched_fill(record: Mapping[str, Any]) -> bool:
     return is_authorized_live_matched(record)
+
+
+def is_live_fill_row(record: Mapping[str, Any]) -> bool:
+    return is_live_matched_fill(record) or is_price_bound_matched_fill(record)
 
 
 def claim_caveat(record: Mapping[str, Any]) -> str | None:
@@ -201,6 +214,8 @@ def claim_caveat(record: Mapping[str, Any]) -> str | None:
         return GENUINE_STALE_QUOTE_CAVEAT
     if record.get("channel") == "replay" and str(record.get("outcome") or "") == "MATCHED":
         return REPLAY_MATCHED_CAVEAT
+    if is_price_bound_matched_fill(record):
+        return SIGNED_MATCHED_NOTE
     if is_live_matched_fill(record):
         extra = record.get("extra") or {}
         if extra.get("stance_source") == "bars_heuristic_no_llm_key":
@@ -222,7 +237,7 @@ def build_manifest(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             raise ValueError("claim commit SHA does not match ledger record")
         if not COMMIT_SHA_RE.fullmatch(str(row.get("commit_sha") or "")):
             raise ValueError("commit SHA must be an exact 40-char hex digest")
-        live_fill = is_live_matched_fill(row)
+        live_fill = is_live_fill_row(row)
         claims[claim] = {
             "record_id": parsed["record_id"],
             "commit_sha": parsed["commit_sha"],
@@ -239,12 +254,10 @@ def build_manifest(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
         "source": "sanitized_public_ledger",
         "live_fill_claimed": any_live,
         "injected_no_trade_promoted": False,
-        "matched_claimed": any(
-            str(row.get("outcome") or "") == "MATCHED" and is_live_matched_fill(row) for row in records
-        ),
+        "matched_claimed": any(is_price_bound_matched_fill(row) for row in records),
         "incomplete_live": {},
         "no_trade_injected_quote_caveat": NO_TRADE_CAVEAT,
-        "authorized_live_client_order_ids": sorted(LIVE_MATCHED_CLIENT_IDS),
+        "authorized_live_client_order_ids": sorted(set(LIVE_MATCHED_CLIENT_IDS) | {SIGNED_CLIENT_ORDER_ID}),
         "claims": claims,
     }
 
@@ -289,12 +302,12 @@ def replay_sanitized_records(records: list[dict[str, Any]]) -> list[dict[str, An
         if isinstance(recon, Mapping):
             status = str(recon.get("status") or "").lower()
         if row.get("channel") == "live_paper" and status in {"matched", "filled", "fill"}:
-            if not is_live_matched_fill(row):
+            if not is_live_fill_row(row):
                 raise ValueError("live_paper MATCHED/fill is not a verifiable public claim")
         if is_injected_no_trade(row):
             if status in {"matched", "filled", "fill"}:
                 raise ValueError("injected NO_TRADE must not be used as fill evidence")
-        live_fill = is_live_matched_fill(row)
+        live_fill = is_live_fill_row(row)
         verified.append(
             {
                 "claim": claim,
@@ -448,7 +461,8 @@ def render_evidence_page(
 """
         )
     live_ids = "".join(
-        f"<li><code>{html.escape(cid)}</code></li>" for cid in sorted(LIVE_MATCHED_CLIENT_IDS)
+        f"<li><code>{html.escape(cid)}</code></li>"
+        for cid in sorted(set(LIVE_MATCHED_CLIENT_IDS) | {SIGNED_CLIENT_ORDER_ID})
     )
     gate11 = dict(status or load_gate11_status())
     quote_gap = html.escape(str(gate11.get("live_quote_gap") or ""))
@@ -458,18 +472,15 @@ def render_evidence_page(
         else "no — gap recorded honestly (does not mean live fills are missing)"
     )
     ingest_note = (
-        "Two real live_paper broker fills are recorded "
-        f"({', '.join(sorted(LIVE_MATCHED_CLIENT_IDS))}). "
-        "They are not price-bound MATCHED: submitted MLEG limits were "
-        "debit-positive, and fill credits were worse than the intended credit "
-        "bounds. Replay channel MATCHED is present and is not live_paper. "
-        "No extra fills. Account id omitted. "
-        "Monday MCP fill stance_source=bars_heuristic_no_llm_key (no LLM key at submit; not a live ThesisAgent pick). "
-        "Alpaca GET-by-client_order_id ingested both broker order_id values. "
-        "Raw MCP place_option_order result hash was not retained at submit time. "
-        "Positions still open; mark snapshot recorded; no exit / realized P&L. "
-        "OPENAI_API_KEY is present; ThesisAgent default model is gpt-5.6-luna. "
-        "ThesisAgent was not called on the stale after-hours quote."
+        "Two historical live_paper broker fills "
+        f"({', '.join(sorted(LIVE_MATCHED_CLIENT_IDS))}) remain unsigned-limit FILLED, "
+        "not price-bound MATCHED. In-session signed-credit fill "
+        f"{SIGNED_CLIENT_ORDER_ID} is price-bound MATCHED "
+        "(limit -2.26, fill -2.26, ThesisAgent model_called=true). "
+        "Prior verticals were closed via MCP place_option_order mleg; those close "
+        "orders retained raw_result_hash. The open credit MLEG's MCP envelope was "
+        "not returned after broker accept; Alpaca GET is the fill source. "
+        "Account id omitted. Flatten then new fill equity 100049.62."
     )
     page_records = _page_records(records)
     embedded = html.escape(canonical_dumps({"records": page_records, "manifest": manifest, "gate11": gate11}))
@@ -495,7 +506,7 @@ def render_evidence_page(
   <h1>Opticycle public evidence</h1>
   <p>Rendered from sanitized ledger records only. No secrets, keys, or account credentials.</p>
   <div class="banner">
-    <p><strong>Two real live_paper broker fills are recorded. They are not price-bound MATCHED.</strong> Replay channel MATCHED is not live_paper. Injected NO_TRADE is not fill evidence. No extra fills.</p>
+    <p><strong>One in-session live_paper fill is price-bound MATCHED</strong> (negative credit limit, filled &lt;= limit, ThesisAgent called). Two earlier live_paper fills remain unsigned-limit FILLED, not MATCHED. Replay channel MATCHED is not live_paper. Injected NO_TRADE is not fill evidence.</p>
     <p>{html.escape(NO_TRADE_CAVEAT)}</p>
     <p>Genuine live NO_TRADE this gate: {html.escape(genuine)}. {quote_gap}</p>
     <p>{html.escape(ingest_note)}</p>

@@ -1,18 +1,19 @@
 {
   "authorized_live_client_order_ids": [
     "oc-204a8dfccffd40c9",
+    "oc-63db2a85298b4ecabefab59076a6397e",
     "oc-715ad36a630d408e"
   ],
   "claims": {
-    "opticycle:v1:ERROR:el-81ea47fb5fa3469290e47b8229539535:883ddf43b3ba318224bb70060e7870f6b3c03dc2": {
+    "opticycle:v1:ERROR:el-c3a2454f6cd04415a9f90f31efab0172:6a9ad3a6774dbdfafae5d716365012854601580d": {
       "caveat": null,
       "channel": "fault_injection",
-      "commit_sha": "883ddf43b3ba318224bb70060e7870f6b3c03dc2",
+      "commit_sha": "6a9ad3a6774dbdfafae5d716365012854601580d",
       "incomplete": [],
       "live_fill": false,
       "live_mleg_submit": false,
       "outcome": "ERROR",
-      "record_id": "el-81ea47fb5fa3469290e47b8229539535"
+      "record_id": "el-c3a2454f6cd04415a9f90f31efab0172"
     },
     "opticycle:v1:FILLED:el-ac177b1c1b344c7587fac4851939f3c2:c163d63a8a34f679d5a7ad4bc47535cd6ee7cc66": {
       "caveat": "live_paper broker fill; submitted credit limit had debit sign; not price-bound MATCHED; account id omitted",
@@ -34,25 +35,35 @@
       "outcome": "FILLED",
       "record_id": "el-c40cea16e4f2477d89f451de8e1901b4"
     },
-    "opticycle:v1:MATCHED:el-f5e3a6d562c3402e8718888a945575b0:883ddf43b3ba318224bb70060e7870f6b3c03dc2": {
+    "opticycle:v1:MATCHED:el-77530598c0e7b7aca7f8cfa5bed34430:6a9ad3a6774dbdfafae5d716365012854601580d": {
+      "caveat": "live_paper price-bound MATCHED; Alpaca-negative credit limit; filled <= submitted; ThesisAgent model_called=true; account id omitted",
+      "channel": "live_paper",
+      "commit_sha": "6a9ad3a6774dbdfafae5d716365012854601580d",
+      "incomplete": [],
+      "live_fill": true,
+      "live_mleg_submit": true,
+      "outcome": "MATCHED",
+      "record_id": "el-77530598c0e7b7aca7f8cfa5bed34430"
+    },
+    "opticycle:v1:MATCHED:el-c3d5dffc621f42d8ba674f43afb08855:6a9ad3a6774dbdfafae5d716365012854601580d": {
       "caveat": null,
       "channel": "replay",
-      "commit_sha": "883ddf43b3ba318224bb70060e7870f6b3c03dc2",
+      "commit_sha": "6a9ad3a6774dbdfafae5d716365012854601580d",
       "incomplete": [],
       "live_fill": false,
       "live_mleg_submit": false,
       "outcome": "MATCHED",
-      "record_id": "el-f5e3a6d562c3402e8718888a945575b0"
+      "record_id": "el-c3d5dffc621f42d8ba674f43afb08855"
     },
-    "opticycle:v1:NO_TRADE:el-0e6fc527eff5425399432ac9fd9d789c:883ddf43b3ba318224bb70060e7870f6b3c03dc2": {
+    "opticycle:v1:NO_TRADE:el-5b4fd48d1f2341168505b2411362f393:6a9ad3a6774dbdfafae5d716365012854601580d": {
       "caveat": null,
       "channel": "replay",
-      "commit_sha": "883ddf43b3ba318224bb70060e7870f6b3c03dc2",
+      "commit_sha": "6a9ad3a6774dbdfafae5d716365012854601580d",
       "incomplete": [],
       "live_fill": false,
       "live_mleg_submit": false,
       "outcome": "NO_TRADE",
-      "record_id": "el-0e6fc527eff5425399432ac9fd9d789c"
+      "record_id": "el-5b4fd48d1f2341168505b2411362f393"
     },
     "opticycle:v1:NO_TRADE:el-618c39ea9b7f471a83573e72bd17d6b6:883ddf43b3ba318224bb70060e7870f6b3c03dc2": {
       "caveat": "live Alpaca observation; SPY quote stale after the regular session; genuine NO_TRADE; ThesisAgent not called (freshness fail-closed); not fill evidence",
@@ -74,15 +85,15 @@
       "outcome": "NO_TRADE",
       "record_id": "el-6b67a01c2bdd448388e813633f90e890"
     },
-    "opticycle:v1:VETO:el-f98f7d5692b14fb2a92d3c6f371e7b4d:883ddf43b3ba318224bb70060e7870f6b3c03dc2": {
+    "opticycle:v1:VETO:el-b33a097da05c4caf9454e9da772cd247:6a9ad3a6774dbdfafae5d716365012854601580d": {
       "caveat": null,
       "channel": "replay",
-      "commit_sha": "883ddf43b3ba318224bb70060e7870f6b3c03dc2",
+      "commit_sha": "6a9ad3a6774dbdfafae5d716365012854601580d",
       "incomplete": [],
       "live_fill": false,
       "live_mleg_submit": false,
       "outcome": "VETO",
-      "record_id": "el-f98f7d5692b14fb2a92d3c6f371e7b4d"
+      "record_id": "el-b33a097da05c4caf9454e9da772cd247"
     }
   },
   "demo_mp4": "deleted; Remotion demo is Gate 12",
@@ -91,7 +102,7 @@
   "injected_no_trade_promoted": false,
   "live_fill_claimed": true,
   "live_quotes_available": true,
-  "matched_claimed": false,
+  "matched_claimed": true,
   "no_trade_injected_quote_caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
   "sanitized_json_provided": true,
   "schema": "opticycle.claim-evidence.v1",

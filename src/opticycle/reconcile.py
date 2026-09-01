@@ -342,7 +342,9 @@ def reconcile(
     if account is None or broker is None:
         return _unknown(report_id, cycle, payload, receipt, clock, "broker account missing")
 
-    account_id = _text(_attr(account, "id", "account_number", "account_id"))
+    from opticycle.observe import paper_account_id as _paper_account_id
+
+    account_id = _text(_paper_account_id(account) or _attr(account, "id", "account_number", "account_id"))
     comparisons.append(_compare("account", designated, account_id))
     if not comparisons[-1].matched:
         discrepancies.append("account")

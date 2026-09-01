@@ -15,6 +15,7 @@ import urllib.error
 import urllib.request
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
+from pathlib import Path
 from typing import Any, Protocol
 
 from opticycle.journal import TradeJournal
@@ -75,6 +76,17 @@ class LlmClient(Protocol):
 
 
 DEFAULT_LLM_MODEL = "gpt-5.6-luna"
+LLM_LAST_PATH = Path("data/llm_last.json")
+
+
+def _dump_llm_last(payload: dict[str, Any]) -> None:
+    """Gitignored debug dump of the last model reply. Never includes the API key."""
+    try:
+        path = LLM_LAST_PATH
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
+    except OSError:
+        return
 
 
 def llm_omits_temperature(model: str) -> bool:
@@ -137,13 +149,21 @@ class OpenAiThesisClient:
             with urllib.request.urlopen(request, timeout=60) as response:
                 body = json.loads(response.read().decode("utf-8"))
         except urllib.error.URLError as exc:
+            _dump_llm_last({"model": self.model, "error": type(exc).__name__})
             raise ThesisDisabled(f"real model call failed: {type(exc).__name__}") from exc
         content = body["choices"][0]["message"].get("content") or ""
         if not str(content).strip():
+            _dump_llm_last({"model": self.model, "error": "empty_content"})
             raise ThesisDisabled("real model call returned empty content")
-        loaded = json.loads(content)
+        try:
+            loaded = json.loads(content)
+        except json.JSONDecodeError as exc:
+            _dump_llm_last({"model": self.model, "error": "json_decode", "content": str(content)[:4000]})
+            raise ThesisDisabled(f"real model call returned non-JSON: {type(exc).__name__}") from exc
         if not isinstance(loaded, dict):
+            _dump_llm_last({"model": self.model, "error": "not_object", "content": str(content)[:4000]})
             raise ValueError("model output is not a JSON object")
+        _dump_llm_last({"model": self.model, "parsed": loaded})
         return loaded
 
 
@@ -284,6 +304,13 @@ def features_to_prompt(features: FeatureSummary) -> str:
             "observation_timestamp",
             "reason_code",
         ],
+        "allowed_reason_codes": sorted(ALLOWED_REASON_CODES),
+        "reason_code_rule": (
+            "For BULLISH or BEARISH use TREND_ALIGNED. "
+            "For NO_TRADE use INSUFFICIENT_EVIDENCE or STALE_DATA."
+        ),
+        "confidence_rule": "confidence is a decimal in [0, 1], never a percent",
+        "timestamp_rule": "copy observation_timestamp from this payload exactly",
         "allowed_stances": ["BULLISH", "BEARISH", "NO_TRADE"],
         "choice_rule": (
             "You choose BULLISH, BEARISH, or NO_TRADE from cited_features. "

@@ -88,7 +88,7 @@ def test_mcp_stdio_params_pin_uvx_server() -> None:
 
     params = _stdio_params(MCP_SERVER_SPEC, {"ALPACA_PAPER_TRADE": "true"})
     assert params.command == "uvx"
-    assert params.args == ["alpaca-mcp-server==2.3.0"]
+    assert params.args == ["--with", "fastmcp>=3.1.0,<4", "alpaca-mcp-server==2.3.0"]
 
 
 def test_parse_mcp_error_result() -> None:

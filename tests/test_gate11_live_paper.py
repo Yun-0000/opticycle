@@ -159,18 +159,18 @@ def test_injected_no_trade_not_promoted_and_fill_incomplete() -> None:
     assert status["live_quotes_available"] is True
     assert status["observation_reason"] == "SPY quote is stale"
     assert status["yun_authorized_one_paper_mleg"] is True
-    assert status["matched_claimed"] is False
-    assert status["llm_episode_recorded"] is False
+    assert status["matched_claimed"] is True
+    assert status["llm_episode_recorded"] is True
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     assert manifest["live_fill_claimed"] is True
     assert manifest.get("injected_no_trade_promoted") is False
     html = PAGE_PATH.read_text(encoding="utf-8")
     assert "NOT fill evidence" in html
     assert "injected missing quote" in html
-    from opticycle.evidence_public import is_live_matched_fill
+    from opticycle.evidence_public import is_live_fill_row
 
     for row in load_public_records():
-        if is_live_matched_fill(row):
+        if is_live_fill_row(row):
             continue
         if row.get("channel") == "live_paper":
             for blocked in ("mcp_attempt", "broker_receipt", "reconciliation", "realized_pnl", "unrealized_pnl"):

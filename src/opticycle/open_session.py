@@ -12,7 +12,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-from opticycle.evidence_public import is_live_matched_fill, load_public_records
+from opticycle.evidence_public import is_live_fill_row, load_public_records
 from opticycle.ledger import canonical_dumps, sanitize
 from opticycle.observe import AlpacaReadClient, ObservationClosed, observe_live
 from opticycle.protocol import ObservationOutcome
@@ -52,12 +52,10 @@ def load_lock(path: Path = LOCK_PATH) -> dict[str, Any]:
 
 def signed_matched_already_recorded() -> bool:
     for row in load_public_records():
-        if not is_live_matched_fill(row):
-            continue
         extra = row.get("extra") or {}
         if extra.get("matched_claimed") is True or extra.get("price_bound_matched") is True:
             return True
-        if str(row.get("outcome") or "") == "MATCHED":
+        if str(row.get("outcome") or "") == "MATCHED" and is_live_fill_row(row):
             return True
     return False
 

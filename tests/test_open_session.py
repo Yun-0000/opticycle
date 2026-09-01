@@ -30,9 +30,20 @@ def test_skip_reason_one_submit_per_day(monkeypatch: pytest.MonkeyPatch) -> None
     monkeypatch.setenv("ALPACA_SECRET_KEY", "paper-secret")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     monkeypatch.setenv("ALPACA_LIVE_TRADE", "false")
+    monkeypatch.setattr("opticycle.open_session.signed_matched_already_recorded", lambda: False)
     reason = skip_reason(submit=True, today=date(2026, 9, 1), lock={"submit_date": "2026-09-01"})
     assert reason is not None
     assert "already submitted" in reason
+
+
+def test_skip_reason_when_signed_matched_recorded(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ALPACA_API_KEY", "paper-key")
+    monkeypatch.setenv("ALPACA_SECRET_KEY", "paper-secret")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("ALPACA_LIVE_TRADE", "false")
+    monkeypatch.setattr("opticycle.open_session.signed_matched_already_recorded", lambda: True)
+    reason = skip_reason(submit=True)
+    assert reason == "a price-bound MATCHED live fill is already recorded"
 
 
 def test_unauthorized_clock_does_not_submit_or_leak_html(

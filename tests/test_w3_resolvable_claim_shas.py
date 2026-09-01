@@ -66,19 +66,20 @@ def test_ghost_fc974f1_is_gone_from_public_artifacts() -> None:
 
 
 def test_public_completion_is_two_live_matched_fills() -> None:
-    from opticycle.evidence_public import is_live_matched_fill
+    from opticycle.evidence_public import is_live_fill_row, is_live_matched_fill
     from opticycle.live_matched_fills import LIVE_MATCHED_CLIENT_IDS
+    from opticycle.broker_lookup import SIGNED_CLIENT_ORDER_ID
 
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     html = PAGE_PATH.read_text(encoding="utf-8")
     public = PUBLIC_JSONL.read_text(encoding="utf-8")
     assert manifest["live_fill_claimed"] is True
-    assert manifest["matched_claimed"] is False
+    assert manifest["matched_claimed"] is True
     assert "replay/fixture" not in html
     assert "not public completion" not in html
     assert "Do not invent MATCHED" not in html
     assert not manifest.get("incomplete_live")
-    for client_id in LIVE_MATCHED_CLIENT_IDS:
+    for client_id in set(LIVE_MATCHED_CLIENT_IDS) | {SIGNED_CLIENT_ORDER_ID}:
         assert client_id in public
         assert client_id in html
     live = [row for row in load_public_records() if is_live_matched_fill(row)]
@@ -94,7 +95,7 @@ def test_public_completion_is_two_live_matched_fills() -> None:
             caveat = str(mapped.get("caveat") or "")
             assert "fixture" not in caveat.lower()
             assert "not public completion" not in caveat
-        elif is_live_matched_fill(row):
+        elif is_live_fill_row(row):
             assert extra.get("live_fill_claimed") is True
             mapped = manifest["claims"][row["claim"]]
             assert mapped["live_fill"] is True

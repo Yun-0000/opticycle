@@ -156,7 +156,7 @@ def test_paper_host_and_designated_account_are_forced() -> None:
 
     params = _stdio_params(MCP_SERVER_SPEC, {"ALPACA_PAPER_TRADE": "false"})
     assert params.command == "uvx"
-    assert params.args == ["alpaca-mcp-server==2.3.0"]
+    assert params.args == ["--with", "fastmcp>=3.1.0,<4", "alpaca-mcp-server==2.3.0"]
     assert params.env["APCA_API_BASE_URL"] == PAPER_API_HOST
     assert params.env["ALPACA_PAPER_TRADE"] == "true"
 

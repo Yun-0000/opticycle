@@ -19,6 +19,7 @@ from typing import Any, Callable, Protocol
 from ..orders import OCC_SYMBOL_RE, ExecutionRejected, OptionOrderRequest
 
 MCP_SERVER_SPEC = "alpaca-mcp-server==2.3.0"
+FASTMCP_UVX_SPEC = "fastmcp>=3.1.0,<4"
 PLACE_OPTION_ORDER = "place_option_order"
 PAPER_API_HOST = "https://paper-api.alpaca.markets"
 DESIGNATED_PAPER_ACCOUNT = "PA3V84C40PJQ"
@@ -69,7 +70,7 @@ def _stdio_params(server_spec: str, env: dict[str, str]) -> Any:
 
     return StdioServerParameters(
         command="uvx",
-        args=[server_spec],
+        args=["--with", FASTMCP_UVX_SPEC, server_spec],
         env=assert_paper_mcp_env(env),
     )
 

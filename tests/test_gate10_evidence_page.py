@@ -63,7 +63,7 @@ def test_every_public_claim_maps_to_exact_record_and_commit() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     records = {row["record_id"]: row for row in load_public_records()}
     assert manifest["live_fill_claimed"] is True
-    assert manifest["matched_claimed"] is False
+    assert manifest["matched_claimed"] is True
     assert not manifest.get("incomplete_live")
     assert manifest["claims"]
     for claim, mapped in manifest["claims"].items():
@@ -77,7 +77,7 @@ def test_every_public_claim_maps_to_exact_record_and_commit() -> None:
         if mapped["live_fill"]:
             assert mapped["live_mleg_submit"] is True
             assert mapped["channel"] == "live_paper"
-            assert mapped["outcome"] == "FILLED"
+            assert mapped["outcome"] in {"FILLED", "MATCHED"}
             assert not mapped["incomplete"]
         else:
             assert mapped["live_fill"] is False
@@ -133,24 +133,32 @@ def test_no_trade_public_jsonl_is_not_fill_evidence() -> None:
 
 
 def test_live_mleg_fill_claims_record_authorized_matched() -> None:
-    from opticycle.evidence_public import is_live_matched_fill
+    from opticycle.evidence_public import is_live_fill_row, is_live_matched_fill
+    from opticycle.signed_credit_fill import is_price_bound_matched_fill
 
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     assert manifest["live_fill_claimed"] is True
+    assert manifest["matched_claimed"] is True
     html = PAGE_PATH.read_text(encoding="utf-8")
     assert "oc-204a8dfccffd40c9" in html
     assert "oc-715ad36a630d408e" in html
+    assert "oc-63db2a85298b4ecabefab59076a6397e" in html
     live_count = 0
+    signed_count = 0
     for row in load_public_records():
-        if is_live_matched_fill(row):
-            live_count += 1
+        if is_live_fill_row(row):
             for field in ("mcp_attempt", "broker_receipt", "reconciliation"):
                 assert row["episode"][field]["present"] is True
+            if is_live_matched_fill(row):
+                live_count += 1
+            if is_price_bound_matched_fill(row):
+                signed_count += 1
             continue
         if row.get("channel") == "live_paper":
             for blocked in ("mcp_attempt", "broker_receipt", "reconciliation", "realized_pnl", "unrealized_pnl"):
                 assert row["episode"][blocked]["present"] is False
     assert live_count == 2
+    assert signed_count == 1
 
 
 def test_foundation_md_discloses_pinned_upstream() -> None:
@@ -206,5 +214,5 @@ def test_gate9_no_trade_export_is_byte_stable() -> None:
     claims = json.loads((ROOT / "artifacts" / "evidence" / "claims.json").read_text(encoding="utf-8"))
     assert hashlib.sha256(
         (ROOT / "artifacts" / "evidence" / "claims.json").read_bytes()
-    ).hexdigest() == "0a437dc1c294727a19f7c264ed45f8b48e4e4752ff5e921384582a051c5970a1"
+    ).hexdigest() == "2b03a950660096261776602dc912303e969ca222a3fbeac1c019954555a73cad"
     assert "el-6b67a01c2bdd448388e813633f90e890" in json.dumps(claims)

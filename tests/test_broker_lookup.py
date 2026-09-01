@@ -35,11 +35,17 @@ def test_sanitized_fills_match_broker_lookup() -> None:
     assert monday["order_id"] == MONDAY_BROKER_ORDER_ID
     lookup = public_broker_lookup()
     assert lookup["looked_up_at"] == BROKER_LOOKUP_AT
-    assert lookup["mcp_result_hash_present"] is False
+    assert lookup["mcp_result_hash_present"] is True
     ids = {item["client_order_id"]: item["order_id"] for item in lookup["fills"]}
     assert ids[WEEKEND_CLIENT_ORDER_ID] == WEEKEND_BROKER_ORDER_ID
     assert ids[MONDAY_CLIENT_ORDER_ID] == MONDAY_BROKER_ORDER_ID
+    from opticycle.broker_lookup import SIGNED_BROKER_ORDER_ID, SIGNED_CLIENT_ORDER_ID, sanitized_signed_fill
+
+    assert ids[SIGNED_CLIENT_ORDER_ID] == SIGNED_BROKER_ORDER_ID
     assert lookup["fills"][0]["broker_readback_hash"] == broker_readback_hash(weekend)
+    assert any(item.get("price_bound_matched") is True for item in lookup["fills"])
+    assert lookup["closes"]
+    assert all(item.get("raw_result_hash") for item in lookup["closes"])
     committed = json.loads(BROKER_LOOKUP_PATH.read_text(encoding="utf-8"))
     assert committed["fills"][0]["order_id"] == WEEKEND_BROKER_ORDER_ID
     blob = json.dumps(committed)

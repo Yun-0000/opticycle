@@ -41,7 +41,7 @@ def main(argv: list[str] | None = None) -> int:
     os.environ.setdefault("HACKATHON_LLM_MODEL", "gpt-5.6-luna")
     report = run_open_session(submit=args.submit)
     print(json.dumps(report, indent=2, sort_keys=True, default=str))
-    if report.get("blocked", "").startswith("missing"):
+    if str(report.get("blocked") or "").startswith("missing"):
         return 0
     if report.get("blocked") == "regular session is closed":
         return 0

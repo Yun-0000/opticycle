@@ -113,7 +113,7 @@ def test_committed_public_export_has_both_live_fills() -> None:
     public = PUBLIC_JSONL.read_text(encoding="utf-8")
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     assert manifest["live_fill_claimed"] is True
-    assert manifest["matched_claimed"] is False
+    assert manifest["matched_claimed"] is True
     assert "not price-bound MATCHED" in html
     for row in live:
         require_live_matched_fill(row)
@@ -138,8 +138,10 @@ def test_committed_public_export_has_both_live_fills() -> None:
     assert "PA3V84C40PJQ" not in public
     replayed = replay_sanitized_records(records)
     assert {item["client_order_id"] for item in live} == set(LIVE_MATCHED_CLIENT_IDS)
-    live_verified = [item for item in replayed if item["live_fill"]]
+    live_verified = [item for item in replayed if item["live_fill"] and item["outcome"] == "FILLED"]
     assert len(live_verified) == 2
+    signed_verified = [item for item in replayed if item["live_fill"] and item["outcome"] == "MATCHED"]
+    assert len(signed_verified) == 1
     replay_matched = [
         row for row in records if row.get("outcome") == "MATCHED" and row.get("channel") == "replay"
     ]
