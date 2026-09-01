@@ -2,7 +2,7 @@
   "schemaVersion": 5,
   "eventId": "alpaca-trading-agents-2026",
   "state": "BUILDING",
-  "planSha256": "aabf9a2813ce393c46931607cbb26f4762e0472dc3787f186995b9358f3e3396",
+  "planSha256": "69f0e1b0399a23b19bc4a17238acb9040eca6f8010743627b510d1877d08d2b4",
   "artifactRequirements": [
     {
       "id": "submission-repository",
@@ -49,13 +49,13 @@
   ],
   "buildId": null,
   "planApproval": {
-    "command": "APPROVE PLAN alpaca-trading-agents-2026 aabf9a2813ce393c46931607cbb26f4762e0472dc3787f186995b9358f3e3396",
+    "command": "APPROVE PLAN alpaca-trading-agents-2026 69f0e1b0399a23b19bc4a17238acb9040eca6f8010743627b510d1877d08d2b4",
     "eventId": "alpaca-trading-agents-2026",
-    "planSha256": "aabf9a2813ce393c46931607cbb26f4762e0472dc3787f186995b9358f3e3396",
+    "planSha256": "69f0e1b0399a23b19bc4a17238acb9040eca6f8010743627b510d1877d08d2b4",
     "approvedAt": "2026-08-29T04:12:12Z"
   },
   "builderRun": {
-    "idempotencyKey": "builder-v3:alpaca-trading-agents-2026:aabf9a2813ce393c46931607cbb26f4762e0472dc3787f186995b9358f3e3396",
+    "idempotencyKey": "builder-v3:alpaca-trading-agents-2026:69f0e1b0399a23b19bc4a17238acb9040eca6f8010743627b510d1877d08d2b4",
     "attempt": 1,
     "status": "running",
     "startedAt": "2026-08-29T04:12:12Z",

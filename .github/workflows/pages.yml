@@ -1,4 +1,4 @@
-name: Publish judge packet
+name: Publish evidence site
 
 on:
   push:
@@ -26,6 +26,6 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: artifacts
-      - name: Deploy judge packet
+      - name: Deploy evidence site
         id: deployment
         uses: actions/deploy-pages@v4

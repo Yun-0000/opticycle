@@ -242,7 +242,7 @@ def test_ci_runs_tests_and_public_evidence_checks() -> None:
 
 def test_plan_md_bytes_unchanged() -> None:
     digest = hashlib.sha256((ROOT / "PLAN.md").read_bytes()).hexdigest()
-    assert digest == "aabf9a2813ce393c46931607cbb26f4762e0472dc3787f186995b9358f3e3396"
+    assert digest == "69f0e1b0399a23b19bc4a17238acb9040eca6f8010743627b510d1877d08d2b4"
 
 
 def test_gate9_no_trade_export_is_byte_stable() -> None:

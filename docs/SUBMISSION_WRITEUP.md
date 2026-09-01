@@ -22,6 +22,6 @@ All order mutations use official `alpaca-mcp-server==2.3.0` → `place_option_or
 | Account after closing first two spreads | Alpaca equity `100055.67` | authoritative broker snapshot |
 | Modeled walk-forward | Alpaca IEX daily bars + Black-Scholes option pricing | research context only; not broker P&L |
 
-Public proof: Judge packet, broker receipts, portfolio-history curve, source, and rendered demo all resolve from the same repository HEAD.
+Public proof: the evidence page, broker receipts, portfolio-history curve, source, and rendered demo all resolve from the same repository HEAD.
 
 <small>Honesty: the first two entries were real fills but used the wrong positive sign for intended credit limits, so they remain `FILLED`, not price-bound `MATCHED`. The third entry is the only live price-bound match. Keyless replay and the IEX/Black-Scholes walk-forward are labeled and never promoted to live evidence. Foundation reuse is disclosed in `FOUNDATION.md`.</small>

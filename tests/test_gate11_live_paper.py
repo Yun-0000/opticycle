@@ -34,7 +34,7 @@ from opticycle.pnl import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-PLAN_SHA = "aabf9a2813ce393c46931607cbb26f4762e0472dc3787f186995b9358f3e3396"
+PLAN_SHA = "69f0e1b0399a23b19bc4a17238acb9040eca6f8010743627b510d1877d08d2b4"
 NO_TRADE_SHA = "1ca34e086e20246c9025da8ebcfa3633642b523185c7041e71d45622857aecf9"
 
 

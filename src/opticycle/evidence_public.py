@@ -1,4 +1,4 @@
-"""Public judge evidence: sanitized page, claim manifest, keyless replay.
+"""Public evidence page: sanitized records, claim manifest, keyless replay.
 
 Reads sanitized ledger exports only. Two authorized live_paper broker fills
 are recorded. They are not price-bound MATCHED (credit limit sign error).
@@ -377,7 +377,7 @@ def _present_label(record: Mapping[str, Any], field: str) -> str:
 
 
 def _page_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Copy records for the judge page. Injected NO_TRADE empty slots are not fill TODOs."""
+    """Copy records for the public evidence page. Injected NO_TRADE empty slots are not fill TODOs."""
     out: list[dict[str, Any]] = []
     for row in records:
         if is_injected_no_trade(row):
@@ -643,7 +643,7 @@ def render_evidence_page(
 <body>
   <div class="eyebrow">OPTICYCLE / HISTORICAL GOLDEN TRACE / SANITIZED PAPER EVIDENCE</div>
   <h1>One order.<br/>Seven proofs.</h1>
-  <p class="lede">Paper account <strong>{DESIGNATED_ACCOUNT_ID}</strong>. The judge path starts with the only live, price-bound MATCHED fill, then resolves every step to the ledger and independent Alpaca broker readback.</p>
+  <p class="lede">Paper account <strong>{DESIGNATED_ACCOUNT_ID}</strong>. Start with the only live, price-bound MATCHED fill, then follow the same client order through the ledger and the Alpaca broker readback.</p>
   {golden_trace}
   <div class="facts">
     <div class="fact"><small>Golden client order</small><strong>{SIGNED_CLIENT_ORDER_ID}</strong></div>

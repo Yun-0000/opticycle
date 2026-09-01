@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that every golden video fact is present on the judge evidence page."""
+"""Check that every golden video fact is present on the public evidence page."""
 
 from __future__ import annotations
 

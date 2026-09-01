@@ -71,7 +71,7 @@ def test_walk_forward_is_prior_only_exact_width_and_risk_bounded() -> None:
         assert abs(trade["short_strike"] - trade["long_strike"]) == 5.0
 
 
-def test_judge_section_separates_modeled_result_from_broker_pnl(
+def test_walk_forward_section_separates_modeled_result_from_broker_pnl(
     tmp_path: Path, monkeypatch,
 ) -> None:
     from opticycle import evidence_public
