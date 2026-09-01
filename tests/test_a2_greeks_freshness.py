@@ -160,10 +160,12 @@ def test_live_positions_use_chain_greeks_when_broker_omits_them() -> None:
     assert result.outcome.value == "OK"
     assert result.portfolio is not None
     assert result.portfolio.open_positions == 1
-    assert result.portfolio.net_delta == pytest.approx(-0.2)
-    assert result.portfolio.net_vega == pytest.approx(0.1)
-    assert result.portfolio.net_gamma == pytest.approx(0.01)
-    assert result.portfolio.net_theta == pytest.approx(-0.05)
+    # Portfolio Greeks are contract exposure, so option-unit Greeks include
+    # the standard 100-share multiplier.
+    assert result.portfolio.net_delta == pytest.approx(-20.0)
+    assert result.portfolio.net_vega == pytest.approx(10.0)
+    assert result.portfolio.net_gamma == pytest.approx(1.0)
+    assert result.portfolio.net_theta == pytest.approx(-5.0)
 
 
 def test_live_positions_without_chain_greeks_still_omit_portfolio_greeks() -> None:

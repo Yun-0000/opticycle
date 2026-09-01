@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Protocol
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -25,6 +26,7 @@ from opticycle.protocol import (
     ensure_utc,
 )
 from opticycle.risk import PortfolioSnapshot
+from opticycle.position_manager import open_contracts_and_risk
 from opticycle.settings import HackathonSettings
 
 MAX_QUOTE_AGE_SECONDS = Decimal("120")
@@ -315,6 +317,71 @@ def _signed_position_qty(item: Any) -> Decimal | None:
     return qty
 
 
+def _position_record(item: Any) -> dict[str, Any]:
+    def value(name: str) -> Any:
+        raw = item.get(name) if isinstance(item, dict) else getattr(item, name, None)
+        enum_value = getattr(raw, "value", None)
+        return enum_value if enum_value is not None else raw
+
+    return {
+        "symbol": str(value("symbol") or "").upper(),
+        "qty": str(value("qty") or "0"),
+        "side": str(value("side") or ""),
+        "avg_entry_price": str(value("avg_entry_price") or ""),
+        "current_price": str(value("current_price") or ""),
+        "market_value": str(value("market_value") or ""),
+        "unrealized_pl": str(value("unrealized_pl") or ""),
+    }
+
+
+def _opening_activity_today(orders: list[Any], now: datetime) -> tuple[int, int]:
+    """Return (opening MLEG orders, contracts) filled today in New York."""
+    today_et = ensure_utc(now).astimezone(ZoneInfo("America/New_York")).date()
+    seen: set[str] = set()
+    order_count = 0
+    contract_count = 0
+    for order in orders:
+        getter = order.get if isinstance(order, dict) else lambda name, default=None: getattr(order, name, default)
+        status = str(getattr(getter("status"), "value", getter("status", "")) or "").lower()
+        if status not in {
+            "filled",
+            "done_for_day",
+            "new",
+            "accepted",
+            "pending_new",
+            "partially_filled",
+        }:
+            continue
+        activity_at = getter("filled_at") or getter("submitted_at") or getter("created_at")
+        if not isinstance(activity_at, datetime) or ensure_utc(activity_at).astimezone(ZoneInfo("America/New_York")).date() != today_et:
+            continue
+        legs = list(getter("legs", []) or [])
+        intents = {
+            str(
+                getattr(
+                    (leg.get("position_intent") if isinstance(leg, dict) else getattr(leg, "position_intent", "")),
+                    "value",
+                    (leg.get("position_intent") if isinstance(leg, dict) else getattr(leg, "position_intent", "")),
+                )
+                or ""
+            ).lower()
+            for leg in legs
+        }
+        if not intents.intersection({"buy_to_open", "sell_to_open"}):
+            continue
+        identity = str(getter("id") or getter("client_order_id") or "")
+        if identity and identity in seen:
+            continue
+        if identity:
+            seen.add(identity)
+        qty = _as_decimal(getter("qty") or getter("filled_qty") or 0) or Decimal("0")
+        if qty <= 0:
+            continue
+        order_count += 1
+        contract_count += int(qty)
+    return order_count, contract_count
+
+
 def _complete_greeks(
     delta: Decimal | None,
     gamma: Decimal | None,
@@ -375,6 +442,7 @@ def _portfolio_greeks(
         return 0.0, 0.0, 0.0, 0.0
     quotes = {str(quote.symbol).upper(): quote for quote in chain_quotes}
     totals = {"delta": Decimal("0"), "gamma": Decimal("0"), "theta": Decimal("0"), "vega": Decimal("0")}
+    contract_multiplier = Decimal("100")
     for item in positions:
         getter = _item_getter(item)
         symbol = str(getter("symbol", "") or "").upper()
@@ -385,7 +453,7 @@ def _portfolio_greeks(
         if chosen is None:
             return None, None, None, None
         for key, value in chosen.items():
-            totals[key] += value * qty
+            totals[key] += value * qty * contract_multiplier
     return (
         float(totals["delta"]),
         float(totals["gamma"]),
@@ -782,6 +850,11 @@ def observe_live(
         return _closed(ObservationOutcome.HALT, "options approval missing or not confirmed", correlation_id, datums)
 
     net_delta, net_gamma, net_theta, net_vega = _portfolio_greeks(position_list, chain_quotes)
+    position_records = [_position_record(item) for item in position_list]
+    open_contracts, open_risk = open_contracts_and_risk(position_records)
+    opening_orders_today, contracts_opened_today = _opening_activity_today(
+        [*open_list, *fill_list], clock_now
+    )
     portfolio = PortfolioSnapshot(
         equity=float(equity),
         buying_power=float(buying_power),
@@ -789,13 +862,16 @@ def observe_live(
         account_id=account_id,
         paper=True,
         options_approved=True,
-        trades_today=int(getattr(account, "daytrade_count", 0) or 0),
+        trades_today=opening_orders_today,
         open_positions=len(position_list),
+        contracts_opened_today=contracts_opened_today,
+        open_contracts=open_contracts,
         net_delta=net_delta,
         net_vega=net_vega,
         net_gamma=net_gamma,
         net_theta=net_theta,
-        positions=[{"symbol": getattr(item, "symbol", "")} for item in position_list],
+        open_risk=float(open_risk),
+        positions=position_records,
     )
     if open_list:
         portfolio.trades_today = max(portfolio.trades_today, len(open_list))

@@ -9,7 +9,9 @@ The model never receives or emits OCC symbols, quantity, or order prices.
 from __future__ import annotations
 
 import json
+import math
 import os
+import statistics
 import re
 import urllib.error
 import urllib.request
@@ -210,6 +212,8 @@ def summarize_features(evidence: EvidenceSnapshot) -> FeatureSummary:
 
     closes = tuple(close for close in evidence.bar_closes if close > 0)
     bar_return: Decimal | None = None
+    realized_volatility: Decimal | None = None
+    five_day_range_pct: Decimal | None = None
     trend_bucket = "unknown"
     if len(closes) < MIN_BARS:
         missing.append("bar_closes")
@@ -226,6 +230,23 @@ def summarize_features(evidence: EvidenceSnapshot) -> FeatureSummary:
         else:
             trend_bucket = "flat"
         cited.append(_cite("bar_trend", trend_bucket))
+        if len(closes) >= 5:
+            last_five = closes[-5:]
+            five_day_range_pct = (max(last_five) - min(last_five)) / closes[-1]
+            cited.append(_cite("five_day_range_pct", format_decimal(five_day_range_pct, 6)))
+        if len(closes) >= 21:
+            returns = [
+                float((closes[index] - closes[index - 1]) / closes[index - 1])
+                for index in range(max(1, len(closes) - 20), len(closes))
+                if closes[index - 1] > 0
+            ]
+            if len(returns) >= 2:
+                realized_volatility = Decimal(
+                    str(statistics.stdev(returns) * math.sqrt(252))
+                )
+                cited.append(
+                    _cite("realized_volatility_20d", format_decimal(realized_volatility, 6))
+                )
 
     chain_count = len(evidence.chain_quotes)
     cited.append(_cite("chain_count", str(chain_count)))
@@ -236,6 +257,48 @@ def summarize_features(evidence: EvidenceSnapshot) -> FeatureSummary:
     timed_bids = [quote.bid for quote in timed_chain if quote.bid > 0]
     if timed_bids:
         cited.append(_cite("chain_credit_available", format_decimal(max(timed_bids), 4)))
+
+    iv_quotes = [
+        quote
+        for quote in evidence.chain_quotes
+        if quote.implied_volatility is not None and quote.implied_volatility > 0
+    ]
+    iv_rank: Decimal | None = None
+    iv_rank_scope = ""
+    put_call_skew: Decimal | None = None
+    if iv_quotes:
+        atm = min(iv_quotes, key=lambda quote: abs(quote.strike_price - evidence.spot_price))
+        ivs = [quote.implied_volatility for quote in iv_quotes if quote.implied_volatility is not None]
+        low, high = min(ivs), max(ivs)
+        iv_rank = Decimal("0.5") if high == low else (atm.implied_volatility - low) / (high - low)
+        iv_rank_scope = "current_chain_cross_section"
+        cited.append(_cite("iv_rank", format_decimal(iv_rank, 6)))
+        cited.append(_cite("iv_rank_scope", iv_rank_scope))
+        puts = [
+            quote.implied_volatility
+            for quote in iv_quotes
+            if quote.option_type.value == "put"
+            and quote.delta is not None
+            and Decimal("0.20") <= abs(quote.delta) <= Decimal("0.30")
+        ]
+        calls = [
+            quote.implied_volatility
+            for quote in iv_quotes
+            if quote.option_type.value == "call"
+            and quote.delta is not None
+            and Decimal("0.20") <= abs(quote.delta) <= Decimal("0.30")
+        ]
+        if puts and calls:
+            put_call_skew = Decimal(str(statistics.median(puts))) - Decimal(
+                str(statistics.median(calls))
+            )
+            cited.append(_cite("put_call_skew_25d", format_decimal(put_call_skew, 6)))
+
+    nfp = datetime.fromisoformat("2026-09-04T08:30:00-04:00")
+    hours_to_event = Decimal(str((nfp - ensure_utc(evidence.timestamp).astimezone(nfp.tzinfo)).total_seconds() / 3600))
+    next_event = "US_EMPLOYMENT_SITUATION_2026-09-04T08:30:00-04:00"
+    cited.append(_cite("next_event", next_event))
+    cited.append(_cite("hours_to_event", format_decimal(hours_to_event, 3)))
 
     if clock_open is not None:
         cited.append(_cite("clock_open", "true" if clock_open else "false"))
@@ -274,6 +337,13 @@ def summarize_features(evidence: EvidenceSnapshot) -> FeatureSummary:
         quote_timestamp_present=quote_ts is not None,
         bar_return=bar_return,
         bound_credit_type=bound,
+        iv_rank=iv_rank,
+        iv_rank_scope=iv_rank_scope,
+        realized_volatility=realized_volatility,
+        put_call_skew=put_call_skew,
+        five_day_range_pct=five_day_range_pct,
+        next_event=next_event,
+        hours_to_event=hours_to_event,
     )
 
 
@@ -293,6 +363,17 @@ def features_to_prompt(features: FeatureSummary) -> str:
         "implied_stance": features.implied_stance.value,
         "implied_stance_role": "evidence_only_not_the_answer",
         "bound_credit_type": features.bound_credit_type,
+        "iv_rank": str(features.iv_rank) if features.iv_rank is not None else None,
+        "iv_rank_scope": features.iv_rank_scope or None,
+        "realized_volatility_20d": (
+            str(features.realized_volatility) if features.realized_volatility is not None else None
+        ),
+        "put_call_skew_25d": str(features.put_call_skew) if features.put_call_skew is not None else None,
+        "five_day_range_pct": (
+            str(features.five_day_range_pct) if features.five_day_range_pct is not None else None
+        ),
+        "next_event": features.next_event,
+        "hours_to_event": str(features.hours_to_event) if features.hours_to_event is not None else None,
         "cited_features": list(features.evidence_refs),
         "missing_features": list(features.missing_features),
         "required_output_fields": [

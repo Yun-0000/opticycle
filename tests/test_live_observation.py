@@ -13,6 +13,7 @@ from opticycle.observe import (
     MAX_QUOTE_AGE_SECONDS,
     AlpacaReadClient,
     ObservationClosed,
+    _portfolio_greeks,
     equity_data_feed,
     feed_denial_reason,
     observe_live,
@@ -133,6 +134,20 @@ def test_paper_account_id_prefers_pa_account_number_over_uuid() -> None:
     assert result.outcome == ObservationOutcome.OK
     assert result.portfolio is not None
     assert result.portfolio.account_id == "PA3V84C40PJQ"
+
+
+def test_portfolio_greeks_use_option_contract_multiplier() -> None:
+    position = SimpleNamespace(
+        symbol="SPY260918P00500000",
+        qty="2",
+        side="long",
+        greeks=SimpleNamespace(delta=-0.20, gamma=0.01, theta=-0.04, vega=0.08),
+    )
+    delta, gamma, theta, vega = _portfolio_greeks([position])
+    assert delta == pytest.approx(-40.0)
+    assert gamma == pytest.approx(2.0)
+    assert theta == pytest.approx(-8.0)
+    assert vega == pytest.approx(16.0)
 
 
 def test_live_observe_missing_account_is_halt() -> None:

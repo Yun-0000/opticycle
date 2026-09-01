@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import html
 import json
-import re
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -59,7 +58,6 @@ GENUINE_STALE_QUOTE_CAVEAT = (
 DEMO_VIDEO_STATUS = "rendered at artifacts/demo.mp4; source in remotion/"
 
 FORBIDDEN_PUBLIC_TOKENS = (
-    "PA3V84C40PJQ",
     "ALPACA_API_KEY=",
     "ALPACA_SECRET_KEY=",
     "sk-live",
@@ -84,7 +82,7 @@ UPSTREAM_NAME_TOKENS = (
     "github.com/Magica",
 )
 
-ACCOUNT_ID_RE = re.compile(r"\bPA[A-Z0-9]{8,}\b")
+DESIGNATED_ACCOUNT_ID = "PA3V84C40PJQ"
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -268,8 +266,6 @@ def scan_public_text(text: str, *, source: str) -> list[str]:
     for token in FORBIDDEN_PUBLIC_TOKENS:
         if token.lower() in lowered:
             hits.append(f"{source}: {token}")
-    if ACCOUNT_ID_RE.search(text):
-        hits.append(f"{source}: alpaca paper account id")
     if "ALPACA_API_KEY=" in text or "ALPACA_SECRET_KEY=" in text:
         hits.append(f"{source}: credential assignment")
     return hits
@@ -539,12 +535,12 @@ def render_evidence_page(
         "Prior verticals were closed via MCP place_option_order mleg; those close "
         "orders retained raw_result_hash. The open credit MLEG's MCP envelope was "
         "not returned after broker accept; Alpaca GET is the fill source. "
-        "Account id omitted. Flatten then new fill equity 100049.62."
+        f"Paper account {DESIGNATED_ACCOUNT_ID}. Flatten then new fill equity 100049.62."
     )
     page_records = _page_records(records)
     golden_trace = _golden_trace(page_records)
     strategy_premise = (
-        "Trade one-lot SPY defined-risk credit verticals only when fresh evidence, "
+        "Trade risk-budgeted SPY defined-risk credit verticals only when fresh evidence, "
         "an LLM stance, and an exact-payload deterministic certificate all agree; "
         "otherwise record NO_TRADE or HALT."
     )
@@ -573,6 +569,11 @@ def render_evidence_page(
     .fact {{ background: var(--panel); padding: 1.15rem; }}
     .fact small {{ display: block; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }}
     .fact strong {{ display: block; margin-top: .45rem; font-size: 1.25rem; }}
+    .equity {{ border: 1px solid var(--line); background: var(--panel); padding: 1rem; margin: 2rem 0; }}
+    .equity img {{ display: block; width: 100%; height: auto; background: var(--bg); }}
+    .result {{ font-size: 1rem; }}
+    .positive {{ color: var(--acid); font-weight: 800; }}
+    .negative {{ color: #ff7b8c; font-weight: 800; }}
     .banner, .caveat {{ background: #211d0f; border: 1px solid #69591a; padding: 1rem 1.2rem; }}
     .premise {{ border-left: 4px solid var(--acid); padding: .1rem 0 .1rem 1.2rem; margin: 2.5rem 0; font-size: 1.35rem; line-height: 1.5; max-width: 1050px; }}
     .actions {{ display: flex; flex-wrap: wrap; gap: .75rem; margin: 1.5rem 0 2.5rem; }}
@@ -594,7 +595,7 @@ def render_evidence_page(
 <body>
   <div class="eyebrow">OPTICYCLE / GOLDEN TRADE / SANITIZED PAPER EVIDENCE</div>
   <h1>One order.<br/>Seven proofs.</h1>
-  <p class="lede">The judge path starts with the only live, price-bound MATCHED fill. Every step below resolves to the sanitized ledger and an independent Alpaca GET receipt. No secrets, keys, or account credentials.</p>
+  <p class="lede">Paper account <strong>{DESIGNATED_ACCOUNT_ID}</strong>. The judge path starts with the only live, price-bound MATCHED fill, then resolves every step to the ledger and independent Alpaca broker readback.</p>
   {golden_trace}
   <div class="facts">
     <div class="fact"><small>Golden client order</small><strong>{SIGNED_CLIENT_ORDER_ID}</strong></div>
@@ -604,6 +605,21 @@ def render_evidence_page(
     <div class="fact"><small>Timeout invariant</small><strong>mcp_submit_count=1 · second_submit=false</strong></div>
     <div class="fact"><small>After-fill equity</small><strong>100049.62</strong></div>
   </div>
+  <section class="equity">
+    <div class="eyebrow">ALPACA / GET /V2/ACCOUNT/PORTFOLIO/HISTORY</div>
+    <h2>Paper equity curve</h2>
+    <img src="equity-curve.png" alt="Paper account equity curve generated from Alpaca portfolio history"/>
+    <p class="muted">Machine-readable source: <a href="portfolio_history.json">portfolio_history.json</a></p>
+  </section>
+  <h2>Closed-trade results</h2>
+  <table class="result">
+    <thead><tr><th>Spread</th><th>Broker entry</th><th>MCP exit</th><th>Approx. realized P&amp;L</th></tr></thead>
+    <tbody>
+      <tr><td>SPY 793C/809C bear call</td><td>2.11 credit</td><td>1.53 debit</td><td class="positive">+$58</td></tr>
+      <tr><td>SPY 768C/769C bear call</td><td>0.51 credit</td><td>0.53 debit</td><td class="negative">−$2</td></tr>
+      <tr><td><strong>Closed total</strong></td><td colspan="2">Alpaca flatten equity 100055.67</td><td class="positive"><strong>≈ +$56</strong></td></tr>
+    </tbody>
+  </table>
   <div class="actions">
     <a class="button" href="../demo.mp4">Watch the rendered demo</a>
     <a class="button secondary" href="broker_lookup.json">Open broker GET receipts</a>

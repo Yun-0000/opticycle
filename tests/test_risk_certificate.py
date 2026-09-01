@@ -38,7 +38,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _settings() -> HackathonSettings:
-    return HackathonSettings()
+    return HackathonSettings(
+        spread_width=10,
+        min_dte=7,
+        max_dte=45,
+        short_delta_min=0.05,
+        short_delta_max=0.40,
+        max_total_risk_pct=0.08,
+        max_daily_trades=8,
+        max_open_positions=6,
+    )
 
 
 def _portfolio(**kwargs) -> PortfolioSnapshot:

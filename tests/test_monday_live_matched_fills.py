@@ -134,7 +134,7 @@ def test_committed_public_export_has_both_live_fills() -> None:
     assert "bars_heuristic_no_llm_key" in html
     assert WEEKEND_BROKER_ORDER_ID in html
     assert MONDAY_BROKER_ORDER_ID in html
-    assert "PA3V84C40PJQ" not in html
+    assert "PA3V84C40PJQ" in html
     assert "PA3V84C40PJQ" not in public
     replayed = replay_sanitized_records(records)
     assert {item["client_order_id"] for item in live} == set(LIVE_MATCHED_CLIENT_IDS)

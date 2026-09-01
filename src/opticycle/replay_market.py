@@ -11,7 +11,7 @@ from opticycle.pin_option import ObservedBook, ObservedChainAdapter, ObservedFre
 from opticycle.plans import occ_symbol
 
 
-def _friday_after(days: int = 14) -> date:
+def _friday_after(days: int = 3) -> date:
     target = date.today() + timedelta(days=days)
     while target.weekday() != 4:
         target += timedelta(days=1)
@@ -39,10 +39,8 @@ def _synthetic_chain(underlying: str, spot: float, expiration: date, bs_price: A
     rate = 0.04
     vol = 0.70
     rows: list[dict[str, Any]] = []
-    strikes = [
-        round(spot * factor, 0)
-        for factor in (0.90, 0.93, 0.95, 0.97, 0.99, 1.00, 1.01, 1.03, 1.05, 1.07, 1.10)
-    ]
+    center = int(round(spot / 5.0) * 5)
+    strikes = list(range(center - 50, center + 55, 5))
     now = datetime.now(timezone.utc)
     for strike in strikes:
         for kind, flag in (("P", "put"), ("C", "call")):
@@ -103,7 +101,7 @@ def replay_pin_market(
     spot: float = 500.0,
     equity: float = 100_000.0,
 ) -> PinMarket:
-    expiration = _friday_after(days=14)
+    expiration = _friday_after(days=3)
     chain = _synthetic_chain(underlying, spot, expiration, _bs_price())
     return PinMarket(
         spot=spot,

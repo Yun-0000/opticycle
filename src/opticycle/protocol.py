@@ -278,6 +278,13 @@ class FeatureSummary:
     quote_timestamp_present: bool = False
     bar_return: Decimal | None = None
     bound_credit_type: str = ""
+    iv_rank: Decimal | None = None
+    iv_rank_scope: str = ""
+    realized_volatility: Decimal | None = None
+    put_call_skew: Decimal | None = None
+    five_day_range_pct: Decimal | None = None
+    next_event: str = ""
+    hours_to_event: Decimal | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "observation_timestamp", ensure_utc(self.observation_timestamp))

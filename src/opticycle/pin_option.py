@@ -8,12 +8,14 @@ import types
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
+from decimal import Decimal, ROUND_FLOOR
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
 from opticycle.plans import CyclePlan, occ_symbol
-from opticycle.protocol import ThesisStance
+from opticycle.protocol import ThesisStance, parse_occ_symbol
 from opticycle.settings import HackathonSettings
 from trade.orders import ExecutionRejected, OptionOrderRequest
 
@@ -210,6 +212,63 @@ def _spread_request(plan: Any, underlying: str) -> OptionOrderRequest:
     )
 
 
+def vertical_max_loss_per_contract(request: OptionOrderRequest) -> Decimal:
+    """Return exact credit-vertical max loss from the broker-bound limit."""
+    if not request.is_multileg or not request.legs or len(request.legs) != 2:
+        raise ExecutionRejected("NO_TRADE: sizing requires a two-leg vertical")
+    if request.limit_price is None or Decimal(str(request.limit_price)) >= 0:
+        raise ExecutionRejected("NO_TRADE: sizing requires a signed credit limit")
+    strikes = [parse_occ_symbol(str(leg.get("symbol") or ""))[3] for leg in request.legs]
+    width = abs(strikes[0] - strikes[1])
+    credit = -Decimal(str(request.limit_price))
+    max_loss = (width - credit) * Decimal("100")
+    if width <= 0 or credit <= 0 or max_loss <= 0:
+        raise ExecutionRejected("NO_TRADE: invalid vertical economics for sizing")
+    return max_loss.quantize(Decimal("0.01"))
+
+
+def apply_risk_budget_qty(
+    request: OptionOrderRequest,
+    portfolio: Any,
+    settings: HackathonSettings,
+) -> int:
+    """Size one vertical from equity risk, aggregate-risk, and contract caps."""
+    equity = Decimal(str(getattr(portfolio, "equity", 0) or 0))
+    existing_risk = Decimal(str(getattr(portfolio, "open_risk", 0) or 0))
+    opened_today = int(getattr(portfolio, "contracts_opened_today", 0) or 0)
+    open_contracts = int(getattr(portfolio, "open_contracts", 0) or 0)
+    if equity <= 0:
+        raise ExecutionRejected("NO_TRADE: account equity missing for risk sizing")
+    per_contract = vertical_max_loss_per_contract(request)
+    trade_budget = equity * Decimal(str(settings.risk_per_trade_pct))
+    position_hard_cap = equity * Decimal(str(settings.max_position_pct))
+    aggregate_remaining = (
+        equity * Decimal(str(settings.max_total_risk_pct)) - existing_risk
+    )
+    risk_budget = min(trade_budget, position_hard_cap, aggregate_remaining)
+    risk_qty = int((risk_budget / per_contract).to_integral_value(rounding=ROUND_FLOOR))
+    daily_capacity = max(settings.max_new_contracts_per_day - opened_today, 0)
+    open_capacity = max(settings.max_open_contracts - open_contracts, 0)
+    qty = min(risk_qty, daily_capacity, open_capacity)
+    if qty <= 0:
+        raise ExecutionRejected(
+            "NO_TRADE: risk budget or daily/open contract capacity is exhausted"
+        )
+    request.qty = qty
+    request.metadata.update(
+        {
+            "sizing": "equity_risk_budget",
+            "risk_per_trade_pct": str(settings.risk_per_trade_pct),
+            "max_total_risk_pct": str(settings.max_total_risk_pct),
+            "per_contract_max_loss": str(per_contract),
+            "risk_budget": str(risk_budget.quantize(Decimal("0.01"))),
+            "opened_today_before": opened_today,
+            "open_contracts_before": open_contracts,
+        }
+    )
+    return qty
+
+
 def _normalize_stance(stance: ThesisStance | str | None) -> ThesisStance | None:
     if stance is None:
         return None
@@ -222,7 +281,7 @@ def _normalize_stance(stance: ThesisStance | str | None) -> ThesisStance | None:
 
 
 def _credit_candidate_for_type(strategy: Any, market: PinMarket, underlying: str, spread_type: str) -> Any:
-    """Ask the pin constructor for one credit type only. Never uses RSI/trend get_signal."""
+    """Select one exact-width credit vertical from observed quotes and delta."""
     if spread_type in FORBIDDEN_DEBIT_SPREADS:
         raise ExecutionRejected(f"NO_TRADE: {spread_type} debit verticals are disabled")
     if spread_type not in ALLOWED_CREDIT_SPREADS:
@@ -240,25 +299,105 @@ def _credit_candidate_for_type(strategy: Any, market: PinMarket, underlying: str
         raise ExecutionRejected("NO_TRADE: no usable expirations")
     dte_min = int(strategy.params["dte_min"])
     dte_max = int(strategy.params["dte_max"])
-    today = datetime.now().date()
+    today = datetime.now(ZoneInfo("America/New_York")).date()
     chain["dte"] = chain["expiration"].apply(lambda exp: (exp - today).days)
     chain = chain[(chain["dte"] >= dte_min) & (chain["dte"] <= dte_max)]
     if chain.empty:
         raise ExecutionRejected("NO_TRADE: no contracts in DTE window")
-    chain["option_type"] = chain["option_type"].astype(str).str.upper()
-    expirations = sorted(chain["expiration"].unique())
-    candidate = strategy._best_candidate_for_type(
-        chain,
-        expirations,
-        float(market.spot),
-        underlying,
-        spread_type,
-    )
-    if candidate is None:
+    chain["option_type"] = chain["option_type"].astype(str).str.upper().str[0]
+    kind = "P" if spread_type == "bull_put" else "C"
+    chain = chain[chain["option_type"] == kind]
+    if chain.empty:
+        raise ExecutionRejected(f"NO_TRADE: no {spread_type} contracts in DTE window")
+
+    width = Decimal(str(strategy.params["spread_width"]))
+    delta_min = Decimal(str(strategy.params["short_delta_min"]))
+    delta_max = Decimal(str(strategy.params["short_delta_max"]))
+    candidates: list[tuple[Decimal, dict[str, Any]]] = []
+    for _, short in chain.iterrows():
+        try:
+            short_delta = abs(Decimal(str(short.get("delta"))))
+            short_strike = Decimal(str(short.get("strike_price")))
+            short_bid = Decimal(str(short.get("bid_price") or short.get("bid") or 0))
+            short_ask = Decimal(str(short.get("ask_price") or short.get("ask") or 0))
+        except Exception:
+            continue
+        if not (delta_min <= short_delta <= delta_max) or short_bid <= 0 or short_ask <= 0:
+            continue
+        long_strike = short_strike - width if spread_type == "bull_put" else short_strike + width
+        matches = chain[
+            (chain["expiration"] == short["expiration"])
+            & ((chain["strike_price"].astype(float) - float(long_strike)).abs() < 1e-6)
+        ]
+        if matches.empty:
+            continue
+        long = matches.iloc[0]
+        try:
+            long_bid = Decimal(str(long.get("bid_price") or long.get("bid") or 0))
+            long_ask = Decimal(str(long.get("ask_price") or long.get("ask") or 0))
+        except Exception:
+            continue
+        if long_bid <= 0 or long_ask <= 0:
+            continue
+        mid_credit = ((short_bid + short_ask) - (long_bid + long_ask)) / Decimal("2")
+        credit = mid_credit.quantize(Decimal("0.01"))
+        if credit <= 0 or credit >= width:
+            continue
+        max_loss = (width - credit) * Decimal("100")
+        dte = int(short["dte"])
+        score = (credit / max_loss) - (abs(short_delta - Decimal("0.25")) / Decimal("100"))
+        expiration = short["expiration"]
+        metadata = {
+            "order_class": "mleg",
+            "spread_type": spread_type,
+            "underlying_symbol": underlying,
+            "legs": [
+                {
+                    "option_type": "put" if kind == "P" else "call",
+                    "strike": float(short_strike),
+                    "expiration": expiration.isoformat(),
+                    "side": "sell",
+                    "position_intent": "sell_to_open",
+                    "ratio": 1,
+                },
+                {
+                    "option_type": "put" if kind == "P" else "call",
+                    "strike": float(long_strike),
+                    "expiration": expiration.isoformat(),
+                    "side": "buy",
+                    "position_intent": "buy_to_open",
+                    "ratio": 1,
+                },
+            ],
+            "net_price": float(credit),
+            "width": float(width),
+            "max_loss": float(max_loss),
+            "delta_short": float(short_delta),
+            "dte": dte,
+            "selection": "observed_delta_exact_width",
+        }
+        candidates.append(
+            (
+                score,
+                {
+                    "metadata": metadata,
+                    "limit_price": -float(credit),
+                    "max_loss": float(max_loss),
+                    "reason": (
+                        f"{spread_type} ${width:g} wide, short delta {short_delta:.2f}, "
+                        f"{dte} DTE, credit {credit:.2f}"
+                    ),
+                },
+            )
+        )
+    if not candidates:
         raise ExecutionRejected(f"NO_TRADE: no {spread_type} credit vertical available")
-    if candidate.spread_type != spread_type or candidate.spread_type not in ALLOWED_CREDIT_SPREADS:
-        raise ExecutionRejected("NO_TRADE: constructed spread does not match thesis stance")
-    return candidate
+    selected = max(candidates, key=lambda item: item[0])[1]
+    return types.SimpleNamespace(
+        spread_type=spread_type,
+        action="SELL_TO_OPEN",
+        **selected,
+    )
 
 
 def build_pin_cycle_plan(
@@ -294,14 +433,15 @@ def build_pin_cycle_plan(
         "max_stock_price": 10_000.0,
         "min_stock_price": 1.0,
         "position_size_pct": 0.55,
-        "dte_min": 7,
-        "dte_max": 45,
+        "dte_min": settings.min_dte,
+        "dte_max": settings.max_dte,
         "iv_min_credit": 0.10,
-        "short_delta_min": 0.05,
-        "short_delta_max": 0.80,
+        "short_delta_min": settings.short_delta_min,
+        "short_delta_max": settings.short_delta_max,
+        "spread_width": settings.spread_width,
         "credit_min_pct": 0.05,
         "credit_max_pct": 0.90,
-        "width_pct": 0.02,
+        "width_pct": settings.spread_width / market.spot,
         "otm_pct": 0.03,
     }
 
@@ -310,6 +450,16 @@ def build_pin_cycle_plan(
     strategy.provider = market.provider
     strategy.fred = market.fred
     candidate = _credit_candidate_for_type(strategy, market, underlying, spread_type)
+    raw_legs = list((candidate.metadata or {}).get("legs") or [])
+    if len(raw_legs) != 2:
+        raise ExecutionRejected("NO_TRADE: selected vertical is missing legs")
+    selected_width = abs(
+        Decimal(str(raw_legs[0].get("strike"))) - Decimal(str(raw_legs[1].get("strike")))
+    )
+    if selected_width != Decimal(str(settings.spread_width)):
+        raise ExecutionRejected(
+            f"NO_TRADE: no exact ${settings.spread_width:g}-wide vertical available"
+        )
     action_plan = types.SimpleNamespace(
         metadata=candidate.metadata,
         target_price=float(candidate.limit_price),

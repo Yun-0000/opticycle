@@ -218,7 +218,10 @@ def test_upstream_names_stay_out_of_evidence_page() -> None:
         lower = text.lower()
         for token in UPSTREAM_NAME_TOKENS:
             assert token.lower() not in lower, f"{path} contains {token!r}"
-        assert "PA3V84C40PJQ" not in text
+        if path == PAGE_PATH:
+            assert "PA3V84C40PJQ" in text
+        else:
+            assert "PA3V84C40PJQ" not in text
 
 
 def test_ci_runs_tests_and_public_evidence_checks() -> None:

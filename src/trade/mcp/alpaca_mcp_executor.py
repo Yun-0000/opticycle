@@ -309,6 +309,37 @@ class AlpacaMcpExecutor:
         assert_certified_mleg_arguments(arguments, payload)
         return self._dispatch_certified_mcp(arguments)
 
+    def place_authorized_exit_sync(
+        self,
+        payload: Any,
+        authorization: Any,
+        *,
+        position_snapshot_hash: str,
+        settings: Any = None,
+        now: Any = None,
+    ) -> dict[str, Any]:
+        """Submit a hash-bound close MLEG after deterministic exit authorization."""
+        from opticycle.position_manager import ExitAuthorization
+        from opticycle.settings import HackathonSettings
+
+        resolved = settings or HackathonSettings()
+        if not isinstance(authorization, ExitAuthorization):
+            raise ExecutionRejected("unauthorized: exit authorization required")
+        authorization.verify(
+            payload,
+            position_snapshot_hash=position_snapshot_hash,
+            settings=resolved,
+            now=now,
+        )
+        intents = {leg.position_intent.value for leg in payload.legs}
+        if intents != {"buy_to_close", "sell_to_close"} or len(payload.legs) != 2:
+            raise ExecutionRejected("exit authorization permits one two-leg close MLEG only")
+        if payload.limit_price <= 0:
+            raise ExecutionRejected("close MLEG requires a positive debit limit")
+        arguments = payload.to_mcp_arguments()
+        assert_certified_mleg_arguments(arguments, payload)
+        return self._dispatch_certified_mcp(arguments)
+
     def _dispatch_certified_mcp(self, arguments: dict[str, Any]) -> dict[str, Any]:
         return asyncio.run(self._place_certified_mcp_arguments(arguments))
 

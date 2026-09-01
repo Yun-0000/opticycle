@@ -1,6 +1,6 @@
-"""Regular-session automation: observe, ThesisAgent, at most one paper MLEG.
+"""Regular-session automation: manage positions, then consider one paper MLEG.
 
-Never submits unless --submit. Never closes existing positions. Paper only.
+Never submits unless --submit. Paper only. The runner owns entry and exit gates.
 """
 
 from __future__ import annotations
@@ -12,7 +12,6 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
-from opticycle.evidence_public import is_live_fill_row, load_public_records
 from opticycle.ledger import canonical_dumps, sanitize
 from opticycle.observe import AlpacaReadClient, ObservationClosed, observe_live
 from opticycle.protocol import ObservationOutcome
@@ -50,16 +49,6 @@ def load_lock(path: Path = LOCK_PATH) -> dict[str, Any]:
     return loaded if isinstance(loaded, dict) else {}
 
 
-def signed_matched_already_recorded() -> bool:
-    for row in load_public_records():
-        extra = row.get("extra") or {}
-        if extra.get("matched_claimed") is True or extra.get("price_bound_matched") is True:
-            return True
-        if str(row.get("outcome") or "") == "MATCHED" and is_live_fill_row(row):
-            return True
-    return False
-
-
 def skip_reason(
     *,
     submit: bool,
@@ -73,14 +62,8 @@ def skip_reason(
         return "ALPACA_LIVE_TRADE must not be true"
     if not llm_key_present():
         return "missing OPENAI_API_KEY"
-    if signed_matched_already_recorded():
-        return "a price-bound MATCHED live fill is already recorded"
     if not submit:
-        return "submit not enabled (pass --submit to place at most one paper MLEG)"
-    body = dict(lock if lock is not None else load_lock())
-    day = (today or datetime.now(timezone.utc).date()).isoformat()
-    if body.get("submit_date") == day:
-        return f"already submitted once on {day}"
+        return "submit not enabled (pass --submit to enable MCP lifecycle management)"
     return None
 
 
@@ -143,18 +126,18 @@ def run_open_session(
     last_path: Path = LAST_PATH,
     lock_path: Path = LOCK_PATH,
 ) -> dict[str, Any]:
-    """Observe live. Optionally place one certified paper MLEG. Never closes positions."""
+    """Observe live. Optionally run one certified entry/exit lifecycle cycle."""
     settings = settings or HackathonSettings()
     os.environ["ALPACA_PAPER_TRADE"] = "true"
     os.environ["ALPACA_LIVE_TRADE"] = "false"
     blocked = skip_reason(submit=submit, today=today, lock=load_lock(lock_path))
     report: dict[str, Any] = {
-        "schema": "opticycle.open-session.v1",
+        "schema": "opticycle.open-session.v2",
         "submit_requested": submit,
         "submitted": False,
         "model": (os.environ.get("HACKATHON_LLM_MODEL") or "gpt-5.6-luna").strip(),
         "blocked": blocked,
-        "closes_positions": False,
+        "closes_positions": bool(submit),
     }
     if blocked and blocked.startswith("missing"):
         write_last(report, path=last_path)
@@ -240,11 +223,24 @@ def run_open_session(
             "dry_run": order.get("dry_run"),
         }
     if report["submitted"]:
+        previous = load_lock(lock_path)
+        day = (today or datetime.now(timezone.utc).date()).isoformat()
+        same_day = previous.get("submit_date") == day
+        arguments = order.get("arguments") if isinstance(order, Mapping) else {}
+        try:
+            submitted_qty = int((arguments or {}).get("qty") or result.get("filled_qty") or 1)
+        except (TypeError, ValueError):
+            submitted_qty = 1
         write_lock(
             {
-                "submit_date": (today or datetime.now(timezone.utc).date()).isoformat(),
+                "submit_date": day,
                 "client_order_id": report["client_order_id"],
                 "raw_result_hash": (report.get("mcp") or {}).get("raw_result_hash"),
+                "submit_count": (int(previous.get("submit_count") or 0) if same_day else 0) + 1,
+                "contracts_opened": (
+                    int(previous.get("contracts_opened") or 0) if same_day else 0
+                )
+                + submitted_qty,
             },
             path=lock_path,
         )

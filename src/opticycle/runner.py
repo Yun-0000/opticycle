@@ -17,11 +17,19 @@ from opticycle.cycle import (
     CycleState,
     CycleStore,
 )
+from opticycle.alpaca_cli_readonly import AlpacaCliReadError, AlpacaCliReadOnly
 from opticycle.journal import TradeJournal
 from opticycle.ledger import CHANNELS, EpisodeBuilder, OUTCOMES, snapshot_from_observation
 from opticycle.observe import AlpacaReadClient, MarketReadClient, ObservationClosed, ObservationResult, observe_live
-from opticycle.pin_option import ObservedBook, ObservedChainAdapter, ObservedFred, PinMarket
+from opticycle.pin_option import (
+    ObservedBook,
+    ObservedChainAdapter,
+    ObservedFred,
+    PinMarket,
+    apply_risk_budget_qty,
+)
 from opticycle.plans import build_cycle_plan
+from opticycle.position_manager import manage_open_positions
 from opticycle.pnl import SOURCE_LIVE_BROKER, pnl_from_snapshot, snapshot_from_client, snapshot_from_objects
 from opticycle.preflight import assert_paper_env, dry_run_portfolio
 from opticycle.replay_market import replay_pin_market
@@ -312,15 +320,37 @@ def _finalize_reconciliation(
     pending = report.status is ReconciliationStatus.PENDING and not report.halt_triggered
     pnl = None
     pnl_blocked = False
+    cli_readback: dict[str, Any] = {"available": False, "reason": "official Alpaca CLI not installed"}
+    cli = AlpacaCliReadOnly()
+    if report.complete and cli.available():
+        try:
+            cli_readback = cli.reconcile_order(
+                client_order_id=payload.client_order_id,
+                broker_order_id=receipt.broker_order_id,
+            )
+        except AlpacaCliReadError as exc:
+            # The CLI is an independent, read-only corroboration channel.  A
+            # missing credential, network failure, or unreadable response is
+            # recorded honestly as unavailable; only a successful CLI read
+            # that explicitly contradicts the broker receipt is a mismatch.
+            cli_readback = {"available": False, "matched": False, "reason": str(exc)}
+    cli_mismatch = bool(cli_readback.get("available")) and not bool(cli_readback.get("matched"))
     if report.complete and not report.halt_triggered and not pending:
         pnl = _pnl_from_broker(broker)
         if pnl is None or not pnl.matched or pnl.end_of_cycle_equity is None:
             pnl_blocked = True
-    if report.halt_triggered or pnl_blocked:
+    reconciliation_blocked = report.halt_triggered or pnl_blocked
+    if cli_mismatch:
+        reconciliation_blocked = True
+    if reconciliation_blocked:
         halt_reason = (
-            "broker P&L/equity unreadable"
-            if pnl_blocked
-            else ("; ".join(report.discrepancies) or report.status.value)
+            "official Alpaca CLI readback mismatch"
+            if cli_mismatch
+            else (
+                "broker P&L/equity unreadable"
+                if pnl_blocked
+                else ("; ".join(report.discrepancies) or report.status.value)
+            )
         )
         store.halt(
             record.cycle_id,
@@ -345,6 +375,15 @@ def _finalize_reconciliation(
             store.transition(record.cycle_id, CycleState.RECONCILED, reason="matched")
         store.transition(record.cycle_id, CycleState.COMPLETED, reason="complete")
     final = store.load(record.cycle_id)
+    builder = _CURRENT_EPISODE.get()
+    if builder is not None:
+        reconciliation_evidence = report_as_dict(report)
+        reconciliation_evidence["cli_readback"] = cli_readback
+        builder.set(
+            "reconciliation",
+            reconciliation_evidence,
+            reason="broker result plus official Alpaca CLI read-only cross-check",
+        )
     recon_entry = log.record(
         "reconciliation",
         {
@@ -381,6 +420,7 @@ def _finalize_reconciliation(
             "operational_complete": complete,
             "operational_verdict": report.status.value,
             "live_fill_claimed": False,
+            "cli_readback": cli_readback,
         }
         extra.update(fill_pnl)
         if complete:
@@ -441,6 +481,7 @@ def _finalize_reconciliation(
         "realized_pnl": fill_pnl.get("realized_pnl"),
         "unrealized_pnl": fill_pnl.get("unrealized_pnl"),
         "end_of_cycle_equity": fill_pnl.get("end_of_cycle_equity"),
+        "cli_readback": cli_readback,
     }
 
 
@@ -826,6 +867,54 @@ def run_once(
                 client_order_id=closed.client_order_id if closed else "",
                 state=closed.state.value if closed else "",
             )
+        exit_reader = _broker_reader(broker, observer)
+        if exit_reader is None:
+            closed = _close_open_cycle(
+                store, cycle, outcome=ObservationOutcome.HALT, reason="broker readback unavailable"
+            )
+            return _closed_cycle(
+                outcome=ObservationOutcome.HALT,
+                reason="broker readback unavailable",
+                dry_run=False,
+                journal_entry=None,
+                correlation_id=observation.correlation_id,
+                cycle_id=closed.cycle_id if closed else "",
+                client_order_id=closed.client_order_id if closed else "",
+                state=closed.state.value if closed else "",
+            )
+        exit_result = manage_open_positions(
+            settings=settings,
+            positions=list(portfolio.positions),
+            evidence=observation.evidence,
+            broker=exit_reader,
+            executor=mcp_executor or AlpacaMcpExecutor.from_env(dry_run=False),
+            state_dir=log.path.with_name("exit_cycles"),
+        )
+        if exit_result.get("acted"):
+            log.record("position_management", exit_result)
+            builder.set("position_management", exit_result, reason="deterministic exit stage")
+            halted = bool(exit_result.get("halt"))
+            outcome = ObservationOutcome.HALT if halted else ObservationOutcome.NO_TRADE
+            reason = str(exit_result.get("reason") or "position managed")
+            closed = _close_open_cycle(store, cycle, outcome=outcome, reason=reason)
+            if halted:
+                ledger.trip(
+                    status="unknown",
+                    reason=reason,
+                    report_id=str(exit_result.get("client_order_id") or cycle.cycle_id),
+                )
+            return _closed_cycle(
+                outcome=outcome,
+                reason=reason,
+                dry_run=False,
+                journal_entry=None,
+                correlation_id=observation.correlation_id,
+                cycle_id=closed.cycle_id if closed else "",
+                client_order_id=str(exit_result.get("client_order_id") or ""),
+                state=closed.state.value if closed else "",
+                ledger_outcome="HALT" if halted else "NO_TRADE",
+                extra={"position_management": exit_result},
+            )
         if store is not None and cycle is not None:
             store.attach_snapshot(cycle.cycle_id, evidence_digest(observation.evidence))
         reader = observer if observer is not None else broker
@@ -997,6 +1086,27 @@ def run_once(
                 )
             raise
 
+    try:
+        sized_qty = apply_risk_budget_qty(plan.request, portfolio, settings)
+    except ExecutionRejected as exc:
+        closed = _close_open_cycle(
+            store,
+            cycle,
+            outcome=ObservationOutcome.NO_TRADE,
+            reason=str(exc),
+        )
+        return _closed_cycle(
+            outcome=ObservationOutcome.NO_TRADE,
+            reason=str(exc),
+            dry_run=dry_run,
+            journal_entry=None,
+            correlation_id=(observation.correlation_id if not dry_run else ""),
+            cycle_id=closed.cycle_id if closed else "",
+            client_order_id=closed.client_order_id if closed else "",
+            state=closed.state.value if closed else "",
+            ledger_outcome="VETO",
+        )
+
     log.record(
         "decision",
         {
@@ -1004,6 +1114,8 @@ def run_once(
             "underlying": plan.underlying,
             "notes": plan.notes,
             "backend": settings.execution_backend,
+            "qty": sized_qty,
+            "sizing": dict(plan.request.metadata.get("sizing") and plan.request.metadata or {}),
         },
     )
 

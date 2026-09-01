@@ -1,53 +1,26 @@
-# Opticycle — submission write-up
+# Opticycle — proof-carrying SPY options agent
 
-Opticycle is an autonomous paper options trader. Each cycle observes the market, asks ThesisAgent for a stance when an LLM key is present, runs risk gates sized for a $100,000 paper book, and — only after a payload-bound certificate — sends a defined-risk SPY vertical through official Alpaca MCP Server 2.3.0 (`place_option_order`, `order_class=mleg`). Equity-only orders are disabled. There is no CLI execution channel. ThesisAgent is an LLM call and is fail-closed without a key; a heuristic stance is labeled as such and is not a live ThesisAgent pick.
-
-**Strategy premise:** Trade one-lot SPY defined-risk credit verticals only when fresh evidence, an LLM stance, and an exact-payload deterministic certificate all agree; otherwise record `NO_TRADE` or `HALT`.
+Opticycle is an autonomous paper trader that makes one narrow promise: it trades only when fresh evidence survives deterministic risk checks, binds authorization to the exact multi-leg payload, and refuses to trust execution until Alpaca broker state reconciles. The result is an auditable agent that can say `NO_TRADE`, manage its positions, and stop safely when execution is uncertain.
 
 ## AI decision logic
 
-Live ThesisAgent is an LLM call. The model chooses `BULLISH`, `BEARISH`, or `NO_TRADE` from pre-validated snapshot evidence in the prompt (quotes, freshness, bar return/trend, chain presence). Determined signals such as implied stance may appear as evidence; they are not the answer. The model may disagree. Missing or stale evidence stays fail-closed. Without an LLM key the live path is fail-closed `NO_TRADE` / `HALT` — not a silent deterministic direction labeled as AI.
-
-The Monday live MCP MLEG (`oc-715ad36a630d408e`) used `stance_source=bars_heuristic_no_llm_key`: there was no LLM key on the box. That is not a live ThesisAgent LLM pick. On 2026-09-01 during regular hours ThesisAgent `gpt-5.6-luna` ran with `model_called=true` and chose `BULLISH`.
-
-Stance binds credit type later: BULLISH → bull put credit, BEARISH → bear call credit. Debit verticals are disabled. The model never selects OCC symbols, quantity, or limit price. Credit MLEG `limit_price` is Alpaca-signed (negative).
+ThesisAgent receives only validated market features: quote freshness, 20-day realized volatility, current-chain IV rank, 25-delta put/call skew, five-day range, trend, and the NFP event clock. It may output only `BULLISH`, `BEARISH`, or `NO_TRADE`; it never chooses OCC symbols, quantity, or price. A deterministic selector then builds a 3–10 DTE, $5-wide SPY credit vertical with 0.20–0.30 short-leg delta. BULLISH binds to a bull put; BEARISH binds to a bear call. Missing evidence stays `NO_TRADE`.
 
 ## Risk gates
 
-Before any MCP call, the agent checks:
-
-- options-mandatory profile and paper-only flags
-- official MCP as the only execution backend (`alpaca-mcp-server==2.3.0`)
-- equity near $100,000 (configurable tolerance)
-- max position percent, daily trade count, open position count, and buying power
-- portfolio greeks from live marks or real IV when present; missing inputs are omitted, not invented as zero
-- credit MLEG limit sign (positive debit / negative credit). A credit vertical with a non-negative limit is vetoed. Certified max-loss uses that signed limit.
-
-The Monday fill's historical certificate claimed `max_loss=30` from an unsigned 0.70 credit. The broker fill was 0.51 credit, so realized max-loss at fill is $49. That episode is recorded as `FILLED`, not price-bound `MATCHED`. A failed gate is journaled and no order is submitted.
+The exact payload receives a short-lived hash-bound certificate. Quantity is `floor(1.5% × live equity / per-contract max loss)`, then capped by 6% aggregate open risk, the existing 8% position hard cap, two new contracts per day, four contracts open, buying power, and portfolio delta/vega/gamma/theta limits. The lifecycle manager exits through another hash-bound MLEG at 50% credit captured, 2× credit loss, ≤1 DTE, or the pre-NFP ≤2 DTE flatten window. A timeout never creates a second submit.
 
 ## Alpaca infrastructure
 
-Orders do not use alpaca-py `submit_order` on the hackathon path. Live execution spawns `uvx alpaca-mcp-server==2.3.0` over stdio and calls `place_option_order` (`order_class=mleg`) only. Keyless CI dry-run is `python3 -m opticycle run --profile hackathon --backend mcp --once --dry-run` (fixture market, no live submit) plus `scripts/verify-paper-mcp-order.py --dry-run`. Live paper verify omits `--dry-run` and reads `ALPACA_API_KEY` / `ALPACA_SECRET_KEY` from the environment only. Structured JSONL at `data/journal.jsonl` records decision, gate, and order id.
+All order mutations use official `alpaca-mcp-server==2.3.0` → `place_option_order` → `order_class=mleg`. Alpaca GET and the official Alpaca CLI (`account get`, `position list`, `order list`) provide independent read-only reconciliation and public evidence; CLI is never an execution fallback. Every accepted order keeps one `client_order_id`, payload hash, certificate binding, MCP attempt count, broker receipt, reconciliation verdict, and equity/P&L snapshot.
 
-## Monday paper broker fills
+| Verified result | Broker evidence | Outcome |
+| --- | --- | --- |
+| SPY 793C/809C bear call | entry credit 2.11; MCP close debit 1.53 | approx. **+$58** realized |
+| SPY 768C/769C bear call | entry credit 0.51; MCP close debit 0.53 | approx. **−$2** realized |
+| SPY 740P/724P bull put | limit `-2.26`; fill `-2.26`; broker `24b16fe6…` | live price-bound **MATCHED** |
+| Account after closing first two spreads | Alpaca equity `100055.67` | authoritative broker snapshot |
 
-Two real MCP MLEG paper fills are recorded as `live_paper` `FILLED` (not price-bound `MATCHED`). Submitted limits were debit-positive. Account id omitted.
+Public proof: Judge packet, broker receipts, portfolio-history curve, source, and rendered demo all resolve from the same repository HEAD.
 
-| client_order_id | structure | submitted limit | fill | notes |
-| --- | --- | --- | --- | --- |
-| `oc-204a8dfccffd40c9` | BEARISH bear-call SPY 2026-10-09 793C/809C qty 1 | `+2.54` (debit sign; intended credit bound `-2.54`) | 2.11 credit (`filled_avg_price=-2.11`) at 2026-08-31 13:30:03Z | broker `abcb5385-0aa3-42cc-9b58-ef4200235c27`; fill-time equity 100007.95; not credit-better |
-| `oc-715ad36a630d408e` | BEARISH bear-call SPY 2026-09-25 768C/769C qty 1 | `+0.70` (debit sign) | 0.51 credit (`filled_avg_price=-0.51`) at 2026-08-31 14:05:49Z | broker `2a6d6b7c-caad-4c24-959a-8d93455a36fe`; certificate max_loss $30 vs fill max_loss $49; heuristic stance |
-
-Public evidence: `artifacts/evidence/index.html`. These two fills are broker facts, not price-bound MATCHED.
-
-On 2026-09-01 both verticals were closed via MCP `place_option_order` MLEG. Flatten equity `100055.67`. Close orders retained `raw_result_hash`.
-
-Then ThesisAgent submitted a signed-credit bull put: `oc-63db2a85298b4ecabefab59076a6397e`, limit `-2.26`, fill `-2.26`, broker `24b16fe6-0d8d-4478-afa6-0f3781eb6b33`. That episode is price-bound `MATCHED` (`filled <= limit`). The MCP envelope did not return after broker accept, so the agent made no second submit and reconciled the same client ID through Alpaca GET (`mcp_submit_count=1`, `second_submit=false`). After-fill equity `100049.62`.
-
-## Held-out and failure probes
-
-| probe | evidence | expected behavior | recorded result |
-| --- | --- | --- | --- |
-| stale SPY quote | live Alpaca observation | skip ThesisAgent and submit | `NO_TRADE` |
-| mutated or unsafe payload | credential-free risk replay | deterministic certificate veto | `VETO` |
-| MCP response unknown after accept | golden live episode | zero resubmit; GET same client ID | `MATCHED` |
+<small>Honesty: the first two entries were real fills but used the wrong positive sign for intended credit limits, so they remain `FILLED`, not price-bound `MATCHED`. The third entry is the only live price-bound match. Keyless replay is labeled and never promoted to live evidence. Foundation reuse is disclosed in `FOUNDATION.md`.</small>

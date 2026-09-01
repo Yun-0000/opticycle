@@ -25,25 +25,22 @@ def test_skip_reason_refuses_live_flag(monkeypatch: pytest.MonkeyPatch) -> None:
     assert skip_reason(submit=True) == "ALPACA_LIVE_TRADE must not be true"
 
 
-def test_skip_reason_one_submit_per_day(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_prior_submit_does_not_disable_lifecycle_management(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ALPACA_API_KEY", "paper-key")
     monkeypatch.setenv("ALPACA_SECRET_KEY", "paper-secret")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     monkeypatch.setenv("ALPACA_LIVE_TRADE", "false")
-    monkeypatch.setattr("opticycle.open_session.signed_matched_already_recorded", lambda: False)
     reason = skip_reason(submit=True, today=date(2026, 9, 1), lock={"submit_date": "2026-09-01"})
-    assert reason is not None
-    assert "already submitted" in reason
+    assert reason is None
 
 
-def test_skip_reason_when_signed_matched_recorded(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_existing_matched_fill_does_not_disable_future_cycles(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ALPACA_API_KEY", "paper-key")
     monkeypatch.setenv("ALPACA_SECRET_KEY", "paper-secret")
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     monkeypatch.setenv("ALPACA_LIVE_TRADE", "false")
-    monkeypatch.setattr("opticycle.open_session.signed_matched_already_recorded", lambda: True)
     reason = skip_reason(submit=True)
-    assert reason == "a price-bound MATCHED live fill is already recorded"
+    assert reason is None
 
 
 def test_unauthorized_clock_does_not_submit_or_leak_html(
@@ -69,7 +66,7 @@ def test_unauthorized_clock_does_not_submit_or_leak_html(
         lock_path=tmp_path / "lock.json",
     )
     assert report["submitted"] is False
-    assert report["closes_positions"] is False
+    assert report["closes_positions"] is True
     assert report["blocked"] == "paper broker unauthorized"
     dumped = last.read_text(encoding="utf-8")
     assert "<html" not in dumped
@@ -99,7 +96,7 @@ def test_closed_clock_does_not_submit(monkeypatch: pytest.MonkeyPatch, tmp_path)
         lock_path=tmp_path / "lock.json",
     )
     assert report["submitted"] is False
-    assert report["closes_positions"] is False
+    assert report["closes_positions"] is True
     assert report["blocked"] == "regular session is closed"
     assert last.is_file()
 

@@ -60,6 +60,8 @@ class PortfolioSnapshot:
     options_approved: bool = False
     trades_today: int = 0
     open_positions: int = 0
+    contracts_opened_today: int = 0
+    open_contracts: int = 0
     net_delta: float | None = None
     net_vega: float | None = None
     net_gamma: float | None = None
@@ -103,6 +105,8 @@ def account_canonical_dict(portfolio: PortfolioSnapshot) -> dict[str, Any]:
         "net_theta": _optional_greek_str(portfolio.net_theta),
         "net_vega": _optional_greek_str(portfolio.net_vega),
         "open_positions": int(portfolio.open_positions),
+        "contracts_opened_today": int(portfolio.contracts_opened_today),
+        "open_contracts": int(portfolio.open_contracts),
         "open_risk": format_decimal(Decimal(str(portfolio.open_risk)), 2),
         "options_approved": bool(portfolio.options_approved),
         "paper": bool(portfolio.paper),
@@ -129,7 +133,9 @@ def limits_from_settings(settings: HackathonSettings) -> RiskLimits:
         max_abs_theta=MAX_ABS_THETA,
         max_concentration_pct=max_position_pct,
         max_daily_loss=(capital * DAILY_LOSS_FRACTION).quantize(Decimal("0.01")),
-        max_open_risk=(capital * max_position_pct).quantize(Decimal("0.01")),
+        max_open_risk=(capital * Decimal(str(settings.max_total_risk_pct))).quantize(
+            Decimal("0.01")
+        ),
         max_quote_age_seconds=MAX_QUOTE_AGE_SECONDS,
         equity_tolerance=Decimal(str(settings.equity_tolerance)),
         starting_capital=capital,
@@ -573,6 +579,14 @@ class RiskEngine:
             reasons.append("daily trade limit reached")
         if int(portfolio.open_positions) >= limits.max_open_positions:
             reasons.append("open position limit reached")
+        if int(portfolio.contracts_opened_today) + int(payload.qty) > int(
+            self.settings.max_new_contracts_per_day
+        ):
+            reasons.append("daily new-contract limit exceeded")
+        if int(portfolio.open_contracts) + int(payload.qty) > int(
+            self.settings.max_open_contracts
+        ):
+            reasons.append("open-contract limit exceeded")
 
         daily_loss = Decimal(str(portfolio.daily_loss))
         if daily_loss >= limits.max_daily_loss:
@@ -693,6 +707,8 @@ class RiskEngine:
                         reasons.append("NO_TRADE: credit exceeds width")
                 if width <= 0:
                     reasons.append("NO_TRADE: vertical width is missing")
+                elif width != Decimal(str(self.settings.spread_width)):
+                    reasons.append("NO_TRADE: vertical width must equal configured $5 width")
                 if is_credit and net_credit > width:
                     reasons.append("NO_TRADE: credit exceeds width")
                 if not is_credit and net_debit > width:
@@ -703,6 +719,20 @@ class RiskEngine:
                 allowed = _allowed_credit_vertical(payload.legs, is_credit)
                 if allowed is None:
                     reasons.append("NO_TRADE: not an allowed SPY credit vertical")
+                for leg in payload.legs:
+                    if leg.side is not OrderSide.SELL:
+                        continue
+                    quote = quotes.get(leg.symbol)
+                    short_delta = None if quote is None else quote.delta
+                    if short_delta is None or not (
+                        Decimal(str(self.settings.short_delta_min))
+                        <= abs(short_delta)
+                        <= Decimal(str(self.settings.short_delta_max))
+                    ):
+                        reasons.append("NO_TRADE: short-leg delta outside 0.20-0.30")
+                    dte = (leg.expiration.date() - now.date()).days
+                    if not self.settings.min_dte <= dte <= self.settings.max_dte:
+                        reasons.append("NO_TRADE: expiration outside 3-10 DTE")
 
         buying_power_impact = max_loss
         existing_open = Decimal(str(portfolio.open_risk))
@@ -710,11 +740,14 @@ class RiskEngine:
         concentration_pct = (max_loss / equity) if equity > 0 else Decimal("1")
 
         if not missing_quote and max_loss > 0:
+            if equity > 0 and max_loss > equity * Decimal(str(self.settings.risk_per_trade_pct)):
+                reasons.append("trade max loss exceeds 1.5% equity budget")
             if equity > 0 and concentration_pct > limits.max_concentration_pct:
                 reasons.append("concentration limit exceeded")
             if buying_power_impact > buying_power:
                 reasons.append("insufficient buying power")
-            if open_risk > limits.max_open_risk:
+            dynamic_open_risk_limit = equity * Decimal(str(self.settings.max_total_risk_pct))
+            if open_risk > dynamic_open_risk_limit:
                 reasons.append("open risk limit exceeded")
 
         if (
