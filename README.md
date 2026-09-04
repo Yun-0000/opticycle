@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="artifacts/demo.mp4"><strong>Watch the 45-second demo</strong></a>
+  <a href="artifacts/demo.mp4"><strong>Watch the 43-second demo</strong></a>
   · <a href="artifacts/evidence/index.html">Open the evidence ledger</a>
   · <a href="artifacts/opticycle-one-page.pdf">Read the one-page</a>
   · <a href="artifacts/opticycle-slides.pptx">Open the slides</a>
