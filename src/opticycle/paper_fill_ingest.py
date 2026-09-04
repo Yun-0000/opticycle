@@ -1,9 +1,7 @@
 """Ingest a sanitized broker receipt/fill JSON into the Evidence Ledger.
 
-Yun authorized one Alpaca paper MLEG. Cloud VMs have no keys and must not
-place the order. When a later sanitized JSON arrives (order_id, legs, limit,
-status, filled_avg_price, client_order_id), this hook records the receipt.
-It never invents missing fields and never stamps a fake MATCHED episode.
+This read-only hook records supplied receipt fields. It never submits orders,
+invents missing fields, or stamps a fake MATCHED episode.
 """
 
 from __future__ import annotations
@@ -37,16 +35,14 @@ class FillIngestError(Exception):
 def waiting_status() -> dict[str, Any]:
     return {
         "schema": "opticycle.paper-fill-ingest.v1",
-        "yun_authorized_one_paper_mleg": True,
-        "cloud_submit": False,
         "sanitized_json_provided": False,
         "live_fill_claimed": False,
         "matched_claimed": False,
         "waiting_for": list(REQUIRED_FILL_FIELDS),
         "hook": WAITING_HOOK,
         "detail": (
-            "Yun authorized one Alpaca paper MLEG. Cloud VM cannot submit. "
-            "Provide sanitized broker JSON later; do not invent MATCHED, receipt, or P&L."
+            "Receipt ingestion is read-only. Provide sanitized broker JSON; "
+            "do not invent MATCHED, receipt, or P&L."
         ),
     }
 
@@ -137,10 +133,8 @@ def ingest_sanitized_fill(
         client_order_id=cleaned["client_order_id"],
         extra={
             "ingest_sanitized_broker_json": True,
-            "yun_authorized_one_paper_mleg": True,
             "live_fill_claimed": False,
             "matched_claimed": False,
-            "cloud_submit": False,
         },
         fields={"broker_receipt": cleaned},
     )

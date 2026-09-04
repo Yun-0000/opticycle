@@ -240,7 +240,7 @@ def would_record_live_fill_episode(
     broker_receipt: Mapping[str, Any] | None = None,
     reconciliation: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Dry-run preview of the post-Yun ledger append. Does not submit or claim a fill."""
+    """Dry-run preview of a broker-backed ledger append. Never claims a fill."""
     report = pnl_from_snapshot(snapshot)
     return {
         "channel": "live_paper",
@@ -248,7 +248,7 @@ def would_record_live_fill_episode(
         "submitted": False,
         "live_fill_claimed": False,
         "live_mleg_submit": False,
-        "blocked": "Yun authorized one paper MLEG; cloud VM cannot submit; waiting for sanitized broker JSON",
+        "blocked": "preview only; broker submission and a sanitized receipt are required",
         "snapshot_source": snapshot.source,
         "pnl": report.as_dict(),
         "mcp_attempt": dict(mcp_attempt or {}),

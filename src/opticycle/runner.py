@@ -125,6 +125,7 @@ def _closed_cycle(
     state: str = "",
     ledger_outcome: str | None = None,
     extra: dict[str, Any] | None = None,
+    submitted: bool = False,
 ) -> dict[str, Any]:
     record = _commit_episode(
         outcome=ledger_outcome or outcome.value,
@@ -138,7 +139,7 @@ def _closed_cycle(
     return {
         "ok": False,
         "complete": False,
-        "submitted": False,
+        "submitted": submitted,
         "outcome": outcome.value,
         "reason": reason,
         "backend": "mcp",
@@ -153,6 +154,7 @@ def _closed_cycle(
         "claim": (record or {}).get("claim", ""),
         "commit_sha": (record or {}).get("commit_sha", ""),
         "channel": (record or {}).get("channel", ""),
+        "position_management": (extra or {}).get("position_management"),
     }
 
 
@@ -738,6 +740,7 @@ def run_once(
     halt_ledger: HaltLedger | None = None,
     cycle_store: CycleStore | None = None,
     provenance: str | None = None,
+    allow_new_entries: bool = True,
 ) -> dict[str, Any]:
     settings = settings or HackathonSettings()
     configure_backend(settings)
@@ -886,7 +889,6 @@ def run_once(
         )
         if exit_result.get("acted"):
             log.record("position_management", exit_result)
-            builder.set("position_management", exit_result, reason="deterministic exit stage")
             halted = bool(exit_result.get("halt"))
             outcome = ObservationOutcome.HALT if halted else ObservationOutcome.NO_TRADE
             reason = str(exit_result.get("reason") or "position managed")
@@ -908,6 +910,7 @@ def run_once(
                 state=closed.state.value if closed else "",
                 ledger_outcome="HALT" if halted else "NO_TRADE",
                 extra={"position_management": exit_result},
+                submitted=int(exit_result.get("mcp_submit_count") or 0) == 1,
             )
         if store is not None and cycle is not None:
             store.attach_snapshot(cycle.cycle_id, evidence_digest(observation.evidence))
@@ -953,8 +956,37 @@ def run_once(
             list(getattr(portfolio, "positions", None) or []),
             reason="positions at observation; not a live P&L snapshot",
         )
-        builder.missing("realized_pnl", "TODO: waiting for sanitized broker JSON; cloud VM must not submit")
-        builder.missing("unrealized_pnl", "TODO: waiting for sanitized broker JSON; cloud VM must not submit")
+        builder.missing(
+            "realized_pnl",
+            "cycle observation does not derive realized P&L; use the sanitized broker ledger",
+        )
+        builder.missing(
+            "unrealized_pnl",
+            "cycle observation does not derive unrealized P&L; use the sanitized broker snapshot",
+        )
+        if not allow_new_entries:
+            reason = "no_exit_triggered"
+            closed = _close_open_cycle(
+                store,
+                cycle,
+                outcome=ObservationOutcome.NO_TRADE,
+                reason=reason,
+            )
+            return _closed_cycle(
+                outcome=ObservationOutcome.NO_TRADE,
+                reason=reason,
+                dry_run=False,
+                journal_entry=None,
+                correlation_id=observation.correlation_id,
+                cycle_id=closed.cycle_id if closed else "",
+                client_order_id=closed.client_order_id if closed else "",
+                state=closed.state.value if closed else "",
+                ledger_outcome="NO_TRADE",
+                extra={
+                    "entry_allowed": False,
+                    "position_management": exit_result,
+                },
+            )
         try:
             thesis_client = require_live_llm(llm_client)
         except ThesisDisabled as exc:

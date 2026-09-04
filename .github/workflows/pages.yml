@@ -22,6 +22,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: Stamp evidence with release commit and artifact hashes
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: >-
+          python3 -c "import hashlib,json,os; from pathlib import Path;
+          p=Path('artifacts/evidence/manifest.json'); d=json.loads(p.read_text());
+          d['release']['deployed_commit']=os.environ['GITHUB_SHA'];
+          d['artifact_sha256']={name:hashlib.sha256(Path(name).read_bytes()).hexdigest()
+          for name in d['artifact_sha256']};
+          p.write_text(json.dumps(d,indent=2,sort_keys=True)+'\n')"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

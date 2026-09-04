@@ -19,12 +19,13 @@
 <p align="center">
   <a href="artifacts/demo.mp4"><strong>Watch the 45-second demo</strong></a>
   · <a href="artifacts/evidence/index.html">Open the evidence ledger</a>
-  · <a href="artifacts/evidence/broker_lookup.json">Inspect broker receipts</a>
+  · <a href="artifacts/opticycle-one-page.pdf">Read the one-page</a>
+  · <a href="artifacts/opticycle-slides.pptx">Open the slides</a>
 </p>
 
 | LIVE BROKER PROOF | EXECUTION INTEGRITY | REALIZED PAPER P&L |
 | :---: | :---: | :---: |
-| **3 option fills** | **1 submit · 0 resubmits** | **≈ +$56** |
+| **3 option fills** | **1 submit · 0 resubmits** | **+$55.67** |
 | 1 signed-credit price match | same client ID through broker GET | closed spreads, before fees |
 
 Opticycle trades one narrow instrument well: 3–10 DTE, $5-wide SPY credit verticals. The LLM may only return `BULLISH`, `BEARISH`, or `NO_TRADE`; deterministic code owns contracts, quantity, price, risk, execution, and exits.
@@ -51,6 +52,7 @@ flowchart LR
 
 ```bash
 python3 scripts/assert-zero-resubmit.py
+python3 scripts/assert-exits-only.py
 ```
 
 ## Broker trail
@@ -61,7 +63,16 @@ python3 scripts/assert-zero-resubmit.py
 | `2a6d6b7c…` | SPY 768C/769C bear call · 1× | filled `-0.51`; closed through MCP · **≈ −$2** |
 | `24b16fe6…` | SPY 740P/724P bull put · 1× · limit `-2.26` | filled `-2.26` · live price-bound **MATCHED** |
 
-Paper account `PA3V84C40PJQ` started at $100,000. Alpaca reported $100,055.67 after the first two spreads were flattened.
+Paper account `PA3V84C40PJQ` started at $100,000. The evidence keeps each broker metric at its own observation time:
+
+| Broker metric | Value | Meaning |
+| --- | ---: | --- |
+| Closed-spread realized P&L | **+$55.67** | $100,055.67 flatten equity after the first two spreads closed |
+| Open-position unrealized P&L | **−$19.00** | Sep 1 committed Alpaca CLI snapshot |
+| Account equity | **$100,036.62** | same Sep 1 CLI snapshot; the latest committed account truth |
+| Historical equity observation | **$100,026.77** | older portfolio-history endpoint; chart point, not current equity |
+
+At the rounded public precision, `$100,000 + $55.67 − $19.00 = $100,036.67`, within $0.05 of the broker equity because the public leg marks are rounded.
 
 <p align="center">
   <img src="artifacts/evidence/equity-curve.png" alt="Alpaca paper account equity curve" width="49%" />
@@ -92,22 +103,31 @@ python3 -m opticycle run --profile hackathon --backend mcp --once --dry-run
 
 # Targeted proof
 python3 scripts/assert-zero-resubmit.py
+python3 scripts/assert-exits-only.py
 ```
 
 Live paper mode requires `ALPACA_API_KEY`, `ALPACA_SECRET_KEY`, and `OPENAI_API_KEY`; `ALPACA_PAPER_TRADE=true` and `ALPACA_LIVE_TRADE=false` are mandatory.
 
 ```bash
 python3 scripts/verify-paper-account.py
-python3 scripts/run-open-session.py --submit
+
+# Observe + ThesisAgent only; never submits an order
+python3 scripts/run-open-session.py
+
+# Manage existing positions only; never enters a new spread
+python3 scripts/run-open-session.py --exits-only
 ```
 
 ## Evidence map
 
 - **Broker truth:** [`broker_lookup.json`](artifacts/evidence/broker_lookup.json) and [`sanitized_fills/`](artifacts/evidence/sanitized_fills/)
 - **Append-only public ledger:** [`public.jsonl`](artifacts/evidence/public.jsonl)
-- **Judge-readable proof:** [`artifacts/evidence/index.html`](artifacts/evidence/index.html)
+- **Release manifest:** [`manifest.json`](artifacts/evidence/manifest.json) — artifact hashes; Pages stamps its exact deployment commit
+- **Evidence dashboard:** [`artifacts/evidence/index.html`](artifacts/evidence/index.html)
 - **Policy-aligned research:** [`walk-forward-backtest.html`](artifacts/evidence/walk-forward-backtest.html) — **MODELED**, not broker P&L
 - **Rendered demo:** [`artifacts/demo.mp4`](artifacts/demo.mp4)
+- **One-page write-up:** [`artifacts/opticycle-one-page.pdf`](artifacts/opticycle-one-page.pdf)
+- **Presentation slides:** [`artifacts/opticycle-slides.pptx`](artifacts/opticycle-slides.pptx)
 
 <details>
 <summary><strong>Honesty notes</strong></summary>

@@ -400,6 +400,12 @@ def manage_open_positions(
             issued_at=clock,
             expires_at=clock + timedelta(seconds=EXIT_TTL_SECONDS),
         )
+        authorization.verify(
+            payload,
+            position_snapshot_hash=position_hash,
+            settings=settings,
+            now=clock,
+        )
         state_path = state_dir / f"{client_order_id}.json"
         state: dict[str, Any] = {
             "schema": "opticycle.exit-cycle.v1",
@@ -410,7 +416,7 @@ def manage_open_positions(
             "payload_hash": payload.payload_hash,
             "position_snapshot_hash": position_hash,
             "position_snapshot": position_snapshot,
-            "mcp_submit_count": 0,
+            "mcp_submit_count": 1,
             "second_submit": False,
         }
         _write_state(state_path, state)
@@ -430,9 +436,9 @@ def manage_open_positions(
                 "halt": True,
                 "reason": f"exit MCP failed: {type(exc).__name__}",
                 "client_order_id": client_order_id,
+                "mcp_submit_count": 1,
                 "second_submit": False,
             }
-        state["mcp_submit_count"] = 1
         state["arguments_hash"] = result.get("arguments_hash")
         state["raw_result_hash"] = result.get("raw_result_hash")
         receipt = receipt_from_mcp(

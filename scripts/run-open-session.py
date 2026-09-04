@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Regular-session automation entry. Paper only. At most one new MLEG with --submit.
+"""Paper-only regular-session observation and position lifecycle entrypoint.
 
-Does not close existing positions. Cloud CI should omit --submit.
+Default is observation-only. ``--exits-only`` may close one deterministically
+triggered vertical but can never open a position. ``--submit`` retains the full
+entry/exit lifecycle and is intentionally not used during final evidence capture.
 """
 
 from __future__ import annotations
@@ -26,17 +28,23 @@ from opticycle.open_session import run_open_session
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Observe live; optionally submit one paper MLEG")
-    parser.add_argument(
+    parser = argparse.ArgumentParser(description="Observe live or run one paper-only lifecycle mode")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--submit",
         action="store_true",
         help="Allow at most one certified paper MLEG if ThesisAgent accepts",
+    )
+    mode.add_argument(
+        "--exits-only",
+        action="store_true",
+        help="Manage deterministic exits only; never evaluate or submit a new entry",
     )
     args = parser.parse_args(argv)
     os.environ["ALPACA_PAPER_TRADE"] = "true"
     os.environ.setdefault("ALPACA_LIVE_TRADE", "false")
     os.environ.setdefault("HACKATHON_LLM_MODEL", "gpt-5.6-luna")
-    report = run_open_session(submit=args.submit)
+    report = run_open_session(submit=args.submit, exits_only=args.exits_only)
     print(json.dumps(report, indent=2, sort_keys=True, default=str))
     if str(report.get("blocked") or "").startswith("missing"):
         return 0

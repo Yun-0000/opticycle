@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ingest sanitized broker fill JSON, or wait. Cloud VM must not submit."""
+"""Validate and ingest sanitized broker fill JSON. Never submits orders."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from opticycle.paper_fill_ingest import (
     waiting_status,
 )
 
-SUBMIT_BLOCKED = "Yun authorized one paper MLEG; cloud VM has no keys and must not place it"
+SUBMIT_BLOCKED = "receipt ingestion is read-only and cannot submit an order"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -35,7 +35,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--submit",
         action="store_true",
-        help="Refused: this environment cannot place the paper MLEG",
+        help="Refused: receipt ingestion is read-only",
     )
     args = parser.parse_args(argv)
     if args.submit:

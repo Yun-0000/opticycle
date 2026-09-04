@@ -1,6 +1,8 @@
-"""Regular-session automation: manage positions, then consider one paper MLEG.
+"""Paper-only regular-session observation and position lifecycle.
 
-Never submits unless --submit. Paper only. The runner owns entry and exit gates.
+New entries require ``--submit``. ``--exits-only`` can close one vertical when
+the existing deterministic TP, SL, or DTE policy triggers. The runner owns all
+entry and exit gates.
 """
 
 from __future__ import annotations
@@ -52,18 +54,19 @@ def load_lock(path: Path = LOCK_PATH) -> dict[str, Any]:
 def skip_reason(
     *,
     submit: bool,
+    exits_only: bool = False,
     today: date | None = None,
     lock: Mapping[str, Any] | None = None,
 ) -> str | None:
-    """Why this run must not place a new order. Observation-only may still proceed."""
+    """Return a hard prerequisite failure for the requested mode."""
     if not paper_keys_present():
         return "missing ALPACA_API_KEY or ALPACA_SECRET_KEY"
     if str(os.environ.get("ALPACA_LIVE_TRADE") or "").strip().lower() == "true":
         return "ALPACA_LIVE_TRADE must not be true"
+    if exits_only:
+        return None
     if not llm_key_present():
         return "missing OPENAI_API_KEY"
-    if not submit:
-        return "submit not enabled (pass --submit to enable MCP lifecycle management)"
     return None
 
 
@@ -120,6 +123,7 @@ def write_lock(payload: Mapping[str, Any], *, path: Path = LOCK_PATH) -> None:
 def run_open_session(
     *,
     submit: bool = False,
+    exits_only: bool = False,
     settings: HackathonSettings | None = None,
     client: Any | None = None,
     today: date | None = None,
@@ -127,17 +131,28 @@ def run_open_session(
     lock_path: Path = LOCK_PATH,
 ) -> dict[str, Any]:
     """Observe live. Optionally run one certified entry/exit lifecycle cycle."""
+    if submit and exits_only:
+        raise OpenSessionError("submit and exits_only are mutually exclusive")
     settings = settings or HackathonSettings()
     os.environ["ALPACA_PAPER_TRADE"] = "true"
     os.environ["ALPACA_LIVE_TRADE"] = "false"
-    blocked = skip_reason(submit=submit, today=today, lock=load_lock(lock_path))
+    blocked = skip_reason(
+        submit=submit,
+        exits_only=exits_only,
+        today=today,
+        lock=load_lock(lock_path),
+    )
+    mode = "exits_only" if exits_only else ("full_lifecycle" if submit else "observe_only")
     report: dict[str, Any] = {
         "schema": "opticycle.open-session.v2",
+        "mode": mode,
         "submit_requested": submit,
+        "exits_only": exits_only,
         "submitted": False,
         "model": (os.environ.get("HACKATHON_LLM_MODEL") or "gpt-5.6-luna").strip(),
         "blocked": blocked,
-        "closes_positions": bool(submit),
+        "opens_positions": bool(submit),
+        "closes_positions": bool(submit or exits_only),
     }
     if blocked and blocked.startswith("missing"):
         write_last(report, path=last_path)
@@ -167,7 +182,7 @@ def run_open_session(
         write_last(report, path=last_path)
         return report
 
-    if not submit or (blocked and str(blocked).startswith("submit not enabled")):
+    if not submit and not exits_only:
         try:
             observation = observe_live(settings, client=reader)
         except ObservationClosed as exc:
@@ -202,7 +217,13 @@ def run_open_session(
         return report
 
     try:
-        result = run_once(settings, dry_run=False, observer=reader, provenance="live_paper")
+        result = run_once(
+            settings,
+            dry_run=False,
+            observer=reader,
+            provenance="live_paper",
+            allow_new_entries=not exits_only,
+        )
     except Exception as exc:
         report["blocked"] = broker_fault_reason(exc)
         write_last(report, path=last_path)
@@ -213,6 +234,7 @@ def run_open_session(
     report["client_order_id"] = result.get("client_order_id") or ""
     report["record_id"] = result.get("record_id") or ""
     report["claim"] = result.get("claim") or ""
+    report["position_management"] = result.get("position_management")
     order = result.get("order") or {}
     if isinstance(order, Mapping):
         report["mcp"] = {
@@ -222,7 +244,7 @@ def run_open_session(
             "raw_result_hash": order.get("raw_result_hash"),
             "dry_run": order.get("dry_run"),
         }
-    if report["submitted"]:
+    if report["submitted"] and not exits_only:
         previous = load_lock(lock_path)
         day = (today or datetime.now(timezone.utc).date()).isoformat()
         same_day = previous.get("submit_date") == day

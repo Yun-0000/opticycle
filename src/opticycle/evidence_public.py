@@ -9,8 +9,10 @@ NO_TRADE is not fill evidence.
 
 from __future__ import annotations
 
+import hashlib
 import html
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any, Iterable, Mapping
@@ -73,6 +75,16 @@ DESIGNATED_ACCOUNT_ID = "PA3V84C40PJQ"
 
 PUBLIC_MODEL_RE = re.compile(r"\bgpt-[A-Za-z0-9._-]+\b", re.IGNORECASE)
 
+RELEASE_ARTIFACTS = (
+    "artifacts/demo.mp4",
+    "artifacts/opticycle-one-page.pdf",
+    "artifacts/opticycle-slides.pptx",
+    "artifacts/evidence/alpaca_cli_snapshot.json",
+    "artifacts/evidence/broker_lookup.json",
+    "artifacts/evidence/paper_fill_ingest.json",
+    "artifacts/evidence/portfolio_history.json",
+)
+
 
 def redact_public_model_metadata(value: Any) -> Any:
     """Publish the declared competition model while redacting any other model metadata."""
@@ -125,7 +137,6 @@ def load_gate11_status() -> dict[str, Any]:
         "demo_mp4": DEMO_VIDEO_STATUS,
         "live_quote_gap": "live Alpaca quotes were not available without keys",
         "pnl_reconcile": "fixture-tested; not stamped as live",
-        "yun_authorized_one_paper_mleg": True,
         "sanitized_json_provided": False,
     }
     if not GATE11_STATUS_PATH.is_file():
@@ -287,9 +298,21 @@ def build_manifest(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             "caveat": claim_caveat(row),
         }
     any_live = any(item["live_fill"] for item in claims.values())
+    artifact_hashes = {
+        relative: hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
+        for relative in RELEASE_ARTIFACTS
+        if (ROOT / relative).is_file()
+    }
+    deployed_commit = os.environ.get("GITHUB_SHA") or None
     return {
         "schema": "opticycle.claim-evidence.v1",
         "source": "sanitized_public_ledger",
+        "release": {
+            "branch": "main",
+            "deployed_commit": deployed_commit,
+            "stamp_source": "GITHUB_SHA during GitHub Pages publish",
+        },
+        "artifact_sha256": artifact_hashes,
         "live_fill_claimed": any_live,
         "injected_no_trade_promoted": False,
         "matched_claimed": any(is_price_bound_matched_fill(row) for row in records),
@@ -575,7 +598,9 @@ def render_evidence_page(
         "Prior verticals were closed via MCP place_option_order mleg; those close "
         "orders retained raw_result_hash. The open credit MLEG's MCP envelope was "
         "not returned after broker accept; Alpaca GET is the fill source. "
-        f"Paper account {DESIGNATED_ACCOUNT_ID}. Flatten then new fill equity 100049.62."
+        f"Paper account {DESIGNATED_ACCOUNT_ID}. The committed Sep 1 CLI snapshot reports "
+        "equity 100036.62 and open unrealized P&L -19.00. The older portfolio-history "
+        "endpoint ends at 100026.77 and is shown only as a historical chart point."
     )
     page_records = _page_records(records)
     golden_trace = _golden_trace(page_records)
@@ -679,9 +704,18 @@ def render_evidence_page(
     <div class="fact"><small>Price integrity</small><strong>Limit -2.26 / Fill -2.26</strong></div>
     <div class="fact"><small>Official transport</small><strong>Alpaca MCP 2.3.0 · MLEG only</strong></div>
     <div class="fact"><small>Timeout invariant</small><strong>mcp_submit_count=1 · second_submit=false</strong></div>
-    <div class="fact"><small>After-fill equity</small><strong>100049.62</strong></div>
+    <div class="fact"><small>Closed-spread realized P&amp;L</small><strong>+$55.67</strong></div>
+    <div class="fact"><small>Sep 1 CLI account equity</small><strong>$100,036.62</strong></div>
+    <div class="fact"><small>Sep 1 open unrealized P&amp;L</small><strong>−$19.00</strong></div>
+    <div class="fact"><small>Historical portfolio endpoint</small><strong>$100,026.77 · not current</strong></div>
   </div>
   <p class="muted">This receipt predates the tightened selector policy. Current entries require 3–10 DTE, exact $5 width, and 0.20–0.30 short-leg delta.</p>
+  <section class="equity">
+    <div class="eyebrow">BROKER PAPER TRUTH / COMMITTED SEP 1 SNAPSHOT</div>
+    <h2>One accounting identity, explicit timestamps</h2>
+    <p class="lede"><strong>$100,000 starting equity + $55.67 closed-spread realized P&amp;L − $19.00 open unrealized P&amp;L = $100,036.67.</strong> The broker snapshot is $100,036.62; the $0.05 difference is the rounding precision of the public leg marks. The $100,026.77 portfolio-history point below is older and is not presented as current equity.</p>
+    <p class="muted">Machine-readable snapshot: <a href="alpaca_cli_snapshot.json">alpaca_cli_snapshot.json</a></p>
+  </section>
   <section class="equity">
     <div class="eyebrow">ALPACA / GET /V2/ACCOUNT/PORTFOLIO/HISTORY</div>
     <h2>Paper equity curve</h2>
@@ -699,9 +733,10 @@ def render_evidence_page(
   <table class="result">
     <thead><tr><th>Spread</th><th>Broker entry</th><th>MCP exit</th><th>Approx. realized P&amp;L</th></tr></thead>
     <tbody>
-      <tr><td>SPY 793C/809C bear call</td><td>2.11 credit</td><td>1.53 debit</td><td class="positive">+$58</td></tr>
-      <tr><td>SPY 768C/769C bear call</td><td>0.51 credit</td><td>0.53 debit</td><td class="negative">−$2</td></tr>
-      <tr><td><strong>Closed total</strong></td><td colspan="2">Alpaca flatten equity 100055.67</td><td class="positive"><strong>≈ +$56</strong></td></tr>
+      <tr><td><a href="sanitized_fills/oc-204a8dfccffd40c9.json">SPY 793C/809C bear call</a></td><td>2.11 credit</td><td>1.53 debit</td><td class="positive">+$58</td></tr>
+      <tr><td><a href="sanitized_fills/oc-715ad36a630d408e.json">SPY 768C/769C bear call</a></td><td>0.51 credit</td><td>0.53 debit</td><td class="negative">−$2</td></tr>
+      <tr><td><a href="sanitized_fills/oc-63db2a85298b4ecabefab59076a6397e.json">SPY 740P/724P bull put</a></td><td>2.26 credit</td><td>open at Sep 1 snapshot</td><td>−$19 unrealized at snapshot</td></tr>
+      <tr><td><strong>Closed total</strong></td><td colspan="2">Alpaca flatten equity 100055.67</td><td class="positive"><strong>+$55.67</strong></td></tr>
     </tbody>
   </table>
   <h2>Daily run record · PDT</h2>
@@ -709,8 +744,11 @@ def render_evidence_page(
   <div class="timeline">{timeline_html}</div>
   <div class="actions">
     <a class="button" href="../demo.mp4">Watch the rendered demo</a>
+    <a class="button" href="../opticycle-one-page.pdf">Open the one-page</a>
+    <a class="button" href="../opticycle-slides.pptx">Open the slides</a>
     <a class="button secondary" href="broker_lookup.json">Open broker GET receipts</a>
     <a class="button secondary" href="paper_fill_ingest.json">Open fill ingest summary</a>
+    <a class="button secondary" href="manifest.json">Verify release hashes</a>
   </div>
   <p class="premise"><strong>Strategy premise.</strong> {html.escape(strategy_premise)}</p>
   <h2>Held-out and failure probes</h2>
@@ -720,6 +758,7 @@ def render_evidence_page(
       <tr><td>Stale SPY quote</td><td>Live Alpaca observation</td><td>Do not call ThesisAgent; do not submit</td><td>NO_TRADE</td></tr>
       <tr><td>Mutated or unsafe payload</td><td>Credential-free risk replay</td><td>Certificate veto</td><td>VETO</td></tr>
       <tr><td>MCP response unknown after accept</td><td>Golden live episode</td><td>Zero resubmit; GET same client ID</td><td>MATCHED</td></tr>
+      <tr><td>Existing position without TP/SL/DTE trigger</td><td>Credential-free exits-only replay</td><td>No entry path; zero submits</td><td>NO_TRADE / no_exit_triggered</td></tr>
     </tbody>
   </table>
   <div class="banner">
@@ -747,7 +786,12 @@ def render_evidence_page(
 """
 
 
-def write_evidence_artifacts(records: list[dict[str, Any]], *, dest_dir: Path | None = None) -> dict[str, Path]:
+def write_evidence_artifacts(
+    records: list[dict[str, Any]],
+    *,
+    dest_dir: Path | None = None,
+    write_public_ledger: bool = True,
+) -> dict[str, Path]:
     dest = dest_dir or EVIDENCE_DIR
     dest.mkdir(parents=True, exist_ok=True)
     public_path = dest / "public.jsonl"
@@ -756,7 +800,11 @@ def write_evidence_artifacts(records: list[dict[str, Any]], *, dest_dir: Path | 
     sanitized = [redact_public_model_metadata(sanitize(row)) for row in records]
     for row in sanitized:
         row["ledger_class"] = "public_sanitized"
-    public_path.write_text("".join(canonical_dumps(row) + "\n" for row in sanitized), encoding="utf-8")
+    if write_public_ledger:
+        public_path.write_text(
+            "".join(canonical_dumps(row) + "\n" for row in sanitized),
+            encoding="utf-8",
+        )
     manifest = build_manifest(sanitized)
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     page_path.write_text(render_evidence_page(sanitized, manifest), encoding="utf-8")
