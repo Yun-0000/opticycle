@@ -1,0 +1,24 @@
+{
+  "note": "Exact shared dates only; no interpolation across missing account days.",
+  "opticycle": {
+    "end": 100026.77,
+    "return_pct": 0.0268,
+    "source": "Alpaca GET /v2/account/portfolio/history",
+    "start": 100000.0
+  },
+  "period": {
+    "end": "2026-09-01",
+    "start": "2026-08-28"
+  },
+  "schema": "opticycle.same-period-benchmark.v1",
+  "shared_observation_dates": [
+    "2026-08-28",
+    "2026-09-01"
+  ],
+  "spy": {
+    "end": 761.63,
+    "return_pct": -0.9944,
+    "source": "Alpaca IEX daily bars",
+    "start": 769.28
+  }
+}
