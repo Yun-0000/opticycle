@@ -105,7 +105,7 @@ def broker_readback_hash(payload: dict) -> str:
     return sha256_json(payload)
 
 
-def mark_snapshot() -> dict[str, object]:
+def historical_mark_snapshot() -> dict[str, object]:
     return {
         "looked_up_at": BROKER_LOOKUP_AT,
         "clock_open": False,
@@ -192,7 +192,7 @@ def public_broker_lookup() -> dict[str, object]:
         "closes": [
             {**row, "broker_readback_hash": broker_readback_hash(row)} for row in closes
         ],
-        "mark_snapshot": mark_snapshot(),
+        "historical_mark_snapshot": historical_mark_snapshot(),
         "session_2026_09_01": {
             "flatten_equity": "100055.67",
             "flatten_cash": "100055.67",

@@ -1,13 +1,31 @@
 {
   "artifact_sha256": {
+    "artifacts/demo-poster.png": "528042f6786d1d86b19958932a9b54c77f9b98568f872672d529fcf18c66c703",
     "artifacts/demo.mp4": "97976c588a309d9e3d85a296fd72ecb5f0ee91a6fe6c7be22e797a142d690753",
     "artifacts/evidence/alpaca_cli_snapshot.json": "24a4dba0b519480a3874278a0b3244bf4362bb1540e8b893d868b85319cecea6",
-    "artifacts/evidence/broker_lookup.json": "92ac4d3220dfa4486480ff6ba5938236bb504179806f3c4f10d3acca005bd1d8",
+    "artifacts/evidence/broker_lookup.json": "8a726fb4adc8d138b3b3d051ab87b1d6d8de7b444b3c3585a5f4953875341637",
+    "artifacts/evidence/claims.json": "51f7569403a1a682742e13308027940dcef66926c8b2fc5a4a6a5955438ed315",
+    "artifacts/evidence/equity-curve.png": "480eaadf6235022ae546a286ae665938fa822b651287889342808cb15dbacedd",
+    "artifacts/evidence/equity-vs-spy.json": "c92bd9612bcd9fb89db80e5dfc22fc42c1904fa4f748eb6f2a6327ba0bcc9171",
+    "artifacts/evidence/equity-vs-spy.png": "b02b0d3287c5e02dfd791c29baabcf223322b8b87632c54cd4c21ef6aa688c9a",
+    "artifacts/evidence/gate11_status.json": "f1fa97b1e8dfc83ff7439f89da9141bb2d0f46d3672da7e8697bf096b18189fb",
+    "artifacts/evidence/genuine_no_trade.public.jsonl": "83c23b5a7e58db2f68bd3ccf0f2c47c4a71ce825cdad14c342a46fe83587fe3a",
+    "artifacts/evidence/no_trade.public.jsonl": "202f8ba855a780f4da33c15650431fdd8635a33f498dee31744b61a1a94362fe",
     "artifacts/evidence/paper_fill_ingest.json": "ecba1c6dc56e6f83620f93742617a82b35ea08f633eaa0c5d4a9ad31d1ba8819",
     "artifacts/evidence/portfolio_history.json": "366770aa9c030029dc9096614331b6b84d7fe02f788b1da729a5ccaab6433cf1",
-    "artifacts/opticycle-one-page.pdf": "92e51dec8e221daf4bd1c11259a8b9a62d005b70291f0531724df29f0c30a762",
-    "artifacts/opticycle-slides.pdf": "51d2e5553a08808fe299f2e909b22469d58ea2eedb04332008f87def33ff79ed",
-    "artifacts/opticycle-slides.pptx": "d3c3de66a8cc7635fc6b734bb771fc94a603e75aab1659a3757293f0415d5cc3"
+    "artifacts/evidence/public.jsonl": "281b74e5f3852bf5f7801737ffd69046f46e2f01b0052b836b41f430e2c960db",
+    "artifacts/evidence/sanitized_fills/oc-204a8dfccffd40c9.json": "ed27e1aaff03069f5c1a7aac86237e3bd0376d78bf24d756b5b4f38dfea7b4c0",
+    "artifacts/evidence/sanitized_fills/oc-63db2a85298b4ecabefab59076a6397e.json": "7a3263d6f14d2609234484c627dcfe20a7578ce4e038194e1eff34ae08a37dee",
+    "artifacts/evidence/sanitized_fills/oc-715ad36a630d408e.json": "1a20a25890c65ee58000376184c29ac90c22b7a9c469a2f6d3d6430595f8f9da",
+    "artifacts/evidence/walk-forward-backtest.html": "7b8cd20bb4d0f341c6a0b140f9e88aea096729bc44c9297492352aa80d88abec",
+    "artifacts/evidence/walk-forward-backtest.json": "c3b548f7953efe130146a8fb163c81a8b6b71a00e8c127ad7d38d048f174fd35",
+    "artifacts/evidence/walk-forward-backtest.png": "96f7a05a65914615b9362d8f1822a9b4b5e1d092b8256e5eb1a71732a68053c9",
+    "artifacts/evidence/walk-forward-iex-bars.json": "0ca42411b2972f1ff930146050a681695bd6a4e714c53c6ca0c13cc4d09546f3",
+    "artifacts/opticycle-one-page.pdf": "33e185238605959f97140a2edea4167c86f2bc82b5338cc21921eac177734e43",
+    "artifacts/opticycle-slides.pdf": "a45008cfecb5632caf7efcae5a4b82f1ac3539723d04b24d1fb0544e153ed0da",
+    "artifacts/opticycle-slides.pptx": "a14fd672cf0fb1aa87577b5fceda77b73df59fc90da7d1a212f41737e8123b20",
+    "artifacts/readme-hero.svg": "de9448af37d51a7cdf862e52879d0a4769c67510094b71fb0f10a7d21f748c93",
+    "artifacts/team-cover.png": "011cba6c9aaafbd05125aa3b19de39ddc5acd939a6444ee16221f2aed9e684a9"
   },
   "authorized_live_client_order_ids": [
     "oc-204a8dfccffd40c9",
@@ -114,6 +132,7 @@
   "release": {
     "branch": "main",
     "deployed_commit": null,
+    "historical_build_ids": "pre-release provenance retained after the release squash; not checkout targets in the one-commit release repository",
     "stamp_source": "GITHUB_SHA during GitHub Pages publish"
   },
   "schema": "opticycle.claim-evidence.v1",

@@ -137,7 +137,7 @@
     }
   ],
   "looked_up_at": "2026-09-04T02:42:16Z",
-  "mark_snapshot": {
+  "historical_mark_snapshot": {
     "cash": "100261.9",
     "clock_open": false,
     "equity": "100010.9",

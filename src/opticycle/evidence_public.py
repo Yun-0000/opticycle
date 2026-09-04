@@ -412,16 +412,23 @@ def _present_label(record: Mapping[str, Any], field: str) -> str:
 
 
 def _page_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Copy records for the page; injected NO_TRADE slots are explicit absences."""
+    """Copy records for the page and label pre-release provenance accurately."""
     out: list[dict[str, Any]] = []
     for row in records:
+        copied = json.loads(json.dumps(row))
+        episode = copied.get("episode") or {}
+        build_slot = episode.get("code_build_id") or {}
+        if isinstance(build_slot, dict) and build_slot.get("present"):
+            build_slot["reason"] = (
+                "historical pre-release build ID retained after the release squash"
+            )
+            episode["code_build_id"] = build_slot
+        copied["episode"] = episode
         if is_injected_no_trade(row):
-            copied = json.loads(json.dumps(row))
             copied.pop("live_paper_incomplete", None)
             extra = dict(copied.get("extra") or {})
             extra.pop("live_paper_incomplete", None)
             copied["extra"] = extra
-            episode = copied.get("episode") or {}
             for field, slot in list(episode.items()):
                 if not isinstance(slot, dict) or slot.get("present"):
                     continue
@@ -431,12 +438,10 @@ def _page_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
             out.append(copied)
             continue
         if is_genuine_no_trade(row):
-            copied = json.loads(json.dumps(row))
             copied.pop("live_paper_incomplete", None)
             extra = dict(copied.get("extra") or {})
             extra.pop("live_paper_incomplete", None)
             copied["extra"] = extra
-            episode = copied.get("episode") or {}
             for field, slot in list(episode.items()):
                 if not isinstance(slot, dict) or slot.get("present"):
                     continue
@@ -447,7 +452,7 @@ def _page_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
             copied["episode"] = episode
             out.append(copied)
             continue
-        out.append(row)
+        out.append(copied)
     return out
 
 
@@ -638,7 +643,7 @@ def render_evidence_page(
     .nav a, .header-action {{ text-decoration: none; }}
     .header-action {{ justify-self: end; font-size: .78rem; font-weight: 650; }}
     main {{ padding-bottom: 80px; }}
-    .hero {{ min-height: 590px; display: flex; flex-direction: column; justify-content: center; padding: 86px 0 70px; border-bottom: 1px solid var(--line); }}
+    .hero {{ min-height: 540px; display: flex; flex-direction: column; justify-content: center; padding: 72px 0 62px; border-bottom: 1px solid var(--line); }}
     .eyebrow {{ color: var(--accent); font: 650 .69rem/1.4 var(--mono); letter-spacing: .16em; text-transform: uppercase; }}
     h1 {{ max-width: 930px; margin: 22px 0 30px; font-size: clamp(4.6rem, 10.8vw, 8.8rem); font-weight: 620; line-height: .82; letter-spacing: -.075em; text-wrap: balance; }}
     h2 {{ max-width: 760px; margin: 12px 0 0; font-size: clamp(2.35rem, 4.2vw, 4rem); font-weight: 590; line-height: 1; letter-spacing: -.052em; text-wrap: balance; }}
@@ -647,14 +652,14 @@ def render_evidence_page(
     .hero-meta {{ display: flex; flex-wrap: wrap; gap: 9px; margin-top: 34px; }}
     .pill {{ border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.62); padding: .48rem .72rem; font: 650 .67rem var(--mono); letter-spacing: .06em; text-transform: uppercase; }}
     .pill.good {{ color: var(--accent); border-color: #b9d9c7; background: var(--accent-soft); }}
-    .scoreboard {{ display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: 14px; background: var(--panel); margin-top: -30px; overflow: hidden; box-shadow: 0 18px 55px rgba(25,30,26,.07); }}
-    .score {{ min-height: 145px; padding: 24px; border-right: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; }}
+    .scoreboard {{ display: grid; grid-template-columns: repeat(4, 1fr); border-block: 1px solid var(--line); background: transparent; margin-top: -24px; }}
+    .score {{ min-height: 124px; padding: 22px 24px; border-right: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-between; }}
     .score:last-child {{ border-right: 0; }}
     .score small, .label {{ color: var(--muted); font: 600 .67rem var(--mono); letter-spacing: .1em; text-transform: uppercase; }}
     .score strong {{ font-size: clamp(1.65rem, 2.6vw, 2.5rem); font-weight: 570; letter-spacing: -.05em; }}
     .score strong.good, .positive {{ color: var(--accent); }}
     .negative {{ color: var(--red); }}
-    .section {{ padding: 112px 0; border-bottom: 1px solid var(--line); }}
+    .section {{ padding: 92px 0; border-bottom: 1px solid var(--line); }}
     .section-head {{ display: grid; grid-template-columns: 180px 1fr; gap: 24px; align-items: start; margin-bottom: 48px; }}
     .section-head p {{ max-width: 600px; margin: 18px 0 0; color: var(--muted); line-height: 1.6; }}
     .trace {{ display: grid; grid-template-columns: repeat(13, minmax(0, auto)); align-items: center; gap: 8px; overflow-x: auto; padding: 6px 0 16px; }}
@@ -663,8 +668,8 @@ def render_evidence_page(
     .trace-step strong {{ display: block; font: 650 .68rem var(--mono); letter-spacing: .1em; }}
     .trace-step span {{ display: block; margin-top: 26px; color: var(--muted); font-size: .78rem; line-height: 1.35; }}
     .arrow {{ color: #a4aaa4; font-size: .9rem; }}
-    .proof-layout {{ display: grid; grid-template-columns: 1.25fr .75fr; gap: 18px; margin-top: 34px; }}
-    .receipt {{ min-height: 340px; padding: 30px; border-radius: 14px; color: #edf2ee; background: var(--dark); box-shadow: 0 24px 60px rgba(18,22,19,.14); }}
+    .proof-layout {{ display: grid; grid-template-columns: 1.25fr .75fr; margin-top: 28px; }}
+    .receipt {{ min-height: 340px; padding: 30px; color: #edf2ee; background: var(--dark); }}
     .receipt-head {{ display: flex; justify-content: space-between; align-items: center; padding-bottom: 24px; border-bottom: 1px solid var(--dark-line); }}
     .receipt-head .label {{ color: #89928b; }}
     .receipt-status {{ color: #7ce0aa; font: 650 .72rem var(--mono); letter-spacing: .08em; }}
@@ -674,24 +679,24 @@ def render_evidence_page(
     .receipt-grid small {{ display: block; color: #89928b; font: .66rem var(--mono); letter-spacing: .1em; }}
     .receipt-grid strong {{ display: block; margin-top: 8px; font-size: 1.05rem; font-weight: 520; }}
     .receipt-id {{ margin-top: 28px; padding: 14px 16px; border: 1px solid var(--dark-line); border-radius: 8px; color: #a8b0aa; font: .72rem/1.5 var(--mono); overflow-wrap: anywhere; }}
-    .invariants {{ border: 1px solid var(--line); border-radius: 14px; background: var(--panel); overflow: hidden; }}
+    .invariants {{ border: 1px solid var(--line); border-left: 0; background: transparent; }}
     .invariant {{ min-height: 170px; padding: 26px; }}
     .invariant + .invariant {{ border-top: 1px solid var(--line); }}
     .invariant strong {{ display: block; margin-bottom: 15px; font-size: 1.02rem; }}
     .invariant strong span {{ color: var(--accent); margin-right: 10px; font-family: var(--mono); }}
     .invariant p {{ margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.55; }}
     .policy-note {{ margin: 18px 0 0; color: var(--muted); font-size: .78rem; }}
-    .broker-summary {{ display: grid; grid-template-columns: 1.3fr .7fr; gap: 24px; padding: 30px; border: 1px solid #bfdccb; border-radius: 14px; background: var(--accent-soft); }}
+    .broker-summary {{ display: grid; grid-template-columns: 1.3fr .7fr; gap: 24px; padding: 28px; border: 1px solid #bfdccb; border-radius: 4px; background: var(--accent-soft); }}
     .broker-summary .identity {{ font-size: clamp(1.5rem, 3vw, 2.5rem); line-height: 1.2; letter-spacing: -.04em; }}
     .broker-summary .identity strong {{ color: var(--accent); }}
     .broker-summary p {{ margin: 0; color: #4d6255; line-height: 1.55; }}
     .text-link {{ display: inline-block; margin-top: 14px; color: var(--accent); font-size: .82rem; font-weight: 650; text-decoration: none; }}
     .chart-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }}
-    .chart-card {{ margin: 0; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }}
+    .chart-card {{ margin: 0; padding: 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }}
     .chart-card figcaption {{ display: flex; justify-content: space-between; align-items: baseline; padding: 10px 8px 16px; }}
     .chart-card figcaption strong {{ font-size: 1rem; }}
     .chart-card figcaption span {{ color: var(--muted); font: .66rem var(--mono); }}
-    .chart-card img {{ display: block; width: 100%; height: auto; border-radius: 9px; background: var(--dark); }}
+    .chart-card img {{ display: block; width: 100%; height: auto; background: var(--dark); }}
     .subhead {{ margin: 58px 0 18px; font-size: 1.35rem; }}
     .table-wrap {{ width: 100%; overflow-x: auto; border-top: 1px solid var(--ink); }}
     table {{ width: 100%; border-collapse: collapse; font-size: .86rem; }}
@@ -708,19 +713,21 @@ def render_evidence_page(
     .probe {{ padding: 24px; border-top: 1px solid var(--ink); }}
     .probe strong {{ display: block; margin: 10px 0 20px; font-size: 1.05rem; }}
     .probe span {{ color: var(--accent); font: 650 .72rem var(--mono); }}
-    .disclosures {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }}
-    .disclosure {{ min-height: 185px; padding: 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }}
-    .disclosure strong {{ display: block; margin-bottom: 22px; }}
+    .disclosures {{ display: grid; grid-template-columns: repeat(3, 1fr); border-block: 1px solid var(--line); }}
+    .disclosure {{ min-height: 156px; padding: 24px; border-right: 1px solid var(--line); }}
+    .disclosure:last-child {{ border-right: 0; }}
+    .disclosure strong {{ display: block; margin-bottom: 18px; }}
     .disclosure p {{ margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.55; }}
-    details {{ border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }}
-    summary {{ cursor: pointer; list-style: none; }}
+    details {{ border-block: 1px solid var(--line); background: transparent; }}
+    summary {{ display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px; cursor: pointer; list-style: none; }}
     summary::-webkit-details-marker {{ display: none; }}
-    summary::after {{ content: "+"; float: right; color: var(--muted); }}
-    details[open] summary::after {{ content: "−"; }}
-    .research {{ margin-top: 18px; }}
+    summary::after {{ content: ""; width: 7px; height: 7px; margin: -4px 3px 0 8px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: rotate(45deg); transition: transform .18s ease; }}
+    details[open] summary::after {{ margin-top: 4px; transform: rotate(225deg); }}
+    .research {{ margin-top: 20px; border-top: 0; }}
     .research > summary {{ padding: 22px 24px; }}
+    .research > summary {{ grid-template-columns: 1fr auto auto; }}
     .research > summary span {{ font-weight: 650; }}
-    .research > summary strong {{ float: right; margin-right: 24px; color: var(--amber); font-size: .82rem; }}
+    .research > summary strong {{ color: var(--amber); font-size: .82rem; font-weight: 650; }}
     .research-body {{ display: grid; grid-template-columns: .65fr 1.35fr; gap: 28px; align-items: center; padding: 0 24px 24px; border-top: 1px solid var(--line); }}
     .research-body > div {{ padding-top: 24px; }}
     .research-body img {{ display: block; width: 100%; margin-top: 24px; border-radius: 8px; }}
@@ -728,9 +735,9 @@ def render_evidence_page(
     .resources p {{ max-width: 520px; margin: 0; color: var(--muted); }}
     .actions {{ display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; }}
     .button {{ padding: .72rem .9rem; border: 1px solid var(--ink); border-radius: 7px; background: var(--ink); color: white; font-size: .75rem; font-weight: 650; text-decoration: none; }}
-    .button.secondary {{ border-color: var(--line); background: transparent; color: var(--ink); }}
+    .button.secondary {{ padding-inline: .35rem; border: 0; border-radius: 0; background: transparent; color: var(--ink); text-decoration: underline; text-decoration-color: #b7bbb6; }}
     .ledger {{ margin-top: 48px; }}
-    .ledger > summary {{ padding: 24px; font-weight: 650; }}
+    .ledger > summary {{ padding: 20px 4px; font-weight: 650; }}
     .ledger-content {{ padding: 0 24px 24px; border-top: 1px solid var(--line); overflow: hidden; }}
     article.episode {{ margin: 18px 0; padding: 22px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); }}
     article.episode h2 {{ font-size: 1.4rem; margin-top: 0; }}
@@ -747,6 +754,8 @@ def render_evidence_page(
       .scoreboard, .timeline {{ grid-template-columns: repeat(2, 1fr); }} .score:nth-child(2) {{ border-right: 0; }} .score:nth-child(-n+2) {{ border-bottom: 1px solid var(--line); }}
       .section-head, .proof-layout, .broker-summary, .chart-grid, .research-body {{ grid-template-columns: 1fr; }}
       .probe-grid, .disclosures {{ grid-template-columns: 1fr; }}
+      .invariants {{ border-top: 0; border-left: 1px solid var(--line); }}
+      .disclosure {{ min-height: 0; border-right: 0; border-bottom: 1px solid var(--line); }} .disclosure:last-child {{ border-bottom: 0; }}
       .section {{ padding: 82px 0; }} .section-head {{ gap: 14px; }}
       .resources {{ align-items: flex-start; flex-direction: column; }} .actions {{ justify-content: flex-start; }}
     }}
@@ -756,7 +765,7 @@ def render_evidence_page(
       .hero {{ min-height: 520px; padding-top: 60px; }} h1 {{ font-size: clamp(4rem, 22vw, 6rem); }}
       .scoreboard {{ grid-template-columns: 1fr; margin-top: -18px; }} .score {{ min-height: 112px; border-right: 0; border-bottom: 1px solid var(--line); }} .score:last-child {{ border-bottom: 0; }}
       .receipt-grid {{ grid-template-columns: 1fr; }} .timeline {{ grid-template-columns: 1fr 1fr; }}
-      .research > summary strong {{ float: none; display: block; margin: 8px 0 0; }}
+      .research > summary {{ grid-template-columns: 1fr auto; }} .research > summary strong {{ grid-column: 1; grid-row: 2; justify-self: start; margin-top: 6px; }} .research > summary::after {{ grid-column: 2; grid-row: 1 / span 2; }}
       footer {{ display: block; }} footer span {{ display: block; margin-top: 8px; }}
     }}
   </style>
@@ -863,7 +872,6 @@ def render_evidence_page(
       <div class="actions">
         <a class="button" href="../demo.mp4">Watch demo</a>
         <a class="button secondary" href="broker_lookup.json">Broker receipts</a>
-        <a class="button secondary" href="paper_fill_ingest.json">Fill ingest</a>
         <a class="button secondary" href="manifest.json">Release hashes</a>
       </div>
     </section>

@@ -7,14 +7,6 @@ from dataclasses import dataclass, field
 from typing import Any
 
 OCC_SYMBOL_RE = re.compile(r"^[A-Z]{1,6}\d{6}[CP]\d{8}$")
-POSITION_INTENTS = {
-    "BUY_TO_OPEN": "buy_to_open",
-    "BUY_TO_CLOSE": "buy_to_close",
-    "SELL_TO_OPEN": "sell_to_open",
-    "SELL_TO_CLOSE": "sell_to_close",
-    "BUY": "buy_to_open",
-    "SELL": "sell_to_close",
-}
 
 
 class ExecutionRejected(ValueError):
@@ -84,84 +76,3 @@ class OptionOrderRequest:
             args["limit_price"] = str(self.limit_price)
             args["type"] = "limit"
         return args
-
-    def to_cli_argv(self, binary: str = "alpaca") -> list[str]:
-        self.assert_options_instrument()
-        argv = [
-            binary,
-            "order",
-            "submit",
-            "--qty",
-            str(int(self.qty)),
-            "--type",
-            "limit" if self.limit_price is not None else self.order_type,
-            "--time-in-force",
-            "day",
-            "--output",
-            "json",
-        ]
-        if self.is_multileg:
-            import json
-
-            argv.extend(["--order-class", "mleg", "--legs", json.dumps(self.legs)])
-            if self.limit_price is not None:
-                argv.extend(["--limit-price", str(self.limit_price)])
-            return argv
-        argv.extend(["--symbol", str(self.symbol), "--side", str(self.side)])
-        if self.position_intent:
-            argv.extend(["--position-intent", self.position_intent])
-        if self.limit_price is not None:
-            argv.extend(["--limit-price", str(self.limit_price)])
-        if self.client_order_id:
-            argv.extend(["--client-order-id", self.client_order_id])
-        return argv
-
-
-def decision_to_option_order(decision: Any) -> OptionOrderRequest:
-    """Convert an ExecutionDecision-like object into an option order request."""
-    metadata = dict(getattr(decision, "metadata", None) or {})
-    action = str(getattr(decision, "action", "") or "").upper()
-    side = str(getattr(decision, "side", "") or "").lower() or None
-    quantity = int(getattr(decision, "quantity", 0) or 0)
-    if quantity <= 0:
-        raise ExecutionRejected("option quantity must be a positive whole number")
-    symbol = str(getattr(decision, "symbol", "") or "").upper() or None
-    order_type = str(getattr(decision, "order_type", "market") or "market").lower()
-    limit_price = getattr(decision, "limit_price", None)
-    legs = metadata.get("legs")
-    order_class = metadata.get("order_class")
-    intent = metadata.get("position_intent") or POSITION_INTENTS.get(action)
-    if order_class == "mleg" or legs:
-        normalized_legs = [_normalize_leg(leg) for leg in (legs or [])]
-        return OptionOrderRequest(
-            qty=quantity,
-            order_type="limit" if limit_price is not None else order_type,
-            limit_price=float(limit_price) if limit_price is not None else None,
-            order_class="mleg",
-            legs=normalized_legs,
-            client_order_id=metadata.get("client_order_id"),
-            reason=str(getattr(decision, "reason", "") or ""),
-            metadata=metadata,
-        )
-    return OptionOrderRequest(
-        qty=quantity,
-        symbol=symbol,
-        side=side,
-        order_type=order_type,
-        position_intent=intent,
-        limit_price=float(limit_price) if limit_price is not None else None,
-        client_order_id=metadata.get("client_order_id"),
-        reason=str(getattr(decision, "reason", "") or ""),
-        metadata=metadata,
-    )
-
-
-def _normalize_leg(leg: dict[str, Any]) -> dict[str, Any]:
-    symbol = str(leg.get("symbol") or "").upper()
-    ratio = str(leg.get("ratio_qty") or leg.get("ratio") or "1")
-    payload: dict[str, Any] = {"symbol": symbol, "ratio_qty": ratio}
-    if leg.get("side"):
-        payload["side"] = str(leg["side"]).lower()
-    if leg.get("position_intent"):
-        payload["position_intent"] = str(leg["position_intent"]).lower()
-    return payload

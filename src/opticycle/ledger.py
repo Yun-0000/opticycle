@@ -306,7 +306,7 @@ class EvidenceLedger:
             raise LedgerError("code/build ID must be an exact commit SHA")
         episode = _apply_live_paper_block(complete_episode(fields), channel, extra)
         if not episode["code_build_id"]["present"]:
-            episode["code_build_id"] = slot(sha, present=True, reason="exact git commit")
+            episode["code_build_id"] = slot(sha, present=True, reason="recorded build ID")
         elif episode["code_build_id"]["value"] != sha:
             raise LedgerError("episode code_build_id must equal the exact commit SHA")
         previous = self._last()
@@ -413,7 +413,7 @@ class EpisodeBuilder:
             name: slot(None, present=False, reason="not observed in this episode")
             for name in EPISODE_FIELDS
         }
-        self._fields["code_build_id"] = slot(self.commit_sha, present=True, reason="exact git commit")
+        self._fields["code_build_id"] = slot(self.commit_sha, present=True, reason="recorded build ID")
         self._fields["candidate_set"] = slot([], present=True, reason="empty set")
         self._fields["positions"] = slot([], present=True, reason="no positions observed")
         self._committed: dict[str, Any] | None = None

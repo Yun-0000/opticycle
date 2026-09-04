@@ -63,6 +63,8 @@ python3 scripts/assert-exits-only.py
 | `2a6d6b7c…` | SPY 768C/769C bear call · 1× | filled `-0.51`; closed through MCP · **≈ −$2** |
 | `24b16fe6…` | SPY 740P/724P bull put · 1× · limit `-2.26` | filled `-2.26` · live price-bound **MATCHED** |
 
+The signed-credit receipt proves execution and reconciliation; it predates the current 3–10 DTE / $5-wide selector.
+
 Paper account `PA3V84C40PJQ` started at $100,000. The evidence keeps each broker metric at its own observation time:
 
 | Broker metric | Value | Meaning |
