@@ -1,0 +1,11 @@
+{
+  "order_id": "abcb5385-0aa3-42cc-9b58-ef4200235c27",
+  "client_order_id": "oc-204a8dfccffd40c9",
+  "limit": "2.54",
+  "status": "filled",
+  "filled_avg_price": "-2.11",
+  "legs": [
+    {"symbol": "SPY261009C00793000", "side": "sell", "ratio_qty": "1"},
+    {"symbol": "SPY261009C00809000", "side": "buy", "ratio_qty": "1"}
+  ]
+}

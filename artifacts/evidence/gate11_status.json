@@ -1,0 +1,30 @@
+{
+  "authorized_live_client_order_ids": [
+    "oc-204a8dfccffd40c9",
+    "oc-63db2a85298b4ecabefab59076a6397e",
+    "oc-715ad36a630d408e"
+  ],
+  "broker_order_ids": {
+    "oc-204a8dfccffd40c9": "abcb5385-0aa3-42cc-9b58-ef4200235c27",
+    "oc-63db2a85298b4ecabefab59076a6397e": "24b16fe6-0d8d-4478-afa6-0f3781eb6b33",
+    "oc-715ad36a630d408e": "2a6d6b7c-caad-4c24-959a-8d93455a36fe"
+  },
+  "demo_mp4": "rendered at artifacts/demo.mp4",
+  "genuine_no_trade_recorded": true,
+  "injected_no_trade_caveat": "live-path + injected missing quote; NOT an Alpaca true quote-miss; NOT fill evidence; NOT a live MATCHED / MLEG / fill claim",
+  "injected_no_trade_promoted": false,
+  "live_fill_claimed": true,
+  "live_quote_gap": "SPY quote is stale",
+  "live_quotes_available": true,
+  "live_quotes_reachable": true,
+  "llm_key_present": true,
+  "llm_episode_recorded": true,
+  "llm_episode_gap": "In-session 2026-09-01 ThesisAgent gpt-5.6-luna model_called=true BULLISH; signed-credit MLEG MATCHED.",
+  "matched_claimed": true,
+  "observation_outcome": "NO_TRADE",
+  "observation_reason": "SPY quote is stale",
+  "pnl_reconcile": "2026-09-01 session: closed both earlier verticals via MCP MLEG (raw_result_hash retained). Flatten equity 100055.67. Then signed-credit MATCHED oc-63db2a85298b4ecabefab59076a6397e limit -2.26 fill -2.26. After-fill equity 100049.62 cash 100281.62 long_mv 455 short_mv -687 (identity cash+long+short). Historical unsigned-limit fills remain FILLED not MATCHED. After-hours 2026-08-31 mark snapshot kept as historical.",
+  "sanitized_json_provided": true,
+  "schema": "opticycle.gate11-status.v1",
+  "yun_authorized_one_paper_mleg": true
+}

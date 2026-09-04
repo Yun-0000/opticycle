@@ -1,0 +1,27 @@
+{
+  "account_id": "PA3V84C40PJQ",
+  "end_equity": 100026.77,
+  "http_status": 200,
+  "net_change": 26.77,
+  "observed_points": 3,
+  "period": "1M",
+  "points": [
+    {
+      "equity": 100000.0,
+      "timestamp": 1787875200
+    },
+    {
+      "equity": 100000.0,
+      "timestamp": 1787961600
+    },
+    {
+      "equity": 100026.77,
+      "timestamp": 1788220800
+    }
+  ],
+  "schema": "opticycle.portfolio-history.v2",
+  "source": "GET /v2/account/portfolio/history",
+  "start_equity": 100000.0,
+  "timeframe": "1D",
+  "zero_placeholders_removed": 18
+}

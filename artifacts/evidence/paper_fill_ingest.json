@@ -1,0 +1,24 @@
+{
+  "schema": "opticycle.paper-fill-ingest.v1",
+  "yun_authorized_one_paper_mleg": true,
+  "cloud_submit": false,
+  "sanitized_json_provided": true,
+  "live_fill_claimed": true,
+  "matched_claimed": true,
+  "waiting_for": [],
+  "hook": "python3 scripts/ingest-paper-fill.py --from-json <sanitized.json>",
+  "detail": "Three live_paper broker fills recorded. Historical oc-204a8dfccffd40c9 and oc-715ad36a630d408e remain FILLED, not price-bound MATCHED, because their submitted credit limits used the debit-positive sign. oc-63db2a85298b4ecabefab59076a6397e is the only price-bound MATCHED fill: signed limit -2.26, fill -2.26, ThesisAgent model_called=true, mcp_submit_count=1, second_submit=false, then Alpaca GET-by-client_order_id reconciliation. Account id omitted.",
+  "authorized_live_client_order_ids": [
+    "oc-204a8dfccffd40c9",
+    "oc-63db2a85298b4ecabefab59076a6397e",
+    "oc-715ad36a630d408e"
+  ],
+  "broker_order_ids": {
+    "oc-204a8dfccffd40c9": "abcb5385-0aa3-42cc-9b58-ef4200235c27",
+    "oc-63db2a85298b4ecabefab59076a6397e": "24b16fe6-0d8d-4478-afa6-0f3781eb6b33",
+    "oc-715ad36a630d408e": "2a6d6b7c-caad-4c24-959a-8d93455a36fe"
+  },
+  "price_bound_matched_client_order_id": "oc-63db2a85298b4ecabefab59076a6397e",
+  "mcp_submit_count": 1,
+  "second_submit": false
+}
