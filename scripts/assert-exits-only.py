@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
@@ -48,6 +49,66 @@ class AmbiguousExitExecutor:
         _ = args, kwargs
         self.calls += 1
         raise TimeoutError("simulated ambiguous transport response")
+
+
+class ReconciledExitExecutor:
+    def __init__(self) -> None:
+        self.calls = 0
+        self.payload: CanonicalOrderPayload | None = None
+
+    def place_authorized_exit_sync(
+        self,
+        payload: CanonicalOrderPayload,
+        authorization: object,
+        *,
+        position_snapshot_hash: str,
+        settings: HackathonSettings,
+        now: datetime,
+    ) -> dict[str, object]:
+        _ = authorization, position_snapshot_hash, settings, now
+        self.calls += 1
+        self.payload = payload
+        return {
+            "arguments_hash": "exit-arguments-hash",
+            "raw_result_hash": "exit-raw-result-hash",
+            "submitted": True,
+            "dry_run": False,
+            "raw": {"id": "exit-broker-order", "status": "filled"},
+        }
+
+
+class ReconciledExitBroker:
+    def __init__(self, executor: ReconciledExitExecutor) -> None:
+        self.executor = executor
+
+    def fetch_account(self) -> object:
+        return SimpleNamespace(account_number="PA3V84C40PJQ")
+
+    def fetch_orders_by_client_id(self, client_order_id: str) -> list[dict[str, object]]:
+        payload = self.executor.payload
+        if payload is None or payload.client_order_id != client_order_id:
+            return []
+        return [
+            {
+                "id": "exit-broker-order",
+                "client_order_id": payload.client_order_id,
+                "order_class": payload.order_class,
+                "qty": str(payload.qty),
+                "limit_price": str(payload.limit_price),
+                "status": "filled",
+                "filled_qty": str(payload.qty),
+                "filled_avg_price": str(payload.limit_price),
+                "legs": [
+                    {
+                        "symbol": leg.symbol,
+                        "ratio_qty": str(leg.ratio_qty),
+                        "side": leg.side.value,
+                        "position_intent": leg.position_intent.value,
+                    }
+                    for leg in payload.legs
+                ],
+            }
+        ]
 
 
 def _fail_entry(*args: object, **kwargs: object) -> object:
@@ -228,6 +289,143 @@ def _assert_exit_triggers() -> dict[str, str]:
     if reasons != expected:
         raise AssertionError(f"deterministic exit triggers changed: {reasons}")
     return {key: value or "none" for key, value in reasons.items()}
+
+
+def _reconciled_exit_fixture(
+    *,
+    now: datetime,
+    dte: int,
+    short_bid: str,
+    short_ask: str,
+    long_bid: str,
+    long_ask: str,
+) -> tuple[list[dict[str, str]], EvidenceSnapshot]:
+    expiration = now.astimezone(ZoneInfo("America/New_York")).date() + timedelta(days=dte)
+    occ_date = expiration.strftime("%y%m%d")
+    short_symbol = f"SPY{occ_date}P00650000"
+    long_symbol = f"SPY{occ_date}P00645000"
+    positions = [
+        {"symbol": short_symbol, "qty": "-1", "side": "short", "avg_entry_price": "4.00"},
+        {"symbol": long_symbol, "qty": "1", "side": "long", "avg_entry_price": "2.00"},
+    ]
+    evidence = EvidenceSnapshot(
+        underlying="SPY",
+        spot_price=Decimal("650"),
+        timestamp=now,
+        bars_count=60,
+        quote_age_seconds=Decimal("1"),
+        is_fresh=True,
+        chain_quotes=(
+            OptionContractQuote(
+                symbol=short_symbol,
+                underlying="SPY",
+                option_type=OptionType.PUT,
+                strike_price=Decimal("650"),
+                expiration=datetime.combine(expiration, datetime.min.time(), tzinfo=timezone.utc),
+                bid=Decimal(short_bid),
+                ask=Decimal(short_ask),
+                last=(Decimal(short_bid) + Decimal(short_ask)) / Decimal("2"),
+                delta=Decimal("-0.25"),
+                gamma=Decimal("0.01"),
+                theta=Decimal("-0.10"),
+                vega=Decimal("0.10"),
+                quote_timestamp=now,
+            ),
+            OptionContractQuote(
+                symbol=long_symbol,
+                underlying="SPY",
+                option_type=OptionType.PUT,
+                strike_price=Decimal("645"),
+                expiration=datetime.combine(expiration, datetime.min.time(), tzinfo=timezone.utc),
+                bid=Decimal(long_bid),
+                ask=Decimal(long_ask),
+                last=(Decimal(long_bid) + Decimal(long_ask)) / Decimal("2"),
+                delta=Decimal("-0.15"),
+                gamma=Decimal("0.01"),
+                theta=Decimal("-0.08"),
+                vega=Decimal("0.08"),
+                quote_timestamp=now,
+            ),
+        ),
+        correlation_id="reconciled-exit-proof",
+        account_id="PA3V84C40PJQ",
+        quote_timestamp=now,
+    )
+    return positions, evidence
+
+
+def _assert_reconciled_exit_paths() -> dict[str, dict[str, object]]:
+    now = datetime(2026, 9, 3, 15, 0, tzinfo=timezone.utc)
+    settings = HackathonSettings(event_flatten_at="2099-01-01T00:00:00-05:00")
+    cases = {
+        "take_profit": {
+            "dte": 5,
+            "short_bid": "1.00",
+            "short_ask": "1.10",
+            "long_bid": "0.30",
+            "long_ask": "0.40",
+            "reason": "TAKE_PROFIT_50_PERCENT",
+        },
+        "stop_loss": {
+            "dte": 5,
+            "short_bid": "5.00",
+            "short_ask": "5.20",
+            "long_bid": "0.90",
+            "long_ask": "1.00",
+            "reason": "STOP_LOSS_2X_CREDIT",
+        },
+        "dte_force_close": {
+            "dte": 1,
+            "short_bid": "1.40",
+            "short_ask": "1.50",
+            "long_bid": "0.30",
+            "long_ask": "0.40",
+            "reason": "DTE_FORCE_CLOSE",
+        },
+    }
+    reports: dict[str, dict[str, object]] = {}
+    for name, case in cases.items():
+        positions, evidence = _reconciled_exit_fixture(
+            now=now,
+            dte=int(case["dte"]),
+            short_bid=str(case["short_bid"]),
+            short_ask=str(case["short_ask"]),
+            long_bid=str(case["long_bid"]),
+            long_ask=str(case["long_ask"]),
+        )
+        executor = ReconciledExitExecutor()
+        broker = ReconciledExitBroker(executor)
+        with TemporaryDirectory(prefix=f"opticycle-{name}-") as tmp:
+            result = manage_open_positions(
+                settings=settings,
+                positions=positions,
+                evidence=evidence,
+                broker=broker,
+                executor=executor,
+                state_dir=Path(tmp),
+                now=now,
+            )
+        payload = executor.payload
+        reconciliation = result.get("reconciliation") or {}
+        intents = sorted(leg.position_intent.value for leg in (payload.legs if payload else ()))
+        if result.get("reason") != case["reason"]:
+            raise AssertionError(f"{name} selected the wrong deterministic exit reason")
+        if executor.calls != 1 or result.get("mcp_submit_count") != 1:
+            raise AssertionError(f"{name} must submit exactly one close MLEG")
+        if result.get("second_submit") is not False or result.get("halt"):
+            raise AssertionError(f"{name} must reconcile without a second submit")
+        if reconciliation.get("status") != "matched" or not reconciliation.get("complete"):
+            raise AssertionError(f"{name} close MLEG did not reconcile as MATCHED")
+        if intents != ["buy_to_close", "sell_to_close"]:
+            raise AssertionError(f"{name} did not preserve two-leg close intents")
+        reports[name] = {
+            "complete": True,
+            "mcp_submit_count": 1,
+            "reason": result["reason"],
+            "reconciliation": reconciliation["status"],
+            "second_submit": False,
+        }
+    return reports
 
 
 def _assert_ambiguous_exit_halts() -> dict[str, object]:
@@ -420,6 +618,7 @@ def main() -> int:
         "exit_triggers": _assert_exit_triggers(),
         "exits_only": _assert_no_entry(),
         "mode_contract": _assert_mode_prerequisites(),
+        "reconciled_exit_paths": _assert_reconciled_exit_paths(),
         "single_exit": _assert_single_exit_stops_entry(),
         "payload_mutations_rejected": _assert_payload_mutations_rejected(),
     }

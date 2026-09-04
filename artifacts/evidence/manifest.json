@@ -1,6 +1,6 @@
 {
   "artifact_sha256": {
-    "artifacts/demo.mp4": "2f629db498f7088e70ab0d8aa29f9d53b1a7d17b3869a661c1a9bb75c45ae852",
+    "artifacts/demo.mp4": "f636eb6c1cf5ae1a336a83c2be9f08c5d903dcb876ebb64edf01134b1cab6538",
     "artifacts/evidence/alpaca_cli_snapshot.json": "a6611bfaf5d6e804bef36cb639d493909d62d6407b813f6fde9f747bd34e9afc",
     "artifacts/evidence/broker_lookup.json": "82ba8cce0929a16a85689779e445b162562b2ee292f79c98e43d5d70c807b4ae",
     "artifacts/evidence/paper_fill_ingest.json": "ecba1c6dc56e6f83620f93742617a82b35ea08f633eaa0c5d4a9ad31d1ba8819",
