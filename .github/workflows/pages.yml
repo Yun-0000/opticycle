@@ -33,8 +33,6 @@ jobs:
           for name in d['artifact_sha256']};
           p.write_text(json.dumps(d,indent=2,sort_keys=True)+'\n')"
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v4
         with:
           path: artifacts

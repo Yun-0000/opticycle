@@ -78,7 +78,6 @@ PUBLIC_MODEL_RE = re.compile(r"\bgpt-[A-Za-z0-9._-]+\b", re.IGNORECASE)
 RELEASE_ARTIFACTS = (
     "artifacts/demo.mp4",
     "artifacts/opticycle-one-page.pdf",
-    "artifacts/opticycle-slides.pdf",
     "artifacts/opticycle-slides.pptx",
     "artifacts/evidence/alpaca_cli_snapshot.json",
     "artifacts/evidence/broker_lookup.json",
@@ -746,7 +745,7 @@ def render_evidence_page(
   <div class="actions">
     <a class="button" href="../demo.mp4">Watch the rendered demo</a>
     <a class="button" href="../opticycle-one-page.pdf">Open the one-page</a>
-    <a class="button" href="../opticycle-slides.pdf">Open the slides</a>
+    <a class="button" href="../opticycle-slides.pptx">Open the slides</a>
     <a class="button secondary" href="broker_lookup.json">Open broker GET receipts</a>
     <a class="button secondary" href="paper_fill_ingest.json">Open fill ingest summary</a>
     <a class="button secondary" href="manifest.json">Verify release hashes</a>
