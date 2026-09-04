@@ -20,7 +20,7 @@
   <a href="artifacts/demo.mp4"><strong>Watch the 43-second demo</strong></a>
   · <a href="artifacts/evidence/index.html">Open the evidence ledger</a>
   · <a href="artifacts/opticycle-one-page.pdf">Read the one-page</a>
-  · <a href="artifacts/opticycle-slides.pptx">Open the slides</a>
+  · <a href="artifacts/opticycle-slides.pdf">Open the slides</a>
 </p>
 
 | LIVE BROKER PROOF | EXECUTION INTEGRITY | REALIZED PAPER P&L |
@@ -127,7 +127,7 @@ python3 scripts/run-open-session.py --exits-only
 - **Policy-aligned research:** [`walk-forward-backtest.html`](artifacts/evidence/walk-forward-backtest.html) — **MODELED**, not broker P&L
 - **Rendered demo:** [`artifacts/demo.mp4`](artifacts/demo.mp4)
 - **One-page write-up:** [`artifacts/opticycle-one-page.pdf`](artifacts/opticycle-one-page.pdf)
-- **Presentation slides:** [`artifacts/opticycle-slides.pptx`](artifacts/opticycle-slides.pptx)
+- **Presentation slides:** [`artifacts/opticycle-slides.pdf`](artifacts/opticycle-slides.pdf) · [PPTX](artifacts/opticycle-slides.pptx)
 
 <details>
 <summary><strong>Honesty notes</strong></summary>
